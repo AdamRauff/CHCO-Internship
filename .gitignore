@@ -1,6 +1,8 @@
-# filetypes to avoid: #
+#
+#filetypes to avoid: #
 ###################
 *.pdf
+*.txt
 *.swp
 *.DS_Store
 *.DS_Stroe?
