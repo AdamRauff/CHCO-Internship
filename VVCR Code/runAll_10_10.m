@@ -26,6 +26,8 @@ FileSkpTrck = [];
 NewAnalyzedTxt = [];
 
 % create variable to hold name of csv file
+% In future: should add an input box when script runs so user can
+% interactively assign csv file name every time script runs
 csvName = 'RV_data_03.csv';
 
 % Here would be a good opportunity to open the csv file if it
