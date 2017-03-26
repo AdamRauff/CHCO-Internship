@@ -6,3 +6,4 @@
 *.DS_Stroe?
 *.pyc
 __pycache__
+readPDF/Outcomes.csv
