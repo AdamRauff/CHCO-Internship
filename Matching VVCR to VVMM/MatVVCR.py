@@ -113,3 +113,14 @@ for i, row in enumerate(Data):
 # ----------------------------------------------------------------------------
 # compare MRN, names, DOB values of Outcomes and VVMM database to see 
 # if any of the same patients exists in both
+
+matchedMRN = [x for x in demMRN if x in OUT_MRN]
+
+# check how many patients match
+print('# of matching patients: ',len(matchedMRN))
+
+# check if dates of birth match
+
+# check if names match
+
+# obtain VVCR values that align with matchedMRN patients
