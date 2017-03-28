@@ -13,7 +13,7 @@ import csv
 # windows explorer window to allow user to interactively choose files
 DBname = 'VVMM_Database.csv' 
 demoName = 'VVMM_demographics.csv'
-OutCname = ''
+OutCname = 'RV-VVCR.csv'
 
 # list that hold to the patient numbers from the VVMM Database csv file
 PatNum = []
@@ -81,9 +81,9 @@ VVMM_Demo_List = [demPtNo, demFstNam, demLstNam, demGender, demMRN, demDOB]
 KH_VVCR = []
 UT_VVCR = []
 OUT_MRN = []
-OUT_DOB = []
-OUT_Fnam = []
-Out_Lnam = []
+# OUT_DOB = []
+# OUT_Fnam = []
+# Out_Lnam = []
 
 with open(OutCname, 'r') as csv_file:
   csv_reader = csv.reader(csv_file, delimiter=',', quotechar='|')
@@ -97,17 +97,11 @@ with open(OutCname, 'r') as csv_file:
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 for i, row in enumerate(Data):
   for j, column in enumerate(row):
-    if j == 0 and i > 0:
-      OUT_MRN.append(Data[i][j])
     if j == 1 and i > 0:
-      OUT_DOB.append(Data[i][j])
-    if j == 3 and i > 0:
-      OUT_Fnam.append(Data[i][j])
-    if j == 4 and i > 0:
-      Out_Lnam.append(Data[i][j])
-    if j == 6 and i > 0:
-      UT_VVCR.append(Data[i][j])
+      OUT_MRN.append(Data[i][j])
     if j == 5 and i > 0:
+      UT_VVCR.append(Data[i][j])
+    if j == 6 and i > 0:
       KH_VVCR.append(Data[i][j])
 
 # ----------------------------------------------------------------------------
@@ -124,3 +118,8 @@ print('# of matching patients: ',len(matchedMRN))
 # check if names match
 
 # obtain VVCR values that align with matchedMRN patients
+for i, val in enumerate(matchedMRN):
+   
+  # obtain index of MRN in Outcomes file
+  matchedKH_VVCR.append(KH_VVCR(OUT_MRN.index(val)))
+  matchedUT_VVCR.append(UT_VVCR(OUT_MRN.index(val))) 
