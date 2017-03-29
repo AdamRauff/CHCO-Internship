@@ -14,6 +14,7 @@ import csv
 DBname = 'VVMM_Database.csv' 
 demoName = 'VVMM_demographics.csv'
 OutCname = 'RV-VVCR.csv'
+CSV_WRITE_FILENAME = 'MATCHED_VALS.csv'
 
 # list that hold to the patient numbers from the VVMM Database csv file
 PatNum = []
@@ -117,9 +118,24 @@ print('# of matching patients: ',len(matchedMRN))
 
 # check if names match
 
+
+matchedKH_VVCR = []
+matchedUT_VVCR = []
 # obtain VVCR values that align with matchedMRN patients
 for i, val in enumerate(matchedMRN):
    
   # obtain index of MRN in Outcomes file
-  matchedKH_VVCR.append(KH_VVCR(OUT_MRN.index(val)))
-  matchedUT_VVCR.append(UT_VVCR(OUT_MRN.index(val))) 
+  matchedKH_VVCR.append(KH_VVCR[OUT_MRN.index(val)])
+  matchedUT_VVCR.append(UT_VVCR[OUT_MRN.index(val)]) 
+
+# prepare List variable structure to use to write to a new csv file
+WriteData = []
+for i, j, k in zip(matchedMRN, matchedKH_VVCR, matchedUT_VVCR):
+  WriteData.append([i,j,k])
+
+# write csv file
+with open(CSV_WRITE_FILENAME, 'w') as csv_out:
+  csv_writer = csv.writer(csv_out, delimiter=',', quotechar='|', \
+      quoting=csv.QUOTE_MINIMAL)
+
+  csv_writer.writerows(WriteData)
