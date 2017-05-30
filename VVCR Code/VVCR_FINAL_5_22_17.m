@@ -6,7 +6,7 @@ function [ AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, STD_
 
 % if thrid digit/entry of filename is numeric == human file
 % otherwise, calf file --> use calf loadp function
-if FileName(1) == 'H' && ischar(FileName(2)) && (str2double(FileName(3))~= Nan)
+if FileName(1) == 'H' && ischar(FileName(2)) && ~isnan(str2double(FileName(3)));
     [Pres, dPdt, ~, Pnam, Pmrn, file, ~, ~]=loadp_10_10_16(PathName,FileName,100);
 else
     [Pres, dPdt, Rvals, file, ~]=load_calf_p_5_17_17(PathName,FileName,100);
@@ -165,6 +165,14 @@ bad_curve = [];
 for i = 1:length(pksT)
 
     EDi = pksT(i);
+    
+    % ---------------------------------------------------------------
+    % currently comparing derivative value (mmHg/s) to pressure value
+    % (mmHg)
+    % why not compare pressure to pressure?
+    % or slope to slope?
+    % ---------------------------------------------------------------
+    % while dPdt(EDi) > 0.20*dPdt(pksT(i))
     while dPdt(EDi) > 0.20*pks(i)
         EDi = EDi - 1;
         if EDi == 0 && i == 1
