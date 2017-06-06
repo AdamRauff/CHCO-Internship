@@ -33,7 +33,12 @@ if length(Pres) == 1 && Pres == 0
     return
 end
 % construct time array (units of 4 milliseconds from catheter machine)
+% **************** -------------------------
+% This time array works for the human data
+% what is the time interval from calf data????
+% **************** -------------------------
 time_end=0.004*size(Pres,1); time=0.004:0.004:time_end;
+
 
 %% find dP/dt maxima and minima.
 
@@ -166,12 +171,6 @@ for i = 1:length(pksT)
 
     EDi = pksT(i);
     
-    % ---------------------------------------------------------------
-    % currently comparing derivative value (mmHg/s) to pressure value
-    % (mmHg)
-    % why not compare pressure to pressure?
-    % or slope to slope?
-    % ---------------------------------------------------------------
     % while dPdt(EDi) > 0.20*dPdt(pksT(i))
     while dPdt(EDi) > 0.20*pks(i)
         EDi = EDi - 1;
@@ -394,9 +393,24 @@ for i = 1:length(EDP)
     WaveTs = [timeDoub(isovoltime(i).PosIso)'; timeDoub(isovoltime(i).NegIso)'];
     WavePs = [isovol(i).PosIso; isovol(i).NegIso];
     
-    sin_fun2=@(P)(P(1)+P(2)*sin(P(3)*WaveTs+P(4)))-WavePs; %this
-    % equation is from Naeiji et al, single beat method of VVC
-    c2=[15, 215, 10, -1];
+    % this equation is from Naeiji et al, single beat method of VVC
+    sin_fun2=@(P)(P(1)+P(2)*sin(P(3)*WaveTs+P(4)))-WavePs; 
+    
+    % deriving the initial values from the data
+    % mean - average pressure value between dp/dt max and min (top of
+    % curve)
+    T1 = pksT(i);
+    T2 = MinIdx(i);
+    Mea = mean(double(Pres(T1:T2)));
+    
+    % Amplitude is twice the mean
+    Amp = double(1.8*Mea);
+    
+    % frequnecy is the conversion to angular frequency 2*pi/T
+    % multiplied by the number of waves found over the time period
+    Freq = double(((2*pi)*TotNumWaves)/(time_end));
+    
+    c2=[Mea, Amp, Freq, -0.5];
 
     [c,resnorm,~]=lsqnonlin(sin_fun2,c2); %least squares fitting
     
