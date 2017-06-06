@@ -565,7 +565,7 @@ for i = 1:length(EDP)
 
     % if the fit of the wave was bad, mark that wave
     if r_square2(i) <0.90
-       waveFit(i) = 1; 
+       waveFit(i) = 1;
     end
 
     c_tot2(i,:)=c; %getting all the c values in a matrix
@@ -573,6 +573,14 @@ for i = 1:length(EDP)
     P_max2(i)=c(1)+abs(c(2)); %first equation pmax, A+B
     %or the other definition of pmax
 
+    % AR 6/5/17
+    % adding points succesively to beginning of systole to make better fit
+    % of sick patients with wide curves
+    % PresMax = max(double(Pres(pksT(i):MinIdx(i))));
+    % if r_square > 0.90 && P_max2 < PresMax
+        % add point to isovoltime(i).PosIso and corresponding isovol(i).PosIso
+    % end
+    
     % -------------------------------------------------------------
     % NOTE the absolute value of the amplitude is taken!!!!!!!
     % refer to patient HA002019, Wave 11 for an example of why
@@ -769,7 +777,15 @@ if ~isempty(handles.OldIsoT)
 
         P_max2(i)=c(1)+abs(c(2)); %first equation pmax, A+B
         %or the other definition of pmax
-
+        
+        % AR 6/5/17
+        % adding points succesively to beginning of systole to make better fit
+        % of sick patients with wide curves
+        % PresMax = max(double(Pres(pksT(i):MinIdx(i))));
+        % if r_square > 0.90 && P_max2 < PresMax
+            % add point to isovoltime(i).PosIso and corresponding isovol(i).PosIso
+        % end
+    
         % -------------------------------------------------------------
         % NOTE the absolute value of the amplitude is taken!!!!!!!
         % refer to patient HA002019, Wave 11 for an example of why

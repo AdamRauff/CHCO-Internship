@@ -386,6 +386,12 @@ r_square2 = zeros(length(EDP),1);
 totIsoTimePoints = [];
 totIsoPresPoints = [];
 
+% freq is an initial condition that does not rquire individual wave
+% calculation --> executed outside loop
+% frequnecy is the conversion to angular frequency 2*pi/T
+% multiplied by the number of waves found over the time period
+Freq = double(((2*pi)*TotNumWaves)/(time_end));
+
 % scroll through the number of rows (pressure waves) in the
 % structures: isovoltime and isovol
 for i = 1:length(EDP)
@@ -406,10 +412,9 @@ for i = 1:length(EDP)
     % Amplitude is twice the mean
     Amp = double(1.8*Mea);
     
-    % frequnecy is the conversion to angular frequency 2*pi/T
-    % multiplied by the number of waves found over the time period
-    Freq = double(((2*pi)*TotNumWaves)/(time_end));
-    
+    % keep in mind this means the initial conditions of every wave fit may
+    % be slightly different, While values entered via GUI make ICs same for
+    % all waves.
     c2=[Mea, Amp, Freq, -0.5];
 
     [c,resnorm,~]=lsqnonlin(sin_fun2,c2); %least squares fitting
@@ -427,6 +432,15 @@ for i = 1:length(EDP)
     c_tot2(i,:)=c; %getting all the c values in a matrix
     
     P_max2(i)=c(1)+abs(c(2)); %first equation pmax, A+B
+    
+    
+    % AR 6/5/17
+    % adding points succesively to beginning of systole to make better fit
+    % of sick patients with wide curves
+    % PresMax = max(double(Pres(pksT(i):MinIdx(i))));
+    % if r_square > 0.90 && P_max2 < PresMax
+        % add point to isovoltime(i).PosIso and corresponding isovol(i).PosIso
+    % end
     
       % ------------------------------------------------------------------------------
     % NOTE the absolute value of the amplitude is taken!!!!!!!
