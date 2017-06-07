@@ -543,6 +543,7 @@ PmaxT = zeros(length(EDP),1);
 P_max2 = zeros(length(EDP),1);
 r_square2 = zeros(length(EDP),1);
 c_tot2 = zeros(length(EDP),4);
+WHILE_LOOP_FLAG = false;
 
 %%% calculate regression per pressure wave
 for i = 1:length(EDP)
@@ -576,11 +577,69 @@ for i = 1:length(EDP)
     % AR 6/5/17
     % adding points succesively to beginning of systole to make better fit
     % of sick patients with wide curves
-    % PresMax = max(double(Pres(pksT(i):MinIdx(i))));
-    % if r_square > 0.90 && P_max2 < PresMax
-        % add point to isovoltime(i).PosIso and corresponding isovol(i).PosIso
-    % end
+   % obtain maximum pressure point on actual curve
+    PresMax = max(double(Pres(pksT(i):MinIdx(i))));
+    if r_square > 0.90 && P_max2 < PresMax
+        
+        % keep count of how many points added to systole side
+        count = 0;
+        
+        while r_square > 0.90 && P_max2 < PresMax
+            
+            WHILE_LOOP_FLAG = true;
+            % add point to isovoltime(i).PosIso and corresponding isovol(i).PosIso
+            isovoltime(i).PosIso = [(isovoltime(i).PosIso(1,1))-1, isovoltime(i).PosIso];
+            isovol(i).PosIso = [PresDoub(isovoltime(i).PosIso(1,1)), isovol(i).PosIso];
+
+            % update Wave(x)s variables
+            WaveTs = [timeDoub(isovoltime(i).PosIso)'; timeDoub(isovoltime(i).NegIso)'];
+            WavePs = [isovol(i).PosIso; isovol(i).NegIso];
+
+            % re-fit sinusiod
+            % equation from Naeiji et al, single beat method of VVC
+            sin_fun2=@(P)(P(1)+P(2)*sin(P(3)*WaveTs+P(4)))-WavePs; 
+
+            %least squares fitting
+            [c,resnorm,~]=lsqnonlin(sin_fun2,c2); 
+
+            Psine_RV2=(c(1)+c(2)*sin(c(3)*WaveTs+c(4)));
+
+            % r^2 value
+            r_square2(i)=1-resnorm/norm(Psine_RV2-mean(Psine_RV2))^2;
+
+            % if the fit of the wave was bad, mark that wave
+            if r_square2(i) <0.90
+               waveFit(i) = 1; 
+            end
+            
+            %getting all the c values in a matrix
+            c_tot2(i,:)=c; 
     
+            %first equation pmax, A+B
+            P_max2(i)=c(1)+abs(c(2));
+            
+            % increment count to keep track of added points
+            count = count +1;
+            
+            % Do not let program add more than 10 points
+            if count >= 10 && (r_square > 0.90 && P_max2 < PresMax)
+                break
+            end
+        end
+    end
+    
+    if waveFit(i) ~= 1 && WHILE_LOOP_FLAG == true
+        % update handles global variable
+        % extract isovolmic points (times). These are structures
+        handles.InVar(1).ivt = isovoltime;
+
+        % extract isovolmic points (pressures). These are structures
+        handles.InVar(1).iv = isovol;
+        
+        % update totIsoTimePoints and totIsoPresPoints for display on graph
+        % *******************************
+        % -------------------------------
+    end
     % -------------------------------------------------------------
     % NOTE the absolute value of the amplitude is taken!!!!!!!
     % refer to patient HA002019, Wave 11 for an example of why
