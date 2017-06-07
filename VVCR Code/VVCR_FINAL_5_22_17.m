@@ -429,26 +429,67 @@ for i = 1:length(EDP)
        waveFit(i) = 1; 
     end
     
-    c_tot2(i,:)=c; %getting all the c values in a matrix
+    %getting all the c values in a matrix
+    c_tot2(i,:)=c; 
     
-    P_max2(i)=c(1)+abs(c(2)); %first equation pmax, A+B
-    
-    
-    % AR 6/5/17
+    %first equation pmax, A+B
+    P_max2(i)=c(1)+abs(c(2)); 
+   
+    % AR 6/5/17 -----------------------------------------------
     % adding points succesively to beginning of systole to make better fit
     % of sick patients with wide curves
-    % PresMax = max(double(Pres(pksT(i):MinIdx(i))));
-    % if r_square > 0.90 && P_max2 < PresMax
-        % add point to isovoltime(i).PosIso and corresponding isovol(i).PosIso
-    % end
     
-      % ------------------------------------------------------------------------------
+    % obtain maximum pressure point on actual curve
+    PresMax = max(double(Pres(pksT(i):MinIdx(i))));
+    if r_square > 0.90 && P_max2 < PresMax
+        
+        % keep count of how many points added to systole side
+        count = 0;
+        while r_square > 0.90 && P_max2 < PresMax
+        
+            % add point to isovoltime(i).PosIso and corresponding isovol(i).PosIso
+            isovoltime(i).PosIso = [(isovoltime(i).PosIso(1,1))-1, isovoltime(i).PosIso];
+            isovol(i).PosIso = [PresDoub(isovoltime(i).PosIso(1,1)), isovol(i).PosIso];
+
+            % update Wave(x)s variables
+            WaveTs = [timeDoub(isovoltime(i).PosIso)'; timeDoub(isovoltime(i).NegIso)'];
+            WavePs = [isovol(i).PosIso; isovol(i).NegIso];
+
+            % re-fit sinusiod
+            % equation from Naeiji et al, single beat method of VVC
+            sin_fun2=@(P)(P(1)+P(2)*sin(P(3)*WaveTs+P(4)))-WavePs; 
+
+            %least squares fitting
+            [c,resnorm,~]=lsqnonlin(sin_fun2,c2); 
+
+            Psine_RV2=(c(1)+c(2)*sin(c(3)*WaveTs+c(4)));
+
+            % r^2 value
+            r_square2(i)=1-resnorm/norm(Psine_RV2-mean(Psine_RV2))^2;
+
+            % increment count to keep track of added points
+            count = count +1;
+
+            % if the fit of the wave was bad, mark that wave
+            if r_square2(i) <0.90
+               waveFit(i) = 1; 
+            end
+            
+            %getting all the c values in a matrix
+            c_tot2(i,:)=c; 
+    
+            %first equation pmax, A+B
+            P_max2(i)=c(1)+abs(c(2));
+        end
+    end
+    
+    % ---------------------------------------------------------------
     % NOTE the absolute value of the amplitude is taken!!!!!!!
     % refer to patient HA002019, Wave 11 (last pressure waveform) for an example 
     
     % sometime amplitude of given equation solves for negative ( with a
     % significant phase shift, which can make a good fit (r^2 > 0.99).
-    % ---------------------------------------------------------------------------------
+    % --------------------------------------------------------------------
 
     % store the time points and pressure points in one array for easy
     % plotting 
