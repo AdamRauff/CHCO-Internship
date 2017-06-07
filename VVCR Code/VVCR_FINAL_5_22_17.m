@@ -467,9 +467,6 @@ for i = 1:length(EDP)
             % r^2 value
             r_square2(i)=1-resnorm/norm(Psine_RV2-mean(Psine_RV2))^2;
 
-            % increment count to keep track of added points
-            count = count +1;
-
             % if the fit of the wave was bad, mark that wave
             if r_square2(i) <0.90
                waveFit(i) = 1; 
@@ -480,6 +477,14 @@ for i = 1:length(EDP)
     
             %first equation pmax, A+B
             P_max2(i)=c(1)+abs(c(2));
+            
+            % increment count to keep track of added points
+            count = count +1;
+            
+            % Do not let program add more than 10 points
+            if count >= 10 && (r_square > 0.90 && P_max2 < PresMax)
+                break
+            end
         end
     end
     
@@ -496,7 +501,6 @@ for i = 1:length(EDP)
     totIsoTimePoints = [totIsoTimePoints; WaveTs];
     totIsoPresPoints = [totIsoPresPoints; WavePs];
 end
-
 %% GUI to change ICs
 
 % pre-allocate structure
