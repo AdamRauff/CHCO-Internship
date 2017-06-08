@@ -635,9 +635,9 @@ for i = 1:length(EDP)
             count = count +1;
             
             % Do not let program add more than 10 points
-            if count >= 10 && (r_square > 0.90 && P_max2 < PresMax)
+            if count >= 10 && (P_max2 < PresMax || waveFit(i) == 1)
                 waveFit(i) = 1;
-                disp('Added nine points on systolic side of curve, and Pmax remains short of actual pressure');
+                disp('Added nine points on systolic side of curve, and curve fit remains unsatisfying');
                 disp(['Wave: ',num2str(i), 'is excluded']);
                 WHILE_LOOP_FLAG(i) = false;
                 break
@@ -657,11 +657,6 @@ for i = 1:length(EDP)
     % sometime amplitude of given equation solves for negative ( with a
     % significant phase shift, which makes a good fit (r^2 > 0.99).
     % ---------------------------------------------------------------
-
-%     % store the time points and pressure points in one array for easy
-%     % plotting 
-%     totIsoTimePoints = [totIsoTimePoints; WaveTs];
-%     totIsoPresPoints = [totIsoPresPoints; WavePs];
 end
 
 % if iso points have been added, re-compose the totIsoPnts variables

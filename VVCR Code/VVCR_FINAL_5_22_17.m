@@ -445,7 +445,7 @@ for i = 1:length(EDP)
         
         % keep count of how many points added to systole side
         count = 0;
-        while r_square > 0.90 && P_max2 < PresMax
+        while P_max2 < PresMax
         
             % add point to isovoltime(i).PosIso and corresponding isovol(i).PosIso
             isovoltime(i).PosIso = [(isovoltime(i).PosIso(1,1))-1, isovoltime(i).PosIso];
@@ -484,7 +484,7 @@ for i = 1:length(EDP)
             count = count +1;
             
             % Do not let program add more than 10 points
-            if count >= 10 && (r_square > 0.90 && P_max2 < PresMax)
+            if count >= 10 && (P_max2 < PresMax || waveFit(i) == 1)
                 waveFit(i) = 1;
                 disp('Added nine points on systolic side of curve, and Pmax remains short of actual pressure');
                 disp(['Wave: ',num2str(i), 'is excluded']);
