@@ -616,6 +616,9 @@ for i = 1:length(EDP)
             if r_square2(i) <0.90
                waveFit(i) = 1;
                WHILE_LOOP_FLAG(i) = false;
+            else
+               waveFit(i) = 0;
+               WHILE_LOOP_FLAG(i) = true;
             end
             
             %getting all the c values in a matrix

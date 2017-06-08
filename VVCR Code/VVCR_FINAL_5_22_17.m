@@ -469,7 +469,9 @@ for i = 1:length(EDP)
 
             % if the fit of the wave was bad, mark that wave
             if r_square2(i) <0.90
-               waveFit(i) = 1; 
+               waveFit(i) = 1;
+            else
+                waveFit(i) = 0;
             end
             
             %getting all the c values in a matrix
