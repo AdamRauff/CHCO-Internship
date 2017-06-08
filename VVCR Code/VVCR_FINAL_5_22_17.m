@@ -483,6 +483,9 @@ for i = 1:length(EDP)
             
             % Do not let program add more than 10 points
             if count >= 10 && (r_square > 0.90 && P_max2 < PresMax)
+                waveFit(i) = 1;
+                disp('Added nine points on systolic side of curve, and Pmax remains short of actual pressure');
+                disp(['Wave: ',num2str(i), 'is excluded']);
                 break
             end
         end

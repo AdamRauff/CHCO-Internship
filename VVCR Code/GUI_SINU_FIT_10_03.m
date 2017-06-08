@@ -543,10 +543,13 @@ PmaxT = zeros(length(EDP),1);
 P_max2 = zeros(length(EDP),1);
 r_square2 = zeros(length(EDP),1);
 c_tot2 = zeros(length(EDP),4);
-WHILE_LOOP_FLAG = false;
+
 
 %%% calculate regression per pressure wave
 for i = 1:length(EDP)
+    
+    % reset while loop flag to false every iteration
+    WHILE_LOOP_FLAG = false;
     
     WaveTs = [time(isovoltime(i).PosIso)'; time(isovoltime(i).NegIso)'];
     WavePs = [isovol(i).PosIso; isovol(i).NegIso];
@@ -623,6 +626,9 @@ for i = 1:length(EDP)
             
             % Do not let program add more than 10 points
             if count >= 10 && (r_square > 0.90 && P_max2 < PresMax)
+                waveFit(i) = 1;
+                disp('Added nine points on systolic side of curve, and Pmax remains short of actual pressure');
+                disp(['Wave: ',num2str(i), 'is excluded']);
                 break
             end
         end
