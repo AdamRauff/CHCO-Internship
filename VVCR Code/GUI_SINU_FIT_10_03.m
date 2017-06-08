@@ -543,13 +543,13 @@ PmaxT = zeros(length(EDP),1);
 P_max2 = zeros(length(EDP),1);
 r_square2 = zeros(length(EDP),1);
 c_tot2 = zeros(length(EDP),4);
-
+WHILE_LOOP_FLAG = zeros(length(EDP),1);
 
 %%% calculate regression per pressure wave
 for i = 1:length(EDP)
     
     % reset while loop flag to false every iteration
-    WHILE_LOOP_FLAG = false;
+    
     
     WaveTs = [time(isovoltime(i).PosIso)'; time(isovoltime(i).NegIso)'];
     WavePs = [isovol(i).PosIso; isovol(i).NegIso];
@@ -587,9 +587,8 @@ for i = 1:length(EDP)
         % keep count of how many points added to systole side
         count = 0;
         
-        while r_square > 0.90 && P_max2 < PresMax
+        while P_max2 < PresMax
             
-            WHILE_LOOP_FLAG = true;
             % add point to isovoltime(i).PosIso and corresponding isovol(i).PosIso
             isovoltime(i).PosIso = [(isovoltime(i).PosIso(1,1))-1, isovoltime(i).PosIso];
             isovol(i).PosIso = [PresDoub(isovoltime(i).PosIso(1,1)), isovol(i).PosIso];
@@ -597,7 +596,10 @@ for i = 1:length(EDP)
             % update Wave(x)s variables
             WaveTs = [timeDoub(isovoltime(i).PosIso)'; timeDoub(isovoltime(i).NegIso)'];
             WavePs = [isovol(i).PosIso; isovol(i).NegIso];
-
+            
+            % mark flag that points are added
+            WHILE_LOOP_FLAG(i) = true;
+            
             % re-fit sinusiod
             % equation from Naeiji et al, single beat method of VVC
             sin_fun2=@(P)(P(1)+P(2)*sin(P(3)*WaveTs+P(4)))-WavePs; 
@@ -612,7 +614,8 @@ for i = 1:length(EDP)
 
             % if the fit of the wave was bad, mark that wave
             if r_square2(i) <0.90
-               waveFit(i) = 1; 
+               waveFit(i) = 1;
+               WHILE_LOOP_FLAG(i) = false;
             end
             
             %getting all the c values in a matrix
@@ -629,23 +632,12 @@ for i = 1:length(EDP)
                 waveFit(i) = 1;
                 disp('Added nine points on systolic side of curve, and Pmax remains short of actual pressure');
                 disp(['Wave: ',num2str(i), 'is excluded']);
+                WHILE_LOOP_FLAG(i) = false;
                 break
             end
         end
     end
     
-    if waveFit(i) ~= 1 && WHILE_LOOP_FLAG == true
-        % update handles global variable
-        % extract isovolmic points (times). These are structures
-        handles.InVar(1).ivt = isovoltime;
-
-        % extract isovolmic points (pressures). These are structures
-        handles.InVar(1).iv = isovol;
-        
-        % update totIsoTimePoints and totIsoPresPoints for display on graph
-        % *******************************
-        % -------------------------------
-    end
     % -------------------------------------------------------------
     % NOTE the absolute value of the amplitude is taken!!!!!!!
     % refer to patient HA002019, Wave 11 for an example of why
@@ -660,6 +652,27 @@ for i = 1:length(EDP)
 %     totIsoPresPoints = [totIsoPresPoints; WavePs];
 end
 
+% if iso points have been added, re-compose the totIsoPnts variables
+if any(WHILE_LOOP_FLAG)
+
+    % update handles global variable
+    % extract isovolmic points (times). These are structures
+    handles.InVar(1).ivt = isovoltime;
+
+    % extract isovolmic points (pressures). These are structures
+    handles.InVar(1).iv = isovol;
+
+    % recompose totIsoTimePoints and totIsoPresPoints and 
+    totIsoTimePoints = [];
+    totIsoPresPoints = [];
+    for i = 1:length(EDP)
+        totIsoTimePoints = [totIsoTimePoints; [timeDoub(isovoltime(i).PosIso)'; timeDoub(isovoltime(i).NegIso)']];
+        totIsoPresPoints = [totIsoPresPoints; [isovol(i).PosIso; isovol(i).NegIso]];
+    end
+    % update global structure
+    handles.InVar(1).isoPts = totIsoTimePoints;
+    handles.InVar(2).isoPts = totIsoPresPoints;
+end
 % print to command line the waves that were not fit correctly. This is used
 % as a debugger to check that the "bad" waves, the ones that don't have a
 % good fit, are not utilized in the VVCR calculation.
