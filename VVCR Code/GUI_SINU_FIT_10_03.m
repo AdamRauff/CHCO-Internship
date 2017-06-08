@@ -544,12 +544,11 @@ P_max2 = zeros(length(EDP),1);
 r_square2 = zeros(length(EDP),1);
 c_tot2 = zeros(length(EDP),4);
 WHILE_LOOP_FLAG = zeros(length(EDP),1);
+ADD_TPoints = [];
+ADD_PPoints = [];
 
 %%% calculate regression per pressure wave
 for i = 1:length(EDP)
-    
-    % reset while loop flag to false every iteration
-    
     
     WaveTs = [time(isovoltime(i).PosIso)'; time(isovoltime(i).NegIso)'];
     WavePs = [isovol(i).PosIso; isovol(i).NegIso];
@@ -587,12 +586,17 @@ for i = 1:length(EDP)
         % keep count of how many points added to systole side
         count = 0;
         
+        temp_ADD_TPoints = [];
+        temp_ADD_PPoints = [];
         while P_max2 < PresMax
             
             % add point to isovoltime(i).PosIso and corresponding isovol(i).PosIso
             isovoltime(i).PosIso = [(isovoltime(i).PosIso(1,1))-1, isovoltime(i).PosIso];
             isovol(i).PosIso = [PresDoub(isovoltime(i).PosIso(1,1)), isovol(i).PosIso];
-
+            
+            temp_ADD_TPoints = [ADD_Points, (isovoltime(i).PosIso(1,1))-1]; 
+            temp_ADD_PPoints = [ADD_PPoints, PresDoub(isovoltime(i).PosIso(1,1))];
+            
             % update Wave(x)s variables
             WaveTs = [timeDoub(isovoltime(i).PosIso)'; timeDoub(isovoltime(i).NegIso)'];
             WavePs = [isovol(i).PosIso; isovol(i).NegIso];
@@ -639,6 +643,11 @@ for i = 1:length(EDP)
                 break
             end
         end
+        
+        if WHILE_LOOP_FLAG(i) == true
+            ADD_TPoints = [ADD_TPoints, temp_ADD_TPoints];
+            ADD_PPoints = [ADD_PPoints, temp_ADD_PPoints];
+        end
     end
     
     % -------------------------------------------------------------
@@ -666,16 +675,14 @@ if any(WHILE_LOOP_FLAG)
     handles.InVar(1).iv = isovol;
 
     % recompose totIsoTimePoints and totIsoPresPoints and 
-    totIsoTimePoints = [];
-    totIsoPresPoints = [];
-    for i = 1:length(EDP)
-        totIsoTimePoints = [totIsoTimePoints; [timeDoub(isovoltime(i).PosIso)'; timeDoub(isovoltime(i).NegIso)']];
-        totIsoPresPoints = [totIsoPresPoints; [isovol(i).PosIso; isovol(i).NegIso]];
-    end
+    totIsoTimePoints = [totIsoTimePoints, ADD_TPoints];
+    totIsoPresPoints = [totIsoPresPoints, ADD_PPoints];
+    
     % update global structure
     handles.InVar(1).isoPts = totIsoTimePoints;
     handles.InVar(2).isoPts = totIsoPresPoints;
 end
+
 % print to command line the waves that were not fit correctly. This is used
 % as a debugger to check that the "bad" waves, the ones that don't have a
 % good fit, are not utilized in the VVCR calculation.
