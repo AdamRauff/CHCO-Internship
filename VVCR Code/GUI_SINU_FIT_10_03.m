@@ -523,6 +523,7 @@ Pha = str2double(get(handles.Phase_txt,'String'));
 % time and pressure vectors
 time = handles.InVar(1).Data;
 Pres = handles.InVar(2).Data;
+Oldtime = handles.InVar(2).ivt;
 
 % extract isovolmic points (times). These are structures
 isovoltime = handles.InVar(1).ivt;
@@ -536,6 +537,9 @@ totIsoPresPoints = handles.InVar(2).isoPts;
 
 % EDP - end diastolic pressure
 EDP = handles.InVar(1).Misc;
+
+pksT = handles.InVar(1).Crit;
+MinIdx = handles.InVar(2).Crit;
 
 % pre - allocate 
 waveFit = zeros(length(EDP),1);
@@ -579,16 +583,18 @@ for i = 1:length(EDP)
     % AR 6/5/17
     % adding points succesively to beginning of systole to make better fit
     % of sick patients with wide curves
-   % obtain maximum pressure point on actual curve
-    PresMax = max(double(Pres(pksT(i):MinIdx(i))));
-    if r_square > 0.90 && P_max2 < PresMax
+    % obtain maximum pressure point on actual curve
+%     P2 = find(round(time,3)==round(Oldtime(MinIdx(i),3)));
+%     P1 = find(round(time,3)==round(Oldtime(pksT(i)),3));
+    PresMax = max(Pres(isovoltime(i).PosIso(1,1):1:isovoltime(i).NegIso(end,1)));
+    if r_square2(i) > 0.80 && P_max2(i) < PresMax
         
         % keep count of how many points added to systole side
         count = 0;
         
         temp_ADD_TPoints = [];
         temp_ADD_PPoints = [];
-        while P_max2 < PresMax
+        while P_max2(i) < PresMax
             
             % add point to isovoltime(i).PosIso and corresponding isovol(i).PosIso
             isovoltime(i).PosIso = [(isovoltime(i).PosIso(1,1))-1, isovoltime(i).PosIso];
@@ -635,7 +641,7 @@ for i = 1:length(EDP)
             count = count +1;
             
             % Do not let program add more than 10 points
-            if count >= 10 && (P_max2 < PresMax || waveFit(i) == 1)
+            if count >= 10 && (P_max2(i) < PresMax || waveFit(i) == 1)
                 waveFit(i) = 1;
                 disp('Added nine points on systolic side of curve, and curve fit remains unsatisfying');
                 disp(['Wave: ',num2str(i), 'is excluded']);

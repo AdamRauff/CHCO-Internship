@@ -60,6 +60,7 @@ if isa(file(1),'char')
         marks = 0; 
         
         % exit the function
+        disp('Unable to find time array or pressure array');
         return
     end
     
@@ -86,13 +87,23 @@ if isa(file(1),'char')
     time_end = Tnumeric(end);
     DerivLen = length(dPdt);
     
-    % The peaks must exceed 80 [mmHg/s] and be
+    % The peaks must exceed 70 [mmHg/s] and be
     % separated by the number of total seconds of the sample*2+10.
-    [pks, pksT] = findpeaks(dPdt, 'MinPeakHeight',80, 'MinPeakDistance',DerivLen/(time_end*2+10));  
+    [pks, pksT] = findpeaks(dPdt, 'MinPeakHeight',70, 'MinPeakDistance',DerivLen/(time_end*2+10));  
 
     % find peaks of inverted data
-    [~, MinIdx] = findpeaks(DataInv, 'MinPeakHeight',80, 'MinPeakDistance',DerivLen/(time_end*2+10));
-
+    [~, MinIdx] = findpeaks(DataInv, 'MinPeakHeight',70, 'MinPeakDistance',DerivLen/(time_end*2+10));
+    
+    % check to see if any peaks were found
+    if isempty(MinIdx) || isempty(pksT)
+        
+        Pres = 0;
+        dPdt = 0;
+        Rvals = 0;
+        disp('Signal does not seem to contain apppropriate numbers');
+        disp('check load_calf_p file for the pressures and derivative found');
+        return
+    end
     %finding the local minima values in dP/dt
     Minima = dPdt(MinIdx); 
     
