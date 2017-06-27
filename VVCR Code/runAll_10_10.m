@@ -13,15 +13,9 @@ Fold_name = uigetdir('','Select folder containing txt files with pressure data')
 % with /
 Fold_name = [Fold_name, '/'];
 
-% list all the stuff in the directory of the chosen folder
-top  = dir(Fold_name);
-
-% % get list of all subdirectories
-% subdir_names = top([top.isdir]);
-% 
-% % remove '.', and '..' to avoid infinite loop
-% tf = ismember({subdirs_nam.name}, {'.', '..'});
-% subdir_names(tf) = [];
+% list all filenames in the directory of the chosen folder and its
+% subdirectories
+top  = recurseDir(Fold_name);
 
 % keep track of how many pressure files were analyzed
 fileCount = 0;
@@ -58,14 +52,8 @@ else
 end
 
 for i = 1:length(top)
-    
-    
     % get individual file (ith file)
-    
     top_name = top(i).name;
-    
-        
-    
     
     % -----------------------------------------------------------------
     % this piece of code is only added for the analysis of the text files
