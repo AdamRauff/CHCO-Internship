@@ -1,0 +1,1 @@
+Experimented with two different filters, Elliptical and Butterworth, to smooth dP/dt prior to applying multiharmonic fit. Experiment code (FiltTest.m) and results are included. Two routines (basename and loadp) and one datafile (HA002019.&03) are here too (used by FiltTest) but are unchanged from the parent directory.
