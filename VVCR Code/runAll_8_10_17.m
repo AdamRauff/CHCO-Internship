@@ -111,7 +111,7 @@ for i = 1:length(top)
         % somewhere, so if it is a pressure file that could not be opened,
         % it is remarked
 %         try
-            [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, STD_Pes, STD_PMX, TotNumWaves] = VVCR_MULTIH_8_09_17(Fold_name,top_name);
+            [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, STD_Pes, STD_PMX, TotNumWaves] = VVCR_MULTIH_08_09_17(Fold_name,top_name);
             
             % check to see if outputs are false or true
             % EXIT
