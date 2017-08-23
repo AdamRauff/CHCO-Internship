@@ -1,5 +1,18 @@
 function [ AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, STD_Pes, STD_PMX, TotNumWaves] = VVCR_MULTIH_08_09_17( PathName, FileName)
 
+% POSSIBLE NAME REMAPPING...
+% pksT        -> dPmaxIdx
+% pks         -> dPmaxVal
+% MinIdx      -> dPminIdx
+% Minima      -> dPminVal
+% isovol      -> isovolPres
+% isovoltime  -> isovolTime
+% EDP         -> Iso1StVal
+% EDP_T       -> Iso1StIdx
+% EDP_N       -> Iso2StVal
+% EDP_NT      -> Iso2StIdx
+% EDP_NT_Doub -> Iso2StIdx_Doub
+
 %% (1) Read in data from the given file
 % determine if file is from calf or humans to apply apprpriate loadp
 % function
@@ -18,17 +31,8 @@ end
 if length(Pres) == 1 && Pres == 0
     
     % set all outputs to true --> skip file
-    AVG_Pes = true;
-    AVG_Pmax = true;
-    VVCR_UT = true;
-    VVCR_KH = true;
-    Pnam = true;
-    Pmrn = true;
-    file = true;
-    numPeaks = true;
-    STD_Pes = true;
-    STD_PMX = true;
-    TotNumWaves = true;
+    [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
+        STD_Pes, STD_PMX, TotNumWaves] = deal (false);
     
     disp('Loadp did not detect an RV column');
     % return to runAll.m
@@ -138,17 +142,8 @@ clear PeakStruct Green_Check Red_X DataInv
 if PeakStruct2(1).Max == false
     
     % set all output variables to false
-    AVG_Pes = false;
-    AVG_Pmax = false;
-    VVCR_UT = false;
-    VVCR_KH = false;
-    Pnam = false;
-    Pmrn = false;
-    file = false;
-    numPeaks = false;
-    STD_Pes = false;
-    STD_PMX = false;
-    TotNumWaves = false;
+    [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
+        STD_Pes, STD_PMX, TotNumWaves] = deal (false);
     
     disp('You chose to exit the analysis');
     disp(['The file ', FileName, ' was not evaluated!']);
@@ -159,17 +154,8 @@ if PeakStruct2(1).Max == false
 elseif PeakStruct2(3).Max == true
     
      % set all output variables to true
-    AVG_Pes = true;
-    AVG_Pmax = true;
-    VVCR_UT = true;
-    VVCR_KH = true;
-    Pnam = true;
-    Pmrn = true;
-    file = true;
-    numPeaks = true;
-    STD_Pes = true;
-    STD_PMX = true;
-    TotNumWaves = true;
+    [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
+        STD_Pes, STD_PMX, TotNumWaves] = deal (true);
     
     % return to runAll.m
     return
@@ -189,7 +175,7 @@ else
 end
 
 
-%%  Find EDP: 0.2*dP/dt max
+%% (5) Find EDP: 0.2*dP/dt max
     
 % Pre allocate variables - add in zeros(,1) here to make it work
 EDP = length(pksT);
@@ -317,6 +303,7 @@ for i = 1:length(pksT)
 
 end
 
+%% (6) remove bad curves from set
 tempNum = length(bad_curve);
 
 % make sure bad_curve has no redundencies
@@ -341,24 +328,15 @@ end
 if isempty(EDP)
     
      % set all output variables to true
-    AVG_Pes = true;
-    AVG_Pmax = true;
-    VVCR_UT = true;
-    VVCR_KH = true;
-    Pnam = true;
-    Pmrn = true;
-    file = true;
-    numPeaks = true;
-    STD_Pes = true;
-    STD_PMX = true;
-    TotNumWaves = true;
-    
+    [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
+        STD_Pes, STD_PMX, TotNumWaves] = deal (true);
+
     % return to runAll.m
     return
 
     % otherwise
 end
-%% FOURIER SERIES INTERPOLATION
+%% (7) FOURIER SERIES INTERPOLATION
 % 
 % increase the number of data points to provide a tighter fit of the 
 % sinusoid that is fitted to the isovolumic points
@@ -407,29 +385,24 @@ for i = 1: length(EDP)
     end
 end
 
+%% (8) Fit the data
 [PeakStruct] = isovol_fit ( EDP, EDP_Doub, EDP_NT_Doub, TotNumWaves, time_end, isovol, isovoltime, time, timeDoub, pksT, MinIdx, Pres, PresDoub );
 
+%% (9) Visualize / check the fit
 % call on GUI. Notice the structure we just made is passed to the GUI, and
 % the GUI passes back a refined structure
 PeakStruct2 = GUI_SINU_FIT_10_03(PeakStruct);
 
 clear PeakStruct
 
+%% (10) cleanup, arrange data to return to runAll
 % if the exit button has been pressed
 if size(PeakStruct2(1).output,1) == 1 && PeakStruct2(2).output == false
     
     % set all output variables to false
-    AVG_Pes = false;
-    AVG_Pmax = false;
-    VVCR_UT = false;
-    VVCR_KH = false;
-    Pnam = false;
-    Pmrn = false;
-    file = false;
-    numPeaks = false;
-    STD_Pes = false;
-    STD_PMX = false;
-    
+    [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
+        STD_Pes, STD_PMX] = deal (false);
+
     % return to runAll.m
     return
 
@@ -437,17 +410,9 @@ if size(PeakStruct2(1).output,1) == 1 && PeakStruct2(2).output == false
 elseif size(PeakStruct2(1).output,1) == 1 && PeakStruct2(2).output == true
     
      % set all output variables to true
-    AVG_Pes = true;
-    AVG_Pmax = true;
-    VVCR_UT = true;
-    VVCR_KH = true;
-    Pnam = true;
-    Pmrn = true;
-    file = true;
-    numPeaks = true;
-    STD_Pes = true;
-    STD_PMX = true;
-    
+    [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
+        STD_Pes, STD_PMX] = deal (true);
+
     % return to runAll.m
     return
 
