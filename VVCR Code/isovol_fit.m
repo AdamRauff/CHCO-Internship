@@ -1,68 +1,75 @@
-function [ PeakStruct ] = isovol_fit ( EDP, EDP_Doub, EDP_NT_Doub, TotNumWaves, time_end, isovol, isovoltime, time, timeDoub, pksT, MinIdx, Pres, PresDoub )
+function [RetVal] = isovol_fit (isovolPres, isovolTime, timeDoub, PresDoub, ...
+                                ICS, GUIstrIn)
 %
-% EDP         - Vector; End Disatolic Pressure Values (start of IsoCont)
-% EDP_Doub    - Vector; Index of EDP in doubled data (end of IsoRelax)
-% EDP_NT_Doub - Vector; Index of end of Isovolumetric Relaxation in doubled data
-% TotNumWaves - Scalar; Total # of cycles
-% time_end    - Scalar; Final time of dataset
-% isovol      - Vector Structure; Fitting values for contract and relax;
-%                   isovol(i).PosIso - Pressure Values on contract
-%                   isovol(i).NegIso - Pressure Values on relaxation
-% isovoltime  - Vector Structure; indices of contract and relax;
-%                   isovoltime(i).PosIso - indices on contract
-%                   isovoltime(i).NegIso - indices on relaxation
-% time        - Vector; Time of entire dataset
-% timeDoub    - Vector; Time of entire dataset in doubled data
-% pksT        - Vector; Indicies of (dP/dt)_max
-% MinIdx      - Vector; Indicies of (dP/dt)_min
-% Pres        -
-% PresDoub    -
+% isovolPres      - Struct; Fitting values for contract and relax;
+%                     isovolPres(i).PosIso - Pressure Values on contract
+%                     isovolPres(i).NegIso - Pressure Values on relaxation
+% isovolTime      - Struct; indices of contract and relax;
+%                     isovolTime(i).PosIso - indices on contract
+%                     isovolTime(i).NegIso - indices on relaxation
+% timeDoub        - Vector; Time for entire dataset in doubled data
+% PresDoub        - Vector; Pressure for entire dataset in doubled data
+% ICS             - Struct or Vector; If called from VVCR_ (first call), is
+%                   structure needed for individual-cycle ICs; if called from
+%                   a GUI, contains contstant initial conditions for fit.
+% GUIstrIn        - Struct; carries in existing waveform and pressure data if
+%                   called from a GUI.
 
+opts1 = optimset ('Display', 'off');
 
 %% SINUSOIDAL FITTING
-%%%%%%%finally, fitting sinusoid to isovolumetric regions%%%%%%%%%
+%%%%%%%finally, fitting sinusoid to isovolPresumetric regions%%%%%%%%%
+nfits = length(isovolPres);
 
-% pre - allocate 
-c_tot2 = zeros(length(EDP),4);
-P_max2 = zeros(length(EDP),1);
-waveFit = zeros(length(EDP),1);
-r_square2 = zeros(length(EDP),1);
+% Variables for main fit
+c_tot2 = zeros(nfits,4);
+P_max2 = zeros(nfits,1);
+waveFit = zeros(nfits,1);
+r_square2 = zeros(nfits,1);
 
-totIsoTimePoints = [];
-totIsoPresPoints = [];
-
-% freq is an initial condition that does not rquire individual wave
-% calculation --> executed outside loop
-% frequnecy is the conversion to angular frequency 2*pi/T
-% multiplied by the number of waves found over the time period
-Freq = double(((2*pi)*TotNumWaves)/(time_end));
+% Variables for adding points to SINU_GUI plots (within Vanderpool method)
+WHILE_LOOP_FLAG = zeros(nfits,1);
+ADD_TPoints = []; 
+ADD_PPoints = []; 
+if isstruct (GUIstrIn)
+    totIsoTimePoints = GUIstrIn.InVar(1).isoPts;
+    totIsoPresPoints = GUIstrIn.InVar(2).isoPts;
+else
+    totIsoTimePoints = [];
+    totIsoPresPoints = [];
+end
 
 % scroll through the number of rows (pressure waves) in the
-% structures: isovoltime and isovol
-for i = 1:length(EDP)
+% structures: isovolTime and isovolPres
+for i = 1:nfits
     
-    WaveTs = [timeDoub(isovoltime(i).PosIso)'; timeDoub(isovoltime(i).NegIso)'];
-    WavePs = [isovol(i).PosIso; isovol(i).NegIso];
+    WaveTs = [timeDoub(isovolTime(i).PosIso)'; timeDoub(isovolTime(i).NegIso)'];
+    WavePs = [isovolPres(i).PosIso; isovolPres(i).NegIso];
     
     % this equation is from Naeiji et al, single beat method of VVC
-    sin_fun2=@(P)(P(1)+P(2)*sin(P(3)*WaveTs+P(4)))-WavePs; 
+    sin_fun2 = @(P)(P(1)+P(2)*sin(P(3)*WaveTs+P(4)))-WavePs; 
     
-    % deriving the initial values from the data
-    % mean - average pressure value between dp/dt max and min (top of
-    % curve)
-    T1 = pksT(i);
-    T2 = MinIdx(i);
-    Mea = mean(double(Pres(T1:T2)));
+    if ~isstruct (ICS)
+        % ICs passed in from GUI
+        c2 = ICS;
+    else
+        % deriving the initial values from the data
+        % mean - average pressure value between dp/dt max and min (top of
+        % curve)
+        T1 = ICS.dPmaxIdx(i);
+        T2 = ICS.dPminIdx(i);
+        Mea = mean(double(ICS.Pres(T1:T2)));
     
-    % Amplitude is twice the mean
-    Amp = double(1.8*Mea);
+        % Amplitude is twice the mean
+        Amp = double(1.8*Mea);
     
-    % keep in mind this means the initial conditions of every wave fit may
-    % be slightly different, While values entered via GUI make ICs same for
-    % all waves.
-    c2=[Mea, Amp, Freq, -0.5];
+        % keep in mind this means the initial conditions of every wave fit may
+        % be slightly different, While values entered via GUI make ICs same for
+        % all waves.
+        c2 = [Mea, Amp, ICS.Freq, -0.5];
+    end
 
-    [c,resnorm,~]=lsqnonlin(sin_fun2,c2); %least squares fitting
+    [c,resnorm,~]=lsqnonlin(sin_fun2,c2,[],[],opts1); %least squares fitting
     
     Psine_RV2=(c(1)+c(2)*sin(c(3)*WaveTs+c(4)));
     
@@ -85,20 +92,29 @@ for i = 1:length(EDP)
     % of sick patients with wide curves
     
     % obtain maximum pressure point on actual curve
-    PresMax = max(PresDoub(isovoltime(i).PosIso(1,1):1:isovoltime(i).NegIso(end,1)));
+    PresMax = max(PresDoub(isovolTime(i).PosIso(1,1):1:isovolTime(i).NegIso(end,1)));
     if r_square2(i) > 0.80 && P_max2(i) < PresMax
        
         % keep count of how many points added to systole side
         count = 0;
+
+        temp_ADD_TPoints = [];
+        temp_ADD_PPoints = [];
         while P_max2(i) < PresMax
             
-            % add point to isovoltime(i).PosIso and corresponding isovol(i).PosIso
-            isovoltime(i).PosIso = [(isovoltime(i).PosIso(1,1))-1; isovoltime(i).PosIso];
-            isovol(i).PosIso = [PresDoub(isovoltime(i).PosIso(1,1)); isovol(i).PosIso];
+            % add point to isovolTime(i).PosIso and corresponding isovolPres(i).PosIso
+            isovolTime(i).PosIso = [(isovolTime(i).PosIso(1,1))-1; isovolTime(i).PosIso];
+            isovolPres(i).PosIso = [PresDoub(isovolTime(i).PosIso(1,1)); isovolPres(i).PosIso];
+
+            temp_ADD_TPoints = [ADD_TPoints, (isovolTime(i).PosIso(1,1))-1];
+            temp_ADD_PPoints = [ADD_PPoints, PresDoub(isovolTime(i).PosIso(1,1))];
 
             % update Wave(x)s variables
-            WaveTs = [timeDoub(isovoltime(i).PosIso)'; timeDoub(isovoltime(i).NegIso)'];
-            WavePs = [isovol(i).PosIso; isovol(i).NegIso];
+            WaveTs = [timeDoub(isovolTime(i).PosIso)'; timeDoub(isovolTime(i).NegIso)'];
+            WavePs = [isovolPres(i).PosIso; isovolPres(i).NegIso];
+
+            % mark flag that points are added
+            WHILE_LOOP_FLAG(i) = true;
 
             % re-fit sinusiod
             % equation from Naeiji et al, single beat method of VVC
@@ -115,8 +131,10 @@ for i = 1:length(EDP)
             % if the fit of the wave was bad, mark that wave
             if r_square2(i) <0.90
                waveFit(i) = 1;
+               WHILE_LOOP_FLAG(i) = false;
             else
-                waveFit(i) = 0;
+               waveFit(i) = 0;
+               WHILE_LOOP_FLAG(i) = true;
             end
             
             %getting all the c values in a matrix
@@ -136,6 +154,11 @@ for i = 1:length(EDP)
                 break
             end
         end
+
+        if WHILE_LOOP_FLAG(i) == true
+            ADD_TPoints = [ADD_TPoints, temp_ADD_TPoints];
+            ADD_PPoints = [ADD_PPoints, temp_ADD_PPoints];
+        end
     end
     
     % ---------------------------------------------------------------
@@ -147,42 +170,49 @@ for i = 1:length(EDP)
     % --------------------------------------------------------------------
 
     % store the time points and pressure points in one array for easy
-    % plotting 
-    totIsoTimePoints = [totIsoTimePoints; WaveTs];
-    totIsoPresPoints = [totIsoPresPoints; WavePs];
+    % plotting - first pass (call from VVCR_); otherwise, reconsitute these
+    % arrays if needed just outside this loop.
+    if isstruct (ICS)
+        totIsoTimePoints = [totIsoTimePoints; WaveTs];
+        totIsoPresPoints = [totIsoPresPoints; WavePs];
+    end 
 end
-%% GUI to change ICs
 
-% pre-allocate structure
-PeakStruct = struct('Data',cell(2,1), 'ivt',cell(2,1), 'iv', cell(2,1), 'isoPts', cell(2,1), 'Cs', cell(2,1), 'Misc', cell(2,1), 'EDPs', cell(2,1), 'Crit', cell(2,1));
+% if iso points have been added, re-compose the totIsoPnts variables; only
+% relevant for calls from the GUIs; former sections that reset isovol and 
+% totIso vars must appear in the calling program, using the updates to RetVal
+% below.
+if ~isstruct (ICS)
+    if any(WHILE_LOOP_FLAG)
 
-% Pressure and derivative
-PeakStruct(1).Data = timeDoub;
-PeakStruct(2).Data = PresDoub;
+      % recompose totIsoTimePoints and totIsoPresPoints and
+        totIsoTimePoints = [totIsoTimePoints, ADD_TPoints];
+        totIsoPresPoints = [totIsoPresPoints, ADD_PPoints];
 
-% isovolumic time
-PeakStruct(1).ivt = isovoltime; % times of all isovolumic points\
-PeakStruct(2).ivt = time; % passing the old time vector with 1/2 the points. This is used for the buttondownFcn
+    end
+end
 
-% isovolumic pressures
-PeakStruct(1).iv = isovol;
-PeakStruct(2).iv = waveFit; % this keeps track of which waveforms had a bad fit
+% Create return structure - passed to the GUIs or used to update the GUI
+% global handles.
+RetVal = struct( 'Data', cell(2,1), 'ivt',    cell(2,1), ...
+                 'iv',   cell(2,1), 'isoPts', cell(2,1), ...
+                 'Cs',   cell(2,1), 'Misc',   cell(2,1), ...
+                 'EDPs', cell(2,1), 'Crit',   cell(2,1));
 
-% passing the time points in one array for ease of plotting
-PeakStruct(1).isoPts = totIsoTimePoints;
-PeakStruct(2).isoPts = totIsoPresPoints;
+% These structs may be updated by Vanderpool section.
+RetVal(1).ivt = isovolTime;
+RetVal(1).iv  = isovolPres;
 
-PeakStruct(1).Cs = c2; % intial conditions that were first used
-PeakStruct(2).Cs = c_tot2; % regression constants from first fit
+% These vectors may be updated by Vanderpool section.
+% Time & Pressure points in one array for ease of plotting
+RetVal(1).isoPts = totIsoTimePoints;
+RetVal(2).isoPts = totIsoPresPoints;
 
-PeakStruct(1).Misc = EDP; % used as reference for number of peaks
-PeakStruct(2).Misc = P_max2; % Pmax values obtained from fit
-
-PeakStruct(1).EDPs = EDP_Doub; % give the time EDP occured - used for buttondownFcn
-PeakStruct(2).EDPs = EDP_NT_Doub; % give the time negative EDP occured - used for buttondownFcn
-
-PeakStruct(1).Crit = pksT; % pass the times of the peaks. used in buttownDownFcn. Recall these are indexs of the old time vector
-PeakStruct(2).Crit = MinIdx;
+% This data is generated by the fit itself, so must be stored here.
+RetVal(2).iv  = waveFit; % which waveforms had a bad fit
+RetVal(1).Cs = c2;       % intial conditions that were first used
+RetVal(2).Cs = c_tot2;   % regression constants from first fit
+RetVal(2).Misc = P_max2; % Pmax values obtained from fit
 
 % print to command line the waves that were not fit correctly. This is used
 % as a debugger to check that the "bad" waves, the ones that don't have a
