@@ -335,12 +335,12 @@ P_es = PresDoub(uint16(dtmin_30/0.002));
 
 %% Obtaining Isovolumetric points
 
-% storing isovolPresumetric data in structure with two fields:
+% storing isovolumetric data in structure with two fields:
 % First field is positive isovolmetric, storing all the points that lie on
 % the left side, the positive slope side of the pressure wave, and the
 % second field stores the points on the negative slope side.
 
-[DatStr] = isovol_data(Iso1StIdx, Iso2StIdx, time, timeDoub, PresDoub, ...
+[DatStr] = data_isovol(Iso1StIdx, Iso2StIdx, time, timeDoub, PresDoub, ...
                        dPmaxIdx, dPminIdx, false);
 isovolPres = DatStr.P;
 isovolTime = DatStr.T;
