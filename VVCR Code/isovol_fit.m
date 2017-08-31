@@ -80,6 +80,13 @@ for i = 1:nfits
     
     %first equation pmax, A+B
     P_max2(i)=c(1)+abs(c(2)); 
+
+    % store the time points and pressure points in one array for easy
+    % plotting - first pass (call from VVCR_); otherwise, reconsitute these
+    % arrays if needed just outside this loop.
+
+    totIsoTimePoints = [totIsoTimePoints; WaveTs];
+    totIsoPresPoints = [totIsoPresPoints; WavePs];
    
     % AR 6/5/17 -----------------------------------------------
     % adding points succesively to beginning of systole to make better fit
@@ -94,14 +101,15 @@ for i = 1:nfits
 
         temp_ADD_TPoints = [];
         temp_ADD_PPoints = [];
+
         while P_max2(i) < PresMax
             
             % add point to isovolTime(i).PosIso and corresponding isovolPres(i).PosIso
             isovolTime(i).PosIso = [(isovolTime(i).PosIso(1,1))-1; isovolTime(i).PosIso];
             isovolPres(i).PosIso = [PresDoub(isovolTime(i).PosIso(1,1)); isovolPres(i).PosIso];
 
-            temp_ADD_TPoints = [ADD_TPoints, (isovolTime(i).PosIso(1,1))-1];
-            temp_ADD_PPoints = [ADD_PPoints, PresDoub(isovolTime(i).PosIso(1,1))];
+            temp_ADD_TPoints = [ADD_TPoints; timeDoub(isovolTime(i).PosIso(1,1))];
+            temp_ADD_PPoints = [ADD_PPoints; PresDoub(isovolTime(i).PosIso(1,1))];
 
             % update Wave(x)s variables
             WaveTs = [timeDoub(isovolTime(i).PosIso)'; timeDoub(isovolTime(i).NegIso)'];
@@ -143,16 +151,16 @@ for i = 1:nfits
             % Do not let program add more than 10 points
             if count >= 10 && (P_max2(i) < PresMax || waveFit(i) == 1)
                 waveFit(i) = 1;
-                disp('    isovol_fit: Added nine points on systolic side of');
-                disp('        curve, and Pmax remains short of actual pressure');
-                disp(['       Wave: ',num2str(i), 'is excluded']);
+                disp('    isovol_fit: Added nine points on systolic side of curve, and Pmax');
+                disp('        remains short of actual pressure');
+                disp(['        Wave: ',num2str(i), 'is excluded']);
                 break
             end
         end
 
         if WHILE_LOOP_FLAG(i) == true
-            ADD_TPoints = [ADD_TPoints, temp_ADD_TPoints];
-            ADD_PPoints = [ADD_PPoints, temp_ADD_PPoints];
+            ADD_TPoints = [ADD_TPoints; temp_ADD_TPoints];
+            ADD_PPoints = [ADD_PPoints; temp_ADD_PPoints];
         end
     end
     
@@ -163,26 +171,14 @@ for i = 1:nfits
     % sometime amplitude of given equation solves for negative ( with a
     % significant phase shift, which can make a good fit (r^2 > 0.99).
     % --------------------------------------------------------------------
-
-    % store the time points and pressure points in one array for easy
-    % plotting - first pass (call from VVCR_); otherwise, reconsitute these
-    % arrays if needed just outside this loop.
-    totIsoTimePoints = [totIsoTimePoints; WaveTs];
-    totIsoPresPoints = [totIsoPresPoints; WavePs];
 end
 
-% if iso points have been added, re-compose the totIsoPnts variables; only
-% relevant for calls from the GUIs; former sections that reset isovol and 
-% totIso vars must appear in the calling program, using the updates to RetVal
-% below.
-if ~isstruct (ICS)
-    if any(WHILE_LOOP_FLAG)
+%% if iso points have been added, re-compose the totIsoPnts variables
+if any(WHILE_LOOP_FLAG)
 
-      % recompose totIsoTimePoints and totIsoPresPoints and
-        totIsoTimePoints = [totIsoTimePoints, ADD_TPoints];
-        totIsoPresPoints = [totIsoPresPoints, ADD_PPoints];
+    totIsoTimePoints = [totIsoTimePoints; ADD_TPoints];
+    totIsoPresPoints = [totIsoPresPoints; ADD_PPoints];
 
-    end
 end
 
 % Fill out return structure - passed to the GUIs or used to update the GUI

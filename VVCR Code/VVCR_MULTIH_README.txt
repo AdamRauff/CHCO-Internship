@@ -11,18 +11,5 @@
 (10) pack data as appropriate for return to runAll
     GUI return processing similar to after 1st GUI
 
-Variable Name Mappings
-% pksT        -> dPmaxIdx
-% pks         -> dPmaxVal
-% MinIdx      -> dPminIdx
-% Minima      -> dPminVal
-% isovol      -> isovolPres
-% isovoltime  -> isovolTime
-% EDP         -> Iso1StVal
-% EDP_T       -> Iso1StIdx
-% EDP_N       -> Iso2StVal
-% EDP_NT      -> Iso2StIdx
-% EDP_NT_Doub -> Iso2StIdx_Doub
-
-Need to recover variables in original call before the names were remapped - this is 
+Variable Name Mappings are in subst (perl script)
 

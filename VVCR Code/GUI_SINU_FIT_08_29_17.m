@@ -64,8 +64,8 @@ handles.InVar = cell2mat(varargin);
 time = handles.InVar.Time_D; % recall this is the 2x sampled time vector
 Pres = handles.InVar.Pres_D; % recall this is the 2x sampled pressure vector
 
-% extract isovolmic points (times). These are structures
-isovoltime = handles.InVar.ivTime_D;
+% extract isovolumic points (times). These are structures
+isovolTime = handles.InVar.ivTime_D;
 
 % Extract wave fits
 waveFit = handles.InVar.fit.BadCyc;
@@ -79,11 +79,10 @@ handles.UNDOivPlotTime = [];
 handles.UNDOivPlotPres = [];
 
 % EDP - end diastolic pressure
-EDP = handles.InVar.Iso1StVal;
-P_max2 = handles.InVar.fit.PIsoMax;
+Iso1StVal = handles.InVar.Iso1StVal;
 
 % regression constants
-c_tot2 = handles.InVar.fit.RCoef;
+myfit = handles.InVar.fit;  
 
 % initial conditions
 IC = handles.InVar.fit.InitIC;
@@ -98,18 +97,13 @@ set(handles.Freq_txt, 'String',num2str(IC(3)));
 set(handles.Phase_txt, 'String',num2str(IC(4)));
 
 % plot pressure, sinusoid fits
-[handles] = gui_sinu_plot (time, Pres, EDP, isovoltime, P_max2, c_tot2, ...
+[handles] = gui_sinu_plot (time, Pres, Iso1StVal, isovolTime, myfit, ...
     totIsoTimePoints, totIsoPresPoints, hObject, eventdata, handles); 
 
-% store the wavefit, so output tracks which wave forms did not have a good
-% fit
-handles.OutVar(1).output = waveFit;
-
-% Store the pmax values
-handles.OutVar(2).output = P_max2;
-
-% store regression constants
-handles.OutVar(3).output = c_tot2;
+% store first fit output into output structure
+handles.OutVar(1).output = myfit.BadCyc;  % waveFit
+handles.OutVar(2).output = myfit.PIsoMax; % P_max2
+handles.OutVar(3).output = myfit.RCoef;   % c_tot2
 
 % Update handles structure
 guidata(hObject, handles);
@@ -149,22 +143,22 @@ time = handles.InVar.Time_D;
 Pres = handles.InVar.Pres_D; % recall this is the 2x sampled pressure vector
 Oldtime = handles.InVar.Time; % old time vector. 1/2 the points
 
-EDP = handles.InVar.Iso1StVal;
+Iso1StVal = handles.InVar.Iso1StVal;
 
 % EDP - end diastolic pressure
-EDP_T = handles.InVar.Iso1StIdx_D;
-EDP_NT = handles.InVar.Iso2StIdx_D;
+Iso1StIdx = handles.InVar.Iso1StIdx_D;
+Iso2StIdx = handles.InVar.Iso2StIdx_D;
 
 % pass the time indexes of minima and maxima
-pksT = handles.InVar.dPmaxIdx;
-MinIdx = handles.InVar.dPminIdx;
+dPmaxIdx = handles.InVar.dPmaxIdx;
+dPminIdx = handles.InVar.dPminIdx;
 
 % find which waveform the interval was within. Note the click must be
 % between EDP and Negative EDP. the following two lines find (1) all EDP
 % times that are smaller than the time point of click (2) all negative EDP
 % times that are greater than the time point of click.
-WaveNumPosRm = find(time(EDP_T)<cp(1));
-WaveNumNegRm = find(time(EDP_NT)>cp(1));
+WaveNumPosRm = find(time(Iso1StIdx)<cp(1));
+WaveNumNegRm = find(time(Iso2StIdx)>cp(1));
 
 if ~isempty(WaveNumPosRm) && ~isempty(WaveNumNegRm)
     
@@ -174,18 +168,18 @@ if ~isempty(WaveNumPosRm) && ~isempty(WaveNumNegRm)
     if ~isempty(WaveRm)
         disp(['    Wave: ', num2str(WaveRm), ' is being removed']);
         
-        % erase wave from isovoltime structure. make new structure with one
+        % erase wave from isovolTime structure. make new structure with one
         % less row.
-        EDP_T(WaveRm) = [];
-        EDP_NT(WaveRm) = [];
-        EDP(WaveRm) = [];
-        pksT(WaveRm) = [];
-        MinIdx(WaveRm) = [];
+        Iso1StIdx(WaveRm) = [];
+        Iso2StIdx(WaveRm) = [];
+        Iso1StVal(WaveRm) = [];
+        dPmaxIdx(WaveRm) = [];
+        dPminIdx(WaveRm) = [];
 
-        [DatStr] = data_isovol (EDP_T, EDP_NT, Oldtime, time, Pres, pksT, ...
-                                MinIdx, true);
-        isovoltime = DatStr.T;
-        isovol     = DatStr.P;
+        [DatStr] = data_isovolPres (Iso1StIdx, Iso2StIdx, Oldtime, time, Pres, dPmaxIdx, ...
+                                dPminIdx, true);
+        isovolTime = DatStr.T;
+        isovolPres     = DatStr.P;
 
         % obtain current ICs
         Mea = str2double(get(handles.Mean_txt,'String'));
@@ -194,7 +188,7 @@ if ~isempty(WaveNumPosRm) && ~isempty(WaveNumNegRm)
         Pha = str2double(get(handles.Phase_txt,'String'));
 
         ICS = [Mea Amp Fre Pha];
-        [RetVal] = isovol_fit ( isovol, isovoltime, time, Pres, ICS );
+        [RetVal] = isovol_fit ( isovolPres, isovolTime, time, Pres, ICS );
         
         % update global handles - some from RetVal, others from above. If
         % the Vanderpool method isn't tripped, then nothing really has changed
@@ -204,25 +198,20 @@ if ~isempty(WaveNumPosRm) && ~isempty(WaveNumNegRm)
         handles.InVar.ivPlotTime = RetVal.ivPlotTime;
         handles.InVar.ivPlotPres = RetVal.ivPlotPres;
 
-        handles.InVar.Iso1StIdx_D = EDP_T;
-        handles.InVar.Iso2StIdx_D = EDP_NT;
-        handles.InVar.Iso1StVal = EDP;
-        handles.InVar.dPmaxIdx = pksT;
-        handles.InVar.dPminIdx = MinIdx;
+        handles.InVar.Iso1StIdx_D = Iso1StIdx;
+        handles.InVar.Iso2StIdx_D = Iso2StIdx;
+        handles.InVar.Iso1StVal = Iso1StVal;
+        handles.InVar.dPmaxIdx = dPmaxIdx;
+        handles.InVar.dPminIdx = dPminIdx;
 
         % Plot the results
-        [handles] = gui_sinu_plot (time, Pres, EDP, isovoltime, ...
-            RetVal.fit.PIsoMax, RetVal.fit.RCoef, RetVal.ivPlotTime, ...
-            RetVal.ivPlotPres, hObject, eventdata, handles); 
+        [handles] = gui_sinu_plot (time, Pres, Iso1StVal, isovolTime, ...
+            RetVal.fit, RetVal.ivPlotTime, RetVal.ivPlotPres, hObject, ...
+            eventdata, handles); 
 
-        % store the wavefit, so output tracks which wave forms did not have a good
-        % fit
-        handles.OutVar(1).output = RetVal.fit.BadCyc;   % waveFit
-
-        % Store the pmax values
+        % store fit output into output structure
+        handles.OutVar(1).output = RetVal.fit.BadCyc;  % waveFit
         handles.OutVar(2).output = RetVal.fit.PIsoMax; % P_max2
-
-        % store regression constants
         handles.OutVar(3).output = RetVal.fit.RCoef;   % c_tot2
     end
 end
@@ -380,46 +369,41 @@ time = handles.InVar.Time_D;
 Pres = handles.InVar.Pres_D;
 Oldtime = handles.InVar.Time;
 
-% extract isovolmic points (times). These are structures
-isovoltime = handles.InVar.ivTime_D;
+% extract isovolumic points (times). These are structures
+isovolTime = handles.InVar.ivTime_D;
 
-% extract isovolmic points (pressures). These are structures
-isovol = handles.InVar.ivPres_D;
+% extract isovolumic points (pressures). These are structures
+isovolPres = handles.InVar.ivPres_D;
 
 % iso volumic points in array (for plotting)
 totIsoTimePoints = handles.InVar.ivPlotTime;
 totIsoPresPoints = handles.InVar.ivPlotPres;
 
 % EDP - end diastolic pressure
-EDP = handles.InVar.Iso1StVal;
+Iso1StVal = handles.InVar.Iso1StVal;
 
-pksT = handles.InVar.dPmaxIdx;
-MinIdx = handles.InVar.dPminIdx;
+dPmaxIdx = handles.InVar.dPmaxIdx;
+dPminIdx = handles.InVar.dPminIdx;
 
 ICS = [Mea Amp Fre Pha];
 
-[RetVal] = isovol_fit ( isovol, isovoltime, time, Pres, ICS );
+[RetVal] = isovol_fit ( isovolPres, isovolTime, time, Pres, ICS );
 
 % Update isovolumic points and global plotting vectors after return
 % from isovol_fit.
 
 handles.InVar.ivTime_D = RetVal.ivTime_D;
-handles.InVar.ivPres_D  = RetVal.ivPres_D;
+handles.InVar.ivPres_D = RetVal.ivPres_D;
 handles.InVar.ivPlotTime = RetVal.ivPlotTime;
 handles.InVar.ivPlotPres = RetVal.ivPlotPres;
 
-c_tot2 = RetVal.fit.RCoef;
-P_max2 = RetVal.fit.PIsoMax;
-
-[handles] = gui_sinu_plot (time, Pres, EDP, isovoltime, P_max2, c_tot2, ...
+[handles] = gui_sinu_plot (time, Pres, Iso1StVal, isovolTime, RetVal.fit, ...
      totIsoTimePoints, totIsoPresPoints, hObject, eventdata, handles); 
 
-% store the wavefit, so output tracks which wave forms did not have a good
-% fit, the pmax values, and the regression constants. Note the latter two have
-% been obtained from the RetVal structure above already.
-handles.OutVar(1).output = RetVal.fit.BadCyc;
-handles.OutVar(2).output = P_max2;
-handles.OutVar(3).output = c_tot2;
+% store fit output into output structure
+handles.OutVar(1).output = RetVal.fit.BadCyc;  % waveFit
+handles.OutVar(2).output = RetVal.fit.PIsoMax; % P_max2
+handles.OutVar(3).output = RetVal.fit.RCoef;   % c_tot2
 
 % Update handles structure
 guidata(hObject, handles);
@@ -499,30 +483,25 @@ if ~isempty(handles.UNDOivPlotTime)
     % this pulls data out of PeakStruct as passed to GUI_SINU_FIT
     time = handles.InVar.Time_D;
     Pres = handles.InVar.Pres_D;
-    isovoltime = handles.InVar.ivTime_D;
-    isovol = handles.InVar.ivPres_D;
+    isovolTime = handles.InVar.ivTime_D;
+    isovolPres = handles.InVar.ivPres_D;
     % iso volumic points in array (for plotting)
     totIsoTimePoints = handles.InVar.ivPlotTime;
     totIsoPresPoints = handles.InVar.ivPlotPres;
-    % EDP - end diastolic pressure
-    EDP = handles.InVar.Iso1StVal;
+    % Iso1StVal - end diastolic pressure
+    Iso1StVal = handles.InVar.Iso1StVal;
 
     % pre - allocate 
     ICS = [Mea Amp Fre Pha];
-    [RetVal] = isovol_fit ( isovol, isovoltime, time, Pres, ICS );
+    [RetVal] = isovol_fit ( isovolPres, isovolTime, time, Pres, ICS );
 
-    [handles] = gui_sinu_plot (time, Pres, EDP, isovoltime, ...
-            RetVal.fit.PIsoMax, RetVal.fit.RCoef, RetVal.ivPlotTime, ...
-            RetVal.ivPlotPres, hObject, eventdata, handles);
+    [handles] = gui_sinu_plot (time, Pres, Iso1StVal, isovolTime, ...
+            RetVal.fit, RetVal.ivPlotTime, RetVal.ivPlotPres, hObject, ...
+            eventdata, handles);
 
-    % store the wavefit, so output tracks which wave forms did not have a good
-    % fit
-    handles.OutVar(1).output = RetVal.fit.BadCyc;   % waveFit
-
-    % Store the pmax values
+    % store fit output into output structure
+    handles.OutVar(1).output = RetVal.fit.BadCyc;  % waveFit
     handles.OutVar(2).output = RetVal.fit.PIsoMax; % P_max2
-
-    % store regression constants
     handles.OutVar(3).output = RetVal.fit.RCoef;   % c_tot2
 end
 
@@ -534,11 +513,14 @@ set(handles.figure1, 'pointer', 'arrow');
 end
 
 % --- Function that updates the main plot
-function [handles] = gui_sinu_plot (time, Pres, EDP, isovoltime, P_max2, ...
-                         c_tot2, totIsoTimePoints, totIsoPresPoints, ...
-                         hObject, eventdata, handles);
+function [handles] = gui_sinu_plot (time, Pres, Iso1StVal, isovolTime, fit, ...
+                         totIsoTimePoints, totIsoPresPoints, hObject, ...
+                         eventdata, handles);
 
 axes(handles.pressure_axes);
+
+c_tot2 = fit.RCoef;
+P_max2 = fit.PIsoMax;
 
 h = plot(time,Pres,'b', ...
          totIsoTimePoints,totIsoPresPoints,'ro');
@@ -554,14 +536,14 @@ ylabel('Pressue [mmHg]','FontSize',18);
 
 hold on;
 
-PmaxT = zeros(length(EDP),1);
+PmaxT = zeros(length(Iso1StVal),1);
 
 % Attain the sinusoid fit for all points (so Pmax can be visualized
-for i = 1:length(EDP)
+for i = 1:length(Iso1StVal)
 
     % obtain the range of time of each peak
     interval =  ...
-      time(isovoltime(i).PosIso(1,1)):0.002:time(isovoltime(i).NegIso(end,1));
+      time(isovolTime(i).PosIso(1,1)):0.002:time(isovolTime(i).NegIso(end,1));
 
     % plug into Naeiji equation that was just solved for
     FitSinePres = c_tot2(i,1) + c_tot2(i,2)*sin(c_tot2(i,3)*interval + ...
