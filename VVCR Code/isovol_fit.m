@@ -12,13 +12,13 @@ function [RetVal] = isovol_fit (isovolPres, isovolTime, timeDoub, PresDoub, ICS)
 %                   structure needed for individual-cycle ICs; if called from
 %                   a GUI, contains contstant initial conditions for fit.
 
-%% SINUSOIDAL FITTING
-%%%%%%%finally, fitting sinusoid to isovolPresumetric regions%%%%%%%%%
-
-opts1 = optimset ('Display', 'off');
-nfits = length(isovolPres);
+opts1 = optimoptions (@lsqnonlin);
+opts1.Display = 'off';
+opts1.MaxFunctionEvaluations = 2000;
+opts1.MaxIterations = 1000;
 
 % Variables for main fit
+nfits = length(isovolPres);
 c_tot2 = zeros(nfits,4);
 P_max2 = zeros(nfits,1);
 waveFit = zeros(nfits,1);
@@ -63,7 +63,7 @@ for i = 1:nfits
         c2 = [Mea, Amp, ICS.Freq, -0.5];
     end
 
-    [c,resnorm,~]=lsqnonlin(sin_fun2,c2,[],[],opts1); %least squares fitting
+    [c,resnorm,~] = lsqnonlin (sin_fun2,c2,[],[],opts1);
     
     Psine_RV2=(c(1)+c(2)*sin(c(3)*WaveTs+c(4)));
     

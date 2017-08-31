@@ -176,10 +176,18 @@ if ~isempty(WaveNumPosRm) && ~isempty(WaveNumNegRm)
         dPmaxIdx(WaveRm) = [];
         dPminIdx(WaveRm) = [];
 
-        [DatStr] = data_isovolPres (Iso1StIdx, Iso2StIdx, Oldtime, time, Pres, dPmaxIdx, ...
-                                dPminIdx, true);
+        [DatStr] = data_isovol (Iso1StIdx, Iso2StIdx, Oldtime, time, Pres, ...
+                                dPmaxIdx, dPminIdx, true);
+                               
         isovolTime = DatStr.T;
-        isovolPres     = DatStr.P;
+        isovolPres = DatStr.P;
+
+        % Store changes
+        handles.InVar.Iso1StIdx_D = Iso1StIdx;
+        handles.InVar.Iso2StIdx_D = Iso2StIdx;
+        handles.InVar.Iso1StVal = Iso1StVal;
+        handles.InVar.dPmaxIdx = dPmaxIdx;
+        handles.InVar.dPminIdx = dPminIdx;
 
         % obtain current ICs
         Mea = str2double(get(handles.Mean_txt,'String'));
@@ -188,31 +196,25 @@ if ~isempty(WaveNumPosRm) && ~isempty(WaveNumNegRm)
         Pha = str2double(get(handles.Phase_txt,'String'));
 
         ICS = [Mea Amp Fre Pha];
-        [RetVal] = isovol_fit ( isovolPres, isovolTime, time, Pres, ICS );
+        [FitStr] = isovol_fit (isovolPres, isovolTime, time, Pres, ICS);
         
-        % update global handles - some from RetVal, others from above. If
+        % update global handles - some from FitStr, others from above. If
         % the Vanderpool method isn't tripped, then nothing really has changed
         % from the call, so this is a just-in-case...
-        handles.InVar.ivTime_D = RetVal.ivTime_D;
-        handles.InVar.ivPres_D  = RetVal.ivPres_D;
-        handles.InVar.ivPlotTime = RetVal.ivPlotTime;
-        handles.InVar.ivPlotPres = RetVal.ivPlotPres;
+        handles.InVar.ivTime_D = FitStr.ivTime_D;
+        handles.InVar.ivPres_D = FitStr.ivPres_D;
+        handles.InVar.ivPlotTime = FitStr.ivPlotTime;
+        handles.InVar.ivPlotPres = FitStr.ivPlotPres;
 
-        handles.InVar.Iso1StIdx_D = Iso1StIdx;
-        handles.InVar.Iso2StIdx_D = Iso2StIdx;
-        handles.InVar.Iso1StVal = Iso1StVal;
-        handles.InVar.dPmaxIdx = dPmaxIdx;
-        handles.InVar.dPminIdx = dPminIdx;
+        % store fit output into output structure
+        handles.OutVar(1).output = FitStr.fit.BadCyc;  % waveFit
+        handles.OutVar(2).output = FitStr.fit.PIsoMax; % P_max2
+        handles.OutVar(3).output = FitStr.fit.RCoef;   % c_tot2
 
         % Plot the results
         [handles] = gui_sinu_plot (time, Pres, Iso1StVal, isovolTime, ...
-            RetVal.fit, RetVal.ivPlotTime, RetVal.ivPlotPres, hObject, ...
+            FitStr.fit, FitStr.ivPlotTime, FitStr.ivPlotPres, hObject, ...
             eventdata, handles); 
-
-        % store fit output into output structure
-        handles.OutVar(1).output = RetVal.fit.BadCyc;  % waveFit
-        handles.OutVar(2).output = RetVal.fit.PIsoMax; % P_max2
-        handles.OutVar(3).output = RetVal.fit.RCoef;   % c_tot2
     end
 end
 
@@ -387,23 +389,23 @@ dPminIdx = handles.InVar.dPminIdx;
 
 ICS = [Mea Amp Fre Pha];
 
-[RetVal] = isovol_fit ( isovolPres, isovolTime, time, Pres, ICS );
+[FitStr] = isovol_fit ( isovolPres, isovolTime, time, Pres, ICS );
 
 % Update isovolumic points and global plotting vectors after return
 % from isovol_fit.
 
-handles.InVar.ivTime_D = RetVal.ivTime_D;
-handles.InVar.ivPres_D = RetVal.ivPres_D;
-handles.InVar.ivPlotTime = RetVal.ivPlotTime;
-handles.InVar.ivPlotPres = RetVal.ivPlotPres;
+handles.InVar.ivTime_D = FitStr.ivTime_D;
+handles.InVar.ivPres_D = FitStr.ivPres_D;
+handles.InVar.ivPlotTime = FitStr.ivPlotTime;
+handles.InVar.ivPlotPres = FitStr.ivPlotPres;
 
-[handles] = gui_sinu_plot (time, Pres, Iso1StVal, isovolTime, RetVal.fit, ...
+[handles] = gui_sinu_plot (time, Pres, Iso1StVal, isovolTime, FitStr.fit, ...
      totIsoTimePoints, totIsoPresPoints, hObject, eventdata, handles); 
 
 % store fit output into output structure
-handles.OutVar(1).output = RetVal.fit.BadCyc;  % waveFit
-handles.OutVar(2).output = RetVal.fit.PIsoMax; % P_max2
-handles.OutVar(3).output = RetVal.fit.RCoef;   % c_tot2
+handles.OutVar(1).output = FitStr.fit.BadCyc;  % waveFit
+handles.OutVar(2).output = FitStr.fit.PIsoMax; % P_max2
+handles.OutVar(3).output = FitStr.fit.RCoef;   % c_tot2
 
 % Update handles structure
 guidata(hObject, handles);
@@ -493,16 +495,16 @@ if ~isempty(handles.UNDOivPlotTime)
 
     % pre - allocate 
     ICS = [Mea Amp Fre Pha];
-    [RetVal] = isovol_fit ( isovolPres, isovolTime, time, Pres, ICS );
+    [FitStr] = isovol_fit ( isovolPres, isovolTime, time, Pres, ICS );
 
     [handles] = gui_sinu_plot (time, Pres, Iso1StVal, isovolTime, ...
-            RetVal.fit, RetVal.ivPlotTime, RetVal.ivPlotPres, hObject, ...
+            FitStr.fit, FitStr.ivPlotTime, FitStr.ivPlotPres, hObject, ...
             eventdata, handles);
 
     % store fit output into output structure
-    handles.OutVar(1).output = RetVal.fit.BadCyc;  % waveFit
-    handles.OutVar(2).output = RetVal.fit.PIsoMax; % P_max2
-    handles.OutVar(3).output = RetVal.fit.RCoef;   % c_tot2
+    handles.OutVar(1).output = FitStr.fit.BadCyc;  % waveFit
+    handles.OutVar(2).output = FitStr.fit.PIsoMax; % P_max2
+    handles.OutVar(3).output = FitStr.fit.RCoef;   % c_tot2
 end
 
 % Update handles structure

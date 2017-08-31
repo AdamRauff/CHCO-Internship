@@ -353,37 +353,37 @@ ICS.Pres = Pres;
 ICS.dPmaxIdx = dPmaxIdx;
 ICS.dPminIdx = dPminIdx;
 
-[PeakStruct] = isovol_fit (isovolPres, isovolTime, timeDoub, PresDoub, ICS );
+[FitStr] = isovol_fit (isovolPres, isovolTime, timeDoub, PresDoub, ICS );
 
 %% (8.5) Set any needed vars that weren't set in isovol_fit.
 % Pressure and Time in doubled format:
 % These can be set once, don't need to be done on each call to isovol_fit
-PeakStruct.Time_D = timeDoub;
-PeakStruct.Pres_D = PresDoub;
+FitStr.Time_D = timeDoub;
+FitStr.Pres_D = PresDoub;
 
 % Orig time vector with 1/2 points; used for buttondownFcn
-PeakStruct.Time = time;
+FitStr.Time = time;
 
 % Used as reference for number of peaks
-PeakStruct.Iso1StVal = Iso1StVal;
+FitStr.Iso1StVal = Iso1StVal;
 
 % Time of EDP, neg EDP occured; used for buttondownFcn
-PeakStruct.Iso1StIdx_D = Iso1StIdx_Doub;
-PeakStruct.Iso2StIdx_D = Iso2StIdx_Doub;
+FitStr.Iso1StIdx_D = Iso1StIdx_Doub;
+FitStr.Iso2StIdx_D = Iso2StIdx_Doub;
 % Peak times; used in buttownDownFcn. These are indexs of the old time vector
-PeakStruct.dPmaxIdx = dPmaxIdx;
-PeakStruct.dPminIdx = dPminIdx;
+FitStr.dPmaxIdx = dPmaxIdx;
+FitStr.dPminIdx = dPminIdx;
 
 %% (9) Visualize / check the fit
 % call on GUI. Notice the structure we just made is passed to the GUI, and
 % the GUI passes back a refined structure
-PeakStruct2 = GUI_SINU_FIT_08_29_17 (PeakStruct);
+SinuStr = GUI_SINU_FIT_08_29_17 (FitStr);
 
-clear PeakStruct
+clear FitStr
 
 %% (10) cleanup, arrange data to return to runAll
 % if the exit button has been pressed
-if size(PeakStruct2(1).output,1) == 1 && PeakStruct2(2).output == false
+if size(SinuStr(1).output,1) == 1 && SinuStr(2).output == false
     
     % set all output variables to false, return to runAll
     [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
@@ -391,7 +391,7 @@ if size(PeakStruct2(1).output,1) == 1 && PeakStruct2(2).output == false
     return
 
 % if the discard patient button has been pressed
-elseif size(PeakStruct2(1).output,1) == 1 && PeakStruct2(2).output == true
+elseif size(SinuStr(1).output,1) == 1 && SinuStr(2).output == true
     
      % set all output variables to true, return to runAll
     [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
@@ -402,35 +402,35 @@ elseif size(PeakStruct2(1).output,1) == 1 && PeakStruct2(2).output == true
 else
     % extract Pmax and the list of well fitted curves from the structure
     % that is returned from GUI
-    P_max2 = PeakStruct2(2).output;
-    waveFit = PeakStruct2(1).output;
+    BadCyc  = SinuStr(1).output;
+    PIsoMax = SinuStr(2).output;
     
     % calculate the number of peaks that were evaluated
     numPeaks = 0;
-    for i = 1:length(waveFit)
-        if waveFit(i) ~= 1
+    for i = 1:length(BadCyc)
+        if BadCyc(i) ~= 1
             numPeaks = numPeaks + 1;
         end
     end
     %OKAY! here are the final values and we can FINALLY calculate VVCR.
 
     % average Pes for the waves that fit well
-    AVG_Pes=mean(P_es(waveFit~=1)); 
+    AVG_Pes = mean(P_es(BadCyc~=1)); 
     
     % standard deviation of Pes
-    STD_Pes = std(P_es(waveFit~=1));
+    STD_Pes = std(P_es(BadCyc~=1));
 
     % average P_max for the waves that fit well
-    AVG_Pmax=mean(P_max2(waveFit~=1)); 
+    AVG_Pmax = mean(PIsoMax(BadCyc~=1)); 
     
     % standard deviation of Pmax
-    STD_PMX = std(P_max2(waveFit~=1));
+    STD_PMX = std(PIsoMax(BadCyc~=1));
 
     %from Uyen Truongs VVCR paper
-    VVCR_UT=AVG_Pes/(AVG_Pmax-AVG_Pes); 
+    VVCR_UT = AVG_Pes/(AVG_Pmax-AVG_Pes); 
 
     % Hunter's 
-    VVCR_KH=(AVG_Pmax/AVG_Pes)-1;
+    VVCR_KH = (AVG_Pmax/AVG_Pes)-1;
 end
 
 end
