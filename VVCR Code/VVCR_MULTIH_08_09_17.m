@@ -20,7 +20,7 @@ if length(Pres) == 1 && Pres == 0
     % set all outputs to true --> skip file, return to runAll
     [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
         STD_Pes, STD_PMX, TotNumWaves] = deal (false);
-    disp('Loadp did not detect an RV column');
+    disp('VVCR_MULTIH: Loadp did not detect an RV column');
     return
 
 end
@@ -89,33 +89,29 @@ end
 
 %% (4) GUI for Manual Deletion of Mins and Maxs
 
-% pre-allocate structure
-PeakStruct = struct('Data', cell(3,1), 'Min', cell(3,1), ...
-                    'Max',  cell(3,1), 'IM',  cell(3,1));
-
 % The GUI allows the user to manually delete inappropriate minima and
 % maxima. In order to do that, The following information must be passed
 % onto the GUI:
 
 % Pressure and derivative
-PeakStruct(1).Data = time;
-PeakStruct(2).Data = Pres;
-PeakStruct(3).Data = dPdt;
+PeakStruct.Time_D = time;
+PeakStruct.Pres_D = Pres;
+PeakStruct.dPdt_D = dPdt;
 
 % dPminVal
-PeakStruct(1).Min = dPminIdx;
-PeakStruct(2).Min = dPminVal;
+PeakStruct.dPminIdx = dPminIdx;
+PeakStruct.dPminVal = dPminVal;
 
 % Maxima
-PeakStruct(1).Max = dPmaxIdx;
-PeakStruct(2).Max = dPmaxVal;
+PeakStruct.dPmaxIdx = dPmaxIdx;
+PeakStruct.dPmaxVal = dPmaxVal;
 
 % pictures
 Green_Check = imread('check.png');
-PeakStruct(1).IM = Green_Check;
+PeakStruct.Green_Check = Green_Check;
 
 Red_X = imread('ex.png');
-PeakStruct(2).IM = Red_X;
+PeakStruct.Red_X = Red_X;
 
 % call on GUI. Notice the structure we just made is passed to the GUI, and
 % the GUI passes back a refined structure
@@ -124,17 +120,17 @@ PeakStruct2 = GUI_No_Peaks_10_10(PeakStruct);
 clear PeakStruct Green_Check Red_X DataInv
 
 % if the exit button has been pressed
-if PeakStruct2(1).Max == false
+if PeakStruct2.dPmaxIdx == false
 
     % set all output variables to false, return to runAll
     [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
         STD_Pes, STD_PMX, TotNumWaves] = deal (false);
-    disp('You chose to exit the analysis');
-    disp(['The file ', FileName, ' was not evaluated!']);
+    disp('VVCR_MULTIH: You chose to exit the analysis');
+    disp(['    The file ', FileName, ' was not evaluated!']);
     return
 
 % if the discard patient button has been pressed
-elseif PeakStruct2(3).Max == true
+elseif PeakStruct2.TotNumWaves == true
 
      % set all output variables to true, return to runAll
     [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
@@ -145,14 +141,14 @@ elseif PeakStruct2(3).Max == true
 else
     
     % update minima and maxima per user filter GUI
-    dPmaxIdx = PeakStruct2(1).Max;
-    dPmaxVal = PeakStruct2(2).Max;
+    dPmaxIdx = PeakStruct2.dPmaxIdx;
+    dPmaxVal = PeakStruct2.dPmaxVal;
 
-    dPminIdx = PeakStruct2(1).Min;
-    dPminVal = PeakStruct2(2).Min;
+    dPminIdx = PeakStruct2.dPminIdx;
+    dPminVal = PeakStruct2.dPminVal;
     
     % obtain number of total waveforms
-    TotNumWaves = PeakStruct2(3).Max;
+    TotNumWaves = PeakStruct2.TotNumWaves;
 end
 
 
@@ -273,7 +269,7 @@ for i = 1:length(dPmaxIdx)
     % if the Iso2StIdx < dPminIdx(i) or Iso2StIdx is only 4 point ahead of the min, then we got a problem. no
     % isovolPresumic points on the negative side of the curve. 
     if Iso2StIdx(i) <= dPminIdx(i) || (Iso2StIdx(i) > dPminIdx(i) && abs(Iso2StIdx(i)-dPminIdx(i)) <= 3)
-        disp(['Curve # ',num2str(i), ' has smaller Iso2StIdx then the min!!!']);
+        disp(['VVCR_MULTIH: Curve # ',num2str(i), ' has smaller Iso2StIdx then the min!!!']);
         % get rid of curve if it is not already marked
         if isempty(find(bad_curve==i,1))
             bad_curve = [bad_curve, i];
@@ -357,26 +353,26 @@ ICS.Pres = Pres;
 ICS.dPmaxIdx = dPmaxIdx;
 ICS.dPminIdx = dPminIdx;
 
-[PeakStruct] = isovol_fit (isovolPres, isovolTime, timeDoub, PresDoub, ICS, []);
+[PeakStruct] = isovol_fit (isovolPres, isovolTime, timeDoub, PresDoub, ICS );
 
 %% (8.5) Set any needed vars that weren't set in isovol_fit.
 % Pressure and Time in doubled format:
 % These can be set once, don't need to be done on each call to isovol_fit
-PeakStruct(1).Data = timeDoub;
-PeakStruct(2).Data = PresDoub;
+PeakStruct.Time_D = timeDoub;
+PeakStruct.Pres_D = PresDoub;
 
 % Orig time vector with 1/2 points; used for buttondownFcn
-PeakStruct(2).ivt = time;
+PeakStruct.Time = time;
 
 % Used as reference for number of peaks
-PeakStruct(1).Misc = Iso1StVal;
+PeakStruct.Iso1StVal = Iso1StVal;
 
 % Time of EDP, neg EDP occured; used for buttondownFcn
-PeakStruct(1).EDPs = Iso1StIdx_Doub;
-PeakStruct(2).EDPs = Iso2StIdx_Doub;
+PeakStruct.Iso1StIdx_D = Iso1StIdx_Doub;
+PeakStruct.Iso2StIdx_D = Iso2StIdx_Doub;
 % Peak times; used in buttownDownFcn. These are indexs of the old time vector
-PeakStruct(1).Crit = dPmaxIdx;
-PeakStruct(2).Crit = dPminIdx;
+PeakStruct.dPmaxIdx = dPmaxIdx;
+PeakStruct.dPminIdx = dPminIdx;
 
 %% (9) Visualize / check the fit
 % call on GUI. Notice the structure we just made is passed to the GUI, and
@@ -438,4 +434,3 @@ else
 end
 
 end
-

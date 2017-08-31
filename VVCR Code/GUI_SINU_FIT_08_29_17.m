@@ -61,35 +61,35 @@ handles.InVar = cell2mat(varargin);
 
 % Extract variables from structure for a more clear workflow
 % time and pressure vectors
-time = handles.InVar(1).Data; % recall this is the 2x sampled time vector
-Pres = handles.InVar(2).Data; % recall this is the 2x sampled pressure vector
+time = handles.InVar.Time_D; % recall this is the 2x sampled time vector
+Pres = handles.InVar.Pres_D; % recall this is the 2x sampled pressure vector
 
 % extract isovolmic points (times). These are structures
-isovoltime = handles.InVar(1).ivt;
+isovoltime = handles.InVar.ivTime_D;
 
 % Extract wave fits
-waveFit = handles.InVar(2).iv;
+waveFit = handles.InVar.fit.BadCyc;
 
 % iso volumic points in array (for plotting)
-totIsoTimePoints = handles.InVar(1).isoPts;
-totIsoPresPoints = handles.InVar(2).isoPts;
+totIsoTimePoints = handles.InVar.ivPlotTime;
+totIsoPresPoints = handles.InVar.ivPlotPres;
 
 % intialize these variables for the undo button
-handles.OldIsoT = [];
-handles.OldIsoP = [];
+handles.UNDOivPlotTime = [];
+handles.UNDOivPlotPres = [];
 
 % EDP - end diastolic pressure
-EDP = handles.InVar(1).Misc;
-P_max2 = handles.InVar(2).Misc;
+EDP = handles.InVar.Iso1StVal;
+P_max2 = handles.InVar.fit.PIsoMax;
 
 % regression constants
-c_tot2 = handles.InVar(2).Cs;
+c_tot2 = handles.InVar.fit.RCoef;
 
 % initial conditions
-IC = handles.InVar(1).Cs;
+IC = handles.InVar.fit.InitIC;
 
 % intialize old variable - used for the undo button
-handles.OldIsoT = [];
+handles.UNDOivPlotTime = [];
 
 % set editable text boxes with ICs
 set(handles.Mean_txt, 'String',num2str(IC(1)));
@@ -98,8 +98,8 @@ set(handles.Freq_txt, 'String',num2str(IC(3)));
 set(handles.Phase_txt, 'String',num2str(IC(4)));
 
 % plot pressure, sinusoid fits
-[PmaxT] = gui_sinu_plot (time, Pres, EDP, isovoltime, P_max2, ...
-              c_tot2, totIsoTimePoints, totIsoPresPoints, handles)
+[handles] = gui_sinu_plot (time, Pres, EDP, isovoltime, P_max2, c_tot2, ...
+    totIsoTimePoints, totIsoPresPoints, hObject, eventdata, handles); 
 
 % store the wavefit, so output tracks which wave forms did not have a good
 % fit
@@ -127,36 +127,37 @@ drawnow;
 
 % store the current isovolumic points as OldIsoT and OldIsoP
 % intialize these variables for the undo button
-handles.OldIsoT = handles.InVar(1).isoPts;
-handles.OldIsoP = handles.InVar(2).isoPts;
-handles.OldIsoVolT = handles.InVar(1).ivt;
-handles.OldEDPT = handles.InVar(1).EDPs;
-handles.OldEDPNT = handles.InVar(2).EDPs;
-handles.OldIsoVol = handles.InVar(1).iv;
-handles.OldEDP = handles.InVar(1).Misc;
-handles.OldPksT = handles.InVar(1).Crit;
-handles.OldMinIdx = handles.InVar(2).Crit;
+handles.UNDOivPlotTime = handles.InVar.ivPlotTime;
+handles.UNDOivPlotPres = handles.InVar.ivPlotPres;
+handles.UNDOivTime_D = handles.InVar.ivTime_D;
+handles.UNDOIso1StIdx_D = handles.InVar.Iso1StIdx_D;
+handles.UNDOIso2StIdx_D = handles.InVar.Iso2StIdx_D;
+handles.UNDOivPres_D = handles.InVar.ivPres_D;
+handles.UNDOIso1StVal = handles.InVar.Iso1StVal;
+handles.UNDOdPmaxIdx = handles.InVar.dPmaxIdx;
+handles.UNDOdPminIdx = handles.InVar.dPminIdx;
 
 % get the current point
 cp(1,:) = [eventdata.IntersectionPoint(1), eventdata.IntersectionPoint(2)];
-disp(['Time: ',num2str(cp(1))]);
-disp(['Pressure: ',num2str(cp(2))]);
+disp('GUI_SINU_FIT>GraphCallBack:');
+disp(['    Time: ',num2str(cp(1))]);
+disp(['    Pressure: ',num2str(cp(2))]);
 
 % obtain variables from InVar Struct for a clear workflow
 % time and pressure vectors
-time = handles.InVar(1).Data;
-Pres = handles.InVar(2).Data; % recall this is the 2x sampled pressure vector
-Oldtime = handles.InVar(2).ivt; % old time vector. 1/2 the points
+time = handles.InVar.Time_D;
+Pres = handles.InVar.Pres_D; % recall this is the 2x sampled pressure vector
+Oldtime = handles.InVar.Time; % old time vector. 1/2 the points
 
-EDP = handles.InVar(1).Misc;
+EDP = handles.InVar.Iso1StVal;
 
 % EDP - end diastolic pressure
-EDP_T = handles.InVar(1).EDPs;
-EDP_NT = handles.InVar(2).EDPs;
+EDP_T = handles.InVar.Iso1StIdx_D;
+EDP_NT = handles.InVar.Iso2StIdx_D;
 
 % pass the time indexes of minima and maxima
-pksT = handles.InVar(1).Crit;
-MinIdx = handles.InVar(2).Crit;
+pksT = handles.InVar.dPmaxIdx;
+MinIdx = handles.InVar.dPminIdx;
 
 % find which waveform the interval was within. Note the click must be
 % between EDP and Negative EDP. the following two lines find (1) all EDP
@@ -171,7 +172,7 @@ if ~isempty(WaveNumPosRm) && ~isempty(WaveNumNegRm)
     WaveRm = find(WaveNumPosRm==WaveNumNegRm(1));
 
     if ~isempty(WaveRm)
-        disp(['Wave: ', num2str(WaveRm), ' is being removed']);
+        disp(['    Wave: ', num2str(WaveRm), ' is being removed']);
         
         % erase wave from isovoltime structure. make new structure with one
         % less row.
@@ -192,103 +193,37 @@ if ~isempty(WaveNumPosRm) && ~isempty(WaveNumNegRm)
         Fre = str2double(get(handles.Freq_txt,'String'));
         Pha = str2double(get(handles.Phase_txt,'String'));
 
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         ICS = [Mea Amp Fre Pha];
-
-        [RetVal] = isovol_fit ( isovol, isovoltime, time, Pres, ICS, handles );
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        [RetVal] = isovol_fit ( isovol, isovoltime, time, Pres, ICS );
         
-%%        % pre - allocate 
-%%        waveFit = zeros(length(EDP),1);
-%%        PmaxT = zeros(length(EDP),1);
-%%        P_max2 = zeros(length(EDP),1);
-%%        r_square2 = zeros(length(EDP),1);
-%%        c_tot2 = zeros(length(EDP),4);
-%%        
-%%        totIsoTimePoints = [];
-%%        totIsoPresPoints = [];
-%%        
-%%        for i = 1:length(EDP)
-%%            WaveTs = [time(isovoltime(i).PosIso)'; time(isovoltime(i).NegIso)'];
-%%            WavePs = [isovol(i).PosIso; isovol(i).NegIso];
-%%
-%%            % from Naeiji et al, single beat method of VVC
-%%            sin_fun2=@(P)(P(1)+P(2)*sin(P(3)*WaveTs+P(4)))-WavePs; 
-%%
-%%            % ICs
-%%            c2=[Mea, Amp, Fre, Pha];
-%%
-%%            [c,resnorm,~]=lsqnonlin(sin_fun2,c2); %least squares fitting
-%%
-%%            Psine_RV2=(c(1)+c(2)*sin(c(3)*WaveTs+c(4)));
-%%
-%%            % r^2 value
-%%            r_square2(i)=1-resnorm/norm(Psine_RV2-mean(Psine_RV2))^2;
-%%
-%%            % if the fit of the wave was bad, mark that wave
-%%            if r_square2(i) <0.90
-%%               waveFit(i) = 1; 
-%%            end
-%%
-%%            c_tot2(i,:)=c; %getting all the c values in a matrix
-%%
-%%            P_max2(i)=c(1)+abs(c(2)); %first equation pmax, A+B
-%%            %or the other definition of pmax
-%%
-%%            % -------------------------------------------------------------
-%%            % NOTE the absolute value of the amplitude is taken!!!!!!!
-%%            % refer to patient HA002019, Wave 11 for an example of why
-%%
-%%            % sometime amplitude of given equation solves for negative ( with a
-%%            % significant phase shift, which makes a good fit (r^2 > 0.99).
-%%            % ---------------------------------------------------------------
-%%
-%%            % store the time points and pressure points in one array for easy
-%%            % plotting 
-%%            totIsoTimePoints = [totIsoTimePoints; WaveTs];
-%%            totIsoPresPoints = [totIsoPresPoints; WavePs];
-%%        end
-%%        
-          % update global handles - some from RetVal, others from above. If
-          % the Vanderpool method isn't tripped, then nothing really has changed
-          % from the call, so this is a just-in-case...
-          handles.InVar(1).ivt = RetVal(1).ivt;
-          handles.InVar(1).iv  = RetVal(1).iv;
-          handles.InVar(1).isoPts = RetVal(1).isoPts;
-          handles.InVar(2).isoPts = RetVal(2).isoPts;
+        % update global handles - some from RetVal, others from above. If
+        % the Vanderpool method isn't tripped, then nothing really has changed
+        % from the call, so this is a just-in-case...
+        handles.InVar.ivTime_D = RetVal.ivTime_D;
+        handles.InVar.ivPres_D  = RetVal.ivPres_D;
+        handles.InVar.ivPlotTime = RetVal.ivPlotTime;
+        handles.InVar.ivPlotPres = RetVal.ivPlotPres;
 
-          handles.InVar(1).EDPs = EDP_T;
-          handles.InVar(2).EDPs = EDP_NT;
-          handles.InVar(1).Misc = EDP;
-          handles.InVar(1).Crit = pksT;
-          handles.InVar(2).Crit = MinIdx;
+        handles.InVar.Iso1StIdx_D = EDP_T;
+        handles.InVar.Iso2StIdx_D = EDP_NT;
+        handles.InVar.Iso1StVal = EDP;
+        handles.InVar.dPmaxIdx = pksT;
+        handles.InVar.dPminIdx = MinIdx;
 
-%%        % print to command line the waves that were not fit correctly. This is used
-%%        % as a debugger to check that the "bad" waves, the ones that don't have a
-%%        % good fit, are not utilized in the VVCR calculation.
-%%        indX = find(waveFit==1); % find indices of the bad waves
-%%        if ~isempty(indX)
-%%            disp('The following waves did NOT have a good fit (will not be included)');
-%%            disp(['Wave(s): ', num2str(indX')]);
-%%        else
-%%            disp('All waves seemed to fit well!');
-%%        end
-
-        c_tot2 = RetVal(2).Cs;
-        P_max2 = RetVal(2).Misc;
-        
-        [PmaxT] = gui_sinu_plot (time, Pres, EDP, isovoltime, P_max2, ...
-                      c_tot2, totIsoTimePoints, totIsoPresPoints, handles)
+        % Plot the results
+        [handles] = gui_sinu_plot (time, Pres, EDP, isovoltime, ...
+            RetVal.fit.PIsoMax, RetVal.fit.RCoef, RetVal.ivPlotTime, ...
+            RetVal.ivPlotPres, hObject, eventdata, handles); 
 
         % store the wavefit, so output tracks which wave forms did not have a good
         % fit
-        handles.OutVar(1).output = waveFit;
+        handles.OutVar(1).output = RetVal.fit.BadCyc;   % waveFit
 
         % Store the pmax values
-        handles.OutVar(2).output = P_max2;
+        handles.OutVar(2).output = RetVal.fit.PIsoMax; % P_max2
 
         % store regression constants
-        handles.OutVar(3).output = c_tot2;
+        handles.OutVar(3).output = RetVal.fit.RCoef;   % c_tot2
     end
 end
 
@@ -423,7 +358,7 @@ end
 end
 
 % --- Executes on button press in calculate.
-function calculate_Callback(hObject, ~, handles)
+function calculate_Callback(hObject, eventdata, handles)
 % hObject    handle to calculate (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -441,204 +376,48 @@ Pha = str2double(get(handles.Phase_txt,'String'));
 
 %%% obtain variables from InVar Struct for a clear workflow
 % time and pressure vectors
-time = handles.InVar(1).Data;
-Pres = handles.InVar(2).Data;
-Oldtime = handles.InVar(2).ivt;
+time = handles.InVar.Time_D;
+Pres = handles.InVar.Pres_D;
+Oldtime = handles.InVar.Time;
 
 % extract isovolmic points (times). These are structures
-isovoltime = handles.InVar(1).ivt;
+isovoltime = handles.InVar.ivTime_D;
 
 % extract isovolmic points (pressures). These are structures
-isovol = handles.InVar(1).iv;
+isovol = handles.InVar.ivPres_D;
 
 % iso volumic points in array (for plotting)
-totIsoTimePoints = handles.InVar(1).isoPts;
-totIsoPresPoints = handles.InVar(2).isoPts;
+totIsoTimePoints = handles.InVar.ivPlotTime;
+totIsoPresPoints = handles.InVar.ivPlotPres;
 
 % EDP - end diastolic pressure
-EDP = handles.InVar(1).Misc;
+EDP = handles.InVar.Iso1StVal;
 
-pksT = handles.InVar(1).Crit;
-MinIdx = handles.InVar(2).Crit;
+pksT = handles.InVar.dPmaxIdx;
+MinIdx = handles.InVar.dPminIdx;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ICS = [Mea Amp Fre Pha];
 
-[RetVal] = isovol_fit ( isovol, isovoltime, time, Pres, ICS, handles );
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% pre - allocate 
-%%c_tot2 = zeros(length(EDP),4);
-%%P_max2 = zeros(length(EDP),1);
-%%waveFit = zeros(length(EDP),1);
-%%r_square2 = zeros(length(EDP),1);
-%%
-%%WHILE_LOOP_FLAG = zeros(length(EDP),1);
-%%ADD_TPoints = [];
-%%ADD_PPoints = [];
-%%
-%%
-%%%%% calculate regression per pressure wave
-%%for i = 1:length(EDP)
-%%    
-%%    WaveTs = [time(isovoltime(i).PosIso)'; time(isovoltime(i).NegIso)'];
-%%    WavePs = [isovol(i).PosIso; isovol(i).NegIso];
-%%
-%%    % from Naeiji et al, single beat method of VVC
-%%    sin_fun2=@(P)(P(1)+P(2)*sin(P(3)*WaveTs+P(4)))-WavePs; 
-%%
-%%    % ICs
-%%    c2=[Mea, Amp, Fre, Pha];
-%%
-%%    [c,resnorm,~]=lsqnonlin(sin_fun2,c2); %least squares fitting
-%%
-%%    Psine_RV2=(c(1)+c(2)*sin(c(3)*WaveTs+c(4)));
-%%
-%%    % r^2 value
-%%    r_square2(i)=1-resnorm/norm(Psine_RV2-mean(Psine_RV2))^2;
-%%
-%%    % if the fit of the wave was bad, mark that wave
-%%    if r_square2(i) <0.90
-%%       waveFit(i) = 1;
-%%    end
-%%
-%%    c_tot2(i,:)=c; %getting all the c values in a matrix
-%%
-%%    P_max2(i)=c(1)+abs(c(2)); %first equation pmax, A+B
-%%    %or the other definition of pmax
-%%
-%%    % AR 6/5/17
-%%    % adding points succesively to beginning of systole to make better fit
-%%    % of sick patients with wide curves
-%%    % obtain maximum pressure point on actual curve
-%%%     P2 = find(round(time,3)==round(Oldtime(MinIdx(i),3)));
-%%%     P1 = find(round(time,3)==round(Oldtime(pksT(i)),3));
-%%    PresMax = max(Pres(isovoltime(i).PosIso(1,1):1:isovoltime(i).NegIso(end,1)));
-%%    if r_square2(i) > 0.80 && P_max2(i) < PresMax
-%%        
-%%        % keep count of how many points added to systole side
-%%        count = 0;
-%%        
-%%        temp_ADD_TPoints = [];
-%%        temp_ADD_PPoints = [];
-%%        while P_max2(i) < PresMax
-%%            
-%%            % add point to isovoltime(i).PosIso and corresponding isovol(i).PosIso
-%%            isovoltime(i).PosIso = [(isovoltime(i).PosIso(1,1))-1; isovoltime(i).PosIso];
-%%            isovol(i).PosIso = [Pres(isovoltime(i).PosIso(1,1)); isovol(i).PosIso];
-%%            
-%%            temp_ADD_TPoints = [ADD_TPoints, (isovoltime(i).PosIso(1,1))-1]
-%%            temp_ADD_PPoints = [ADD_PPoints, Pres(isovoltime(i).PosIso(1,1))]
-%%            
-%%            % update Wave(x)s variables
-%%            WaveTs = [time(isovoltime(i).PosIso)'; time(isovoltime(i).NegIso)'];
-%%            WavePs = [isovol(i).PosIso; isovol(i).NegIso];
-%%            
-%%            % mark flag that points are added
-%%            WHILE_LOOP_FLAG(i) = true;
-%%            
-%%            % re-fit sinusiod
-%%            % equation from Naeiji et al, single beat method of VVC
-%%            sin_fun2=@(P)(P(1)+P(2)*sin(P(3)*WaveTs+P(4)))-WavePs; 
-%%
-%%            %least squares fitting
-%%            [c,resnorm,~]=lsqnonlin(sin_fun2,c2); 
-%%
-%%            Psine_RV2=(c(1)+c(2)*sin(c(3)*WaveTs+c(4)));
-%%
-%%            % r^2 value
-%%            r_square2(i)=1-resnorm/norm(Psine_RV2-mean(Psine_RV2))^2;
-%%
-%%            % if the fit of the wave was bad, mark that wave
-%%            if r_square2(i) <0.90
-%%               waveFit(i) = 1;
-%%               WHILE_LOOP_FLAG(i) = false;
-%%            else
-%%               waveFit(i) = 0;
-%%               WHILE_LOOP_FLAG(i) = true;
-%%            end
-%%            
-%%            %getting all the c values in a matrix
-%%            c_tot2(i,:)=c; 
-%%    
-%%            %first equation pmax, A+B
-%%            P_max2(i)=c(1)+abs(c(2));
-%%            
-%%            % increment count to keep track of added points
-%%            count = count +1;
-%%            
-%%            % Do not let program add more than 10 points
-%%            if count >= 10 && (P_max2(i) < PresMax || waveFit(i) == 1)
-%%                waveFit(i) = 1;
-%%                disp('Added nine points on systolic side of curve, and curve fit remains unsatisfying');
-%%                disp(['Wave: ',num2str(i), 'is excluded']);
-%%                WHILE_LOOP_FLAG(i) = false;
-%%                break
-%%            end
-%%        end
-%%        
-%%        if WHILE_LOOP_FLAG(i) == true
-%%            ADD_TPoints = [ADD_TPoints, temp_ADD_TPoints]
-%%            ADD_PPoints = [ADD_PPoints, temp_ADD_PPoints]
-%%        end
-%%    end
-%%    
-%%    % -------------------------------------------------------------
-%%    % NOTE the absolute value of the amplitude is taken!!!!!!!
-%%    % refer to patient HA002019, Wave 11 for an example of why
-%%
-%%    % sometime amplitude of given equation solves for negative ( with a
-%%    % significant phase shift, which makes a good fit (r^2 > 0.99).
-%%    % ---------------------------------------------------------------
-%%end
-%%
-%%% if iso points have been added, re-compose the totIsoPnts variables
-%%if any(WHILE_LOOP_FLAG)
-%%
-%%    % update handles global variable
-%%    % extract isovolmic points (times). These are structures
-%%    handles.InVar(1).ivt = isovoltime;
-%%
-%%    % extract isovolmic points (pressures). These are structures
-%%    handles.InVar(1).iv = isovol;
-%%
-%%    % recompose totIsoTimePoints and totIsoPresPoints and 
-%%    totIsoTimePoints = [totIsoTimePoints, ADD_TPoints]
-%%    totIsoPresPoints = [totIsoPresPoints, ADD_PPoints]
-%%    
-%%    % update global structure
-%%    handles.InVar(1).isoPts = totIsoTimePoints;
-%%    handles.InVar(2).isoPts = totIsoPresPoints;
-%%end
+[RetVal] = isovol_fit ( isovol, isovoltime, time, Pres, ICS );
 
 % Update isovolumic points and global plotting vectors after return
 % from isovol_fit.
 
-handles.InVar(1).ivt = RetVal(1).ivt;
-handles.InVar(1).iv  = RetVal(1).iv;
-handles.InVar(1).isoPts = RetVal(1).isoPts;
-handles.InVar(2).isoPts = RetVal(2).isoPts;
+handles.InVar.ivTime_D = RetVal.ivTime_D;
+handles.InVar.ivPres_D  = RetVal.ivPres_D;
+handles.InVar.ivPlotTime = RetVal.ivPlotTime;
+handles.InVar.ivPlotPres = RetVal.ivPlotPres;
 
-%%% print to command line the waves that were not fit correctly. This is used
-%%% as a debugger to check that the "bad" waves, the ones that don't have a
-%%% good fit, are not utilized in the VVCR calculation.
-%%indX = find(waveFit==1); % find indices of the bad waves
-%%if ~isempty(indX)
-%%    disp('The following waves did NOT have a good fit (will not be included)');
-%%    disp(['Wave(s): ', num2str(indX')]);
-%%else
-%%    disp('All waves seemed to fit well!');
-%%end
+c_tot2 = RetVal.fit.RCoef;
+P_max2 = RetVal.fit.PIsoMax;
 
-c_tot2 = RetVal(2).Cs;
-P_max2 = RetVal(2).Misc;
-
-[PmaxT] = gui_sinu_plot (time, Pres, EDP, isovoltime, P_max2, ...
-              c_tot2, totIsoTimePoints, totIsoPresPoints, handles)
+[handles] = gui_sinu_plot (time, Pres, EDP, isovoltime, P_max2, c_tot2, ...
+     totIsoTimePoints, totIsoPresPoints, hObject, eventdata, handles); 
 
 % store the wavefit, so output tracks which wave forms did not have a good
 % fit, the pmax values, and the regression constants. Note the latter two have
 % been obtained from the RetVal structure above already.
-handles.OutVar(1).output = RetVal(2).iv;
+handles.OutVar(1).output = RetVal.fit.BadCyc;
 handles.OutVar(2).output = P_max2;
 handles.OutVar(3).output = c_tot2;
 
@@ -687,7 +466,7 @@ uiresume(handles.figure1);
 end
 
 % --- Executes on button press in Undo.
-function Undo_Callback(hObject, ~, handles)
+function Undo_Callback(hObject, eventdata, handles)
 % hObject    handle to Undo (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -698,17 +477,17 @@ drawnow;
 
 % if the handles.Old variables have been created (user has clicked on the
 % plot and removed pressure waveform(s).
-if ~isempty(handles.OldIsoT)
+if ~isempty(handles.UNDOivPlotTime)
     % restore the old isovolumic points 
-    handles.InVar(1).isoPts = handles.OldIsoT;
-    handles.InVar(2).isoPts = handles.OldIsoP;
-    handles.InVar(1).ivt = handles.OldIsoVolT;
-    handles.InVar(1).EDPs = handles.OldEDPT;
-    handles.InVar(2).EDPs = handles.OldEDPNT;
-    handles.InVar(1).iv = handles.OldIsoVol;
-    handles.InVar(1).Misc = handles.OldEDP;
-    handles.InVar(1).Crit = handles.OldPksT;
-    handles.InVar(2).Crit = handles.OldMinIdx;
+    handles.InVar.ivPlotTime = handles.UNDOivPlotTime;
+    handles.InVar.ivPlotPres = handles.UNDOivPlotPres;
+    handles.InVar.ivTime_D = handles.UNDOivTime_D;
+    handles.InVar.Iso1StIdx_D = handles.UNDOIso1StIdx_D;
+    handles.InVar.Iso2StIdx_D = handles.UNDOIso2StIdx_D;
+    handles.InVar.ivPres_D = handles.UNDOivPres_D;
+    handles.InVar.Iso1StVal = handles.UNDOIso1StVal;
+    handles.InVar.dPmaxIdx = handles.UNDOdPmaxIdx;
+    handles.InVar.dPminIdx = handles.UNDOdPminIdx;
     
     % calculate sinusoids based on current ICs!
     Mea = str2double(get(handles.Mean_txt,'String'));
@@ -718,97 +497,33 @@ if ~isempty(handles.OldIsoT)
 
     % obtain variables from InVar Struct for a clear workflow
     % this pulls data out of PeakStruct as passed to GUI_SINU_FIT
-    time = handles.InVar(1).Data;
-    Pres = handles.InVar(2).Data;
-    isovoltime = handles.InVar(1).ivt;
-    isovol = handles.InVar(1).iv;
+    time = handles.InVar.Time_D;
+    Pres = handles.InVar.Pres_D;
+    isovoltime = handles.InVar.ivTime_D;
+    isovol = handles.InVar.ivPres_D;
     % iso volumic points in array (for plotting)
-    totIsoTimePoints = handles.InVar(1).isoPts;
-    totIsoPresPoints = handles.InVar(2).isoPts;
+    totIsoTimePoints = handles.InVar.ivPlotTime;
+    totIsoPresPoints = handles.InVar.ivPlotPres;
     % EDP - end diastolic pressure
-    EDP = handles.InVar(1).Misc;
+    EDP = handles.InVar.Iso1StVal;
 
     % pre - allocate 
-    waveFit = zeros(length(EDP),1);
-    PmaxT = zeros(length(EDP),1);
-    P_max2 = zeros(length(EDP),1);
-    r_square2 = zeros(length(EDP),1);
-    c_tot2 = zeros(length(EDP),4);
+    ICS = [Mea Amp Fre Pha];
+    [RetVal] = isovol_fit ( isovol, isovoltime, time, Pres, ICS );
 
-    % calculate regression per pressure wave
-    for i = 1:length(EDP)
-
-        WaveTs = [time(isovoltime(i).PosIso)'; time(isovoltime(i).NegIso)'];
-        WavePs = [isovol(i).PosIso; isovol(i).NegIso];
-
-        % from Naeiji et al, single beat method of VVC
-        sin_fun2=@(P)(P(1)+P(2)*sin(P(3)*WaveTs+P(4)))-WavePs; 
-
-        % ICs
-        c2=[Mea, Amp, Fre, Pha];
-
-        [c,resnorm,~]=lsqnonlin(sin_fun2,c2); %least squares fitting
-
-        Psine_RV2=(c(1)+c(2)*sin(c(3)*WaveTs+c(4)));
-
-        % r^2 value
-        r_square2(i)=1-resnorm/norm(Psine_RV2-mean(Psine_RV2))^2;
-
-        % if the fit of the wave was bad, mark that wave
-        if r_square2(i) <0.90
-           waveFit(i) = 1; 
-        end
-
-        c_tot2(i,:)=c; %getting all the c values in a matrix
-
-        P_max2(i)=c(1)+abs(c(2)); %first equation pmax, A+B
-        %or the other definition of pmax
-        
-        % AR 6/5/17
-        % adding points succesively to beginning of systole to make better fit
-        % of sick patients with wide curves
-        % PresMax = max(double(Pres(pksT(i):MinIdx(i))));
-        % if r_square > 0.90 && P_max2 < PresMax
-            % add point to isovoltime(i).PosIso and corresponding isovol(i).PosIso
-        % end
-    
-        % -------------------------------------------------------------
-        % NOTE the absolute value of the amplitude is taken!!!!!!!
-        % refer to patient HA002019, Wave 11 for an example of why
-
-        % sometime amplitude of given equation solves for negative ( with a
-        % significant phase shift, which makes a good fit (r^2 > 0.99).
-        % ---------------------------------------------------------------
-
-    %     % store the time points and pressure points in one array for easy
-    %     % plotting 
-    %     totIsoTimePoints = [totIsoTimePoints; WaveTs];
-    %     totIsoPresPoints = [totIsoPresPoints; WavePs];
-    end
-
-    % print to command line the waves that were not fit correctly. This is used
-    % as a debugger to check that the "bad" waves, the ones that don't have a
-    % good fit, are not utilized in the VVCR calculation.
-    indX = find(waveFit==1); % find indices of the bad waves
-    if ~isempty(indX)
-        disp('The following waves did NOT have a good fit (will not be included)');
-        disp(['Wave(s): ', num2str(indX')]);
-    else
-        disp('All waves seemed to fit well!');
-    end
-
-    [PmaxT] = gui_sinu_plot (time, Pres, EDP, isovoltime, P_max2, ...
-                  c_tot2, totIsoTimePoints, totIsoPresPoints, handles)
+    [handles] = gui_sinu_plot (time, Pres, EDP, isovoltime, ...
+            RetVal.fit.PIsoMax, RetVal.fit.RCoef, RetVal.ivPlotTime, ...
+            RetVal.ivPlotPres, hObject, eventdata, handles);
 
     % store the wavefit, so output tracks which wave forms did not have a good
     % fit
-    handles.OutVar(1).output = waveFit;
+    handles.OutVar(1).output = RetVal.fit.BadCyc;   % waveFit
 
     % Store the pmax values
-    handles.OutVar(2).output = P_max2;
+    handles.OutVar(2).output = RetVal.fit.PIsoMax; % P_max2
 
     % store regression constants
-    handles.OutVar(3).output = c_tot2;
+    handles.OutVar(3).output = RetVal.fit.RCoef;   % c_tot2
 end
 
 % Update handles structure
@@ -816,4 +531,61 @@ guidata(hObject, handles);
 
 % Set cursor back to normal
 set(handles.figure1, 'pointer', 'arrow');
+end
+
+% --- Function that updates the main plot
+function [handles] = gui_sinu_plot (time, Pres, EDP, isovoltime, P_max2, ...
+                         c_tot2, totIsoTimePoints, totIsoPresPoints, ...
+                         hObject, eventdata, handles);
+
+axes(handles.pressure_axes);
+
+h = plot(time,Pres,'b', ...
+         totIsoTimePoints,totIsoPresPoints,'ro');
+set(h, 'HitTest', 'off');
+
+set(handles.pressure_axes,'ButtonDownFcn', ...
+    @(hObject, eventdata)GraphCallBack(hObject, eventdata, handles));
+set(handles.pressure_axes,'fontsize',12);
+
+title('Sinusoidal Fitting','FontSize',20);
+xlabel('Time [s]','FontSize',18);
+ylabel('Pressue [mmHg]','FontSize',18);
+
+hold on;
+
+PmaxT = zeros(length(EDP),1);
+
+% Attain the sinusoid fit for all points (so Pmax can be visualized
+for i = 1:length(EDP)
+
+    % obtain the range of time of each peak
+    interval =  ...
+      time(isovoltime(i).PosIso(1,1)):0.002:time(isovoltime(i).NegIso(end,1));
+
+    % plug into Naeiji equation that was just solved for
+    FitSinePres = c_tot2(i,1) + c_tot2(i,2)*sin(c_tot2(i,3)*interval + ...
+      c_tot2(i,4));
+
+    % find time point corresponding to Pmax
+    [~, Idx] = min(abs(FitSinePres-P_max2(i)));
+
+    PmaxT(i) = interval(Idx);
+
+    plot(interval, FitSinePres, 'k--', PmaxT(i), P_max2(i), 'go');
+    hold on;
+end
+
+% check the range of pressure values of Pmax. if the max p_max value is
+% over 450, rescale y axis to (0, 300), so individual waveforms can be seen
+if max(P_max2) > 450
+    ylim([0, 300]);
+end
+
+legend('Pressure', 'Isovolumic Points',  'Sinusoid Fit','Pmax', ...
+    'Location','southoutside', 'Orientation', 'horizontal');
+
+box on;
+grid on;
+hold off;
 end

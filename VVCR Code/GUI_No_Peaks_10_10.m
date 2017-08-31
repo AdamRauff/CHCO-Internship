@@ -59,17 +59,17 @@ handles.output = hObject;
 handles.InVar = cell2mat(varargin);
 
 % Extract variables from structure for a more clear workflow
-time = handles.InVar(1).Data;
-Pres = handles.InVar(2).Data;
-dPdt = handles.InVar(3).Data;
+time = handles.InVar.Time_D;
+Pres = handles.InVar.Pres_D;
+dPdt = handles.InVar.dPdt_D;
 
-MinIdx = handles.InVar(1).Min;
-Minima = handles.InVar(2).Min;
+MinIdx = handles.InVar.dPminIdx;
+Minima = handles.InVar.dPminVal;
 % update number of Minima
 set(handles.Min_num, 'String',num2str(length(Minima)));
 
-pksT = handles.InVar(1).Max;
-pks = handles.InVar(2).Max;
+pksT = handles.InVar.dPmaxIdx;
+pks = handles.InVar.dPmaxVal;
 % update number of maxima
 set(handles.Max_num, 'String', num2str(length(pks)));
 
@@ -77,19 +77,19 @@ set(handles.Max_num, 'String', num2str(length(pks)));
 if length(pks) == length(Minima)
     % display green check
     axes(handles.status_axes);
-    imshow(handles.InVar(1).IM); axis image; axis off
+    imshow(handles.InVar.Green_Check); axis image; axis off
 else
     % display red x
     axes(handles.status_axes);
-    imshow(handles.InVar(2).IM); axis image; axis off
+    imshow(handles.InVar.Red_X); axis image; axis off
 end
 
 % set the total number of complete waveforms (editable text)
 set(handles.NumWaves, 'String',num2str(length(pks)));
 
 % intialize these variables - used for undo button
-handles.OldMinIdx = [];
-handles.OldMinima = [];
+handles.UNDOdPminIdx = [];
+handles.UNDOdPminVal = [];
 handles.OldpksT = [];
 handles.Oldpks = [];
 
@@ -130,25 +130,26 @@ drawnow;
 
 % store current mins and maxs as old min,maxs. This is done so the undo
 % button can function
-handles.OldMinIdx = handles.InVar(1).Min;
-handles.OldMinima = handles.InVar(2).Min;
+handles.UNDOdPminIdx = handles.InVar.dPminIdx;
+handles.UNDOdPminVal = handles.InVar.dPminVal;
 
-handles.OldpksT = handles.InVar(1).Max;
-handles.Oldpks = handles.InVar(2).Max;
+handles.OldpksT = handles.InVar.dPmaxIdx;
+handles.Oldpks = handles.InVar.dPmaxVal;
 
 % get the current point
 cp(1,:) = [eventdata.IntersectionPoint(1), eventdata.IntersectionPoint(2)];
-% disp(['Time: ',num2str(cp(1))]);
-% disp(['Pressure: ',num2str(cp(2))]);
+% disp('GUI_No_Peaks:');
+% disp(['    Time: ',num2str(cp(1))]);
+% disp(['    Pressure: ',num2str(cp(2))]);
 
 % Extract variables from structure for a more clear workflow
-time = handles.InVar(1).Data;
-Pres = handles.InVar(2).Data;
-dPdt = handles.InVar(3).Data;
-MinIdx = handles.InVar(1).Min;
-Minima = handles.InVar(2).Min;
-pksT = handles.InVar(1).Max;
-pks = handles.InVar(2).Max;
+time = handles.InVar.Time_D;
+Pres = handles.InVar.Pres_D;
+dPdt = handles.InVar.dPdt_D;
+MinIdx = handles.InVar.dPminIdx;
+Minima = handles.InVar.dPminVal;
+pksT = handles.InVar.dPmaxIdx;
+pks = handles.InVar.dPmaxVal;
 
 % find indices of critical points within +- 0.5 seconds 
 TPksInds = find(time(pksT)>cp(1)-0.5 & time(pksT)<cp(1)+0.5);
@@ -168,8 +169,8 @@ if isempty(TMnsdst)
     pks(pksInd) = [];
     
     % update handles (global variable)
-    handles.InVar(1).Max = pksT;
-    handles.InVar(2).Max = pks;
+    handles.InVar.dPmaxIdx = pksT;
+    handles.InVar.dPmaxVal = pks;
     
     % update number of maxima
     set(handles.Max_num, 'String', num2str(length(pks)));
@@ -184,8 +185,8 @@ elseif min(TPksdst) < min(TMnsdst)
     pks(pksInd) = [];
     
     % update handles (global variable)
-    handles.InVar(1).Max = pksT;
-    handles.InVar(2).Max = pks;
+    handles.InVar.dPmaxIdx = pksT;
+    handles.InVar.dPmaxVal = pks;
     
     % update number of maxima
     set(handles.Max_num, 'String', num2str(length(pks)));
@@ -200,8 +201,8 @@ elseif isempty(TPksdst)
     Minima(MnsInd) = [];
     
     % update handles (global variable)
-    handles.InVar(1).Min = MinIdx;
-    handles.InVar(2).Min = Minima;
+    handles.InVar.dPminIdx = MinIdx;
+    handles.InVar.dPminVal = Minima;
     
     % update number of minima
     set(handles.Min_num, 'String',num2str(length(Minima)));
@@ -216,8 +217,8 @@ elseif min(TPksdst) > min(TMnsdst)
     Minima(MnsInd) = [];
     
     % update handles (global variable)
-    handles.InVar(1).Min = MinIdx;
-    handles.InVar(2).Min = Minima;
+    handles.InVar.dPminIdx = MinIdx;
+    handles.InVar.dPminVal = Minima;
     
     % update number of minima
     set(handles.Min_num, 'String',num2str(length(Minima)));
@@ -227,11 +228,11 @@ end
 if length(pks) == length(Minima)
     % display green check
     axes(handles.status_axes);
-    imshow(handles.InVar(1).IM); axis image; axis off
+    imshow(handles.InVar.Green_Check); axis image; axis off
 else
     % display red x
     axes(handles.status_axes);
-    imshow(handles.InVar(2).IM); axis image; axis off
+    imshow(handles.InVar.Red_X); axis image; axis off
 end
 
 % update global handles
@@ -287,26 +288,26 @@ function Undo_Callback(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-if ~isempty(handles.OldMinIdx) 
+if ~isempty(handles.UNDOdPminIdx) 
 
     %Make the cusor a spinning wheel so user is aware program is busy
     set(handles.figure1, 'pointer', 'watch');
     drawnow;
 
     % retrieve the old critical points
-    handles.InVar(1).Min = handles.OldMinIdx;
-    handles.InVar(2).Min = handles.OldMinima;
-    handles.InVar(1).Max = handles.OldpksT;
-    handles.InVar(2).Max = handles.Oldpks;
+    handles.InVar.dPminIdx = handles.UNDOdPminIdx;
+    handles.InVar.dPminVal = handles.UNDOdPminVal;
+    handles.InVar.dPmaxIdx = handles.OldpksT;
+    handles.InVar.dPmaxVal = handles.Oldpks;
 
     % Extract variables from structure for a more clear workflow
-    time = handles.InVar(1).Data;
-    Pres = handles.InVar(2).Data;
-    dPdt = handles.InVar(3).Data;
-    MinIdx = handles.InVar(1).Min;
-    Minima = handles.InVar(2).Min;
-    pksT = handles.InVar(1).Max;
-    pks = handles.InVar(2).Max;
+    time = handles.InVar.Time_D;
+    Pres = handles.InVar.Pres_D;
+    dPdt = handles.InVar.dPdt_D;
+    MinIdx = handles.InVar.dPminIdx;
+    Minima = handles.InVar.dPminVal;
+    pksT = handles.InVar.dPmaxIdx;
+    pks = handles.InVar.dPmaxVal;
 
     % update number of minima
     set(handles.Min_num, 'String',num2str(length(Minima)));
@@ -318,11 +319,11 @@ if ~isempty(handles.OldMinIdx)
     if length(pks) == length(Minima)
         % display green check
         axes(handles.status_axes);
-        imshow(handles.InVar(1).IM); axis image; axis off
+        imshow(handles.InVar.Green_Check); axis image; axis off
     else
         % display red x
         axes(handles.status_axes);
-        imshow(handles.InVar(2).IM); axis image; axis off
+        imshow(handles.InVar.Red_X); axis image; axis off
     end
 
     % update global handles
@@ -368,13 +369,13 @@ function Next_Callback(hObject, ~, handles) %#ok<DEFNU>
 % grab the total number of complete waveforms from the editable text
 numWaves = uint8(str2double(get(handles.NumWaves, 'String')));
 
-handles.InVar(3).Max = numWaves;
+handles.InVar.TotNumWaves = numWaves;
 
 % update global handles
 guidata(hObject,handles);
     
 % check the status: check if # Minima == # Maxima
-if length(handles.InVar(1).Min) == length(handles.InVar(1).Max)
+if length(handles.InVar.dPminIdx) == length(handles.InVar.dPmaxIdx)
     
     % call on uiresume so output function executes
     uiresume(handles.figure1);
@@ -404,7 +405,7 @@ function Exit_Callback(hObject, ~, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % set 1 output to false
-handles.InVar(1).Max = false;
+handles.InVar.dPmaxIdx = false;
 
 % update handles globally
 guidata(hObject, handles)
@@ -419,7 +420,7 @@ function Discard_Callback(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-handles.InVar(3).Max = true;
+handles.InVar.TotNumWaves = true;
 
 % update handles globally
 guidata(hObject, handles)
