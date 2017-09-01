@@ -51,8 +51,8 @@ Pres_filt = cumtrapz(dPdt_filt)*time_step+Pres(1);
 dPdt_orig = dPdt;
 Pres_orig = Pres;
 
-%dPdt = dPdt_filt;
-%Pres = Pres_filt;
+dPdt = dPdt_filt;
+Pres = Pres_filt;
 
 % construct time array (units of 4 milliseconds from catheter machine)
 % **************** -------------------------
@@ -265,20 +265,22 @@ for i = 1:length(dPmaxIdx)
     Iso2StIdx(i) = tempNeg_Iso1StVals(tempInds); % keep in mind this is an indicie of the time vector
     Iso2StVal(i) = Pres(tempNeg_Iso1StVals(tempInds)); % pressure in mmHg
 
-    % --------------------------------------------------------------------------
-    % if the Iso2StIdx < dPminIdx(i) or Iso2StIdx is only 4 point ahead of the min, then we got a problem. no
-    % isovolPresumic points on the negative side of the curve. 
-    if Iso2StIdx(i) <= dPminIdx(i) || (Iso2StIdx(i) > dPminIdx(i) && abs(Iso2StIdx(i)-dPminIdx(i)) <= 3)
-        disp(['VVCR_MULTIH: Curve # ',num2str(i), ' has smaller Iso2StIdx then the min!!!']);
+    % if Iso2StIdx < dPminIdx, or Iso2StIdx is only about 4 points ahead of
+    % the min, then we got a problem: there are basically no isovolumic points
+    % on the negative side of the curve. We must reject these examples...
+    if Iso2StIdx(i) <= dPminIdx(i) || ...
+        (Iso2StIdx(i) > dPminIdx(i) && abs(Iso2StIdx(i)-dPminIdx(i)) <= 3)
+
+        disp(['VVCR_MULTIH: for curve # ',num2str(i), ', end diastole leads (dP/dt)min, skipping.']);
         % get rid of curve if it is not already marked
         if isempty(find(bad_curve==i,1))
             bad_curve = [bad_curve, i];
         end
+
         % ask Hunter about this scenario
         % see patient HA000251.&05 (2nd waveform) for example
-    end
-    % ----------------------------------------------------------------------------
 
+    end
 end
 
 %% (6) remove bad curves from set
@@ -323,10 +325,10 @@ PresDoub = interpft(Pres,length(Pres)*2);
 timeDoub = 0.002:0.002:time(end);
 
 %% Pes = 30 ms prior to dp/dt min %%%%%%%%%%%%%
-dtmin_30=time(dPminIdx)-0.03; %30 ms prior to dp/dt min
+dtmin_30=time(dPminIdx)-0.03;
 
-% Using the interpolated data - an exact point can be reached
-P_esTimes = timeDoub(uint16(dtmin_30/0.002)); % convert to integer (can't use double as index). Obtained from interpolated data
+% Convert time to integer (can't use double as index)
+P_esTimes = timeDoub(uint16(dtmin_30/0.002)); 
 P_es = PresDoub(uint16(dtmin_30/0.002));
 
 %% Obtaining Isovolumetric points
