@@ -379,33 +379,35 @@ FitStr.dPminIdx = dPminIdx;
 %% (9) Visualize / check the fit
 % call on GUI. Notice the structure we just made is passed to the GUI, and
 % the GUI passes back a refined structure
-SinuStr = GUI_SINU_FIT_08_29_17 (FitStr);
+RetStr = GUI_SINU_FIT_08_29_17 (FitStr);
 
 clear FitStr
 
 %% (10) cleanup, arrange data to return to runAll
 % if the exit button has been pressed
-if size(SinuStr(1).output,1) == 1 && SinuStr(2).output == false
+if ~isstruct(RetStr)
+    if RetStr == false
     
-    % set all output variables to false, return to runAll
-    [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
-        STD_Pes, STD_PMX, TotNumWaves] = deal (false);
-    return
+        % set all output variables to false, return to runAll
+        [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
+            STD_Pes, STD_PMX, TotNumWaves] = deal (false);
+        return
 
-% if the discard patient button has been pressed
-elseif size(SinuStr(1).output,1) == 1 && SinuStr(2).output == true
+    % if the discard patient button has been pressed
+    elseif RetStr == true
     
-     % set all output variables to true, return to runAll
-    [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
-        STD_Pes, STD_PMX, TotNumWaves] = deal (true);
-    return
+         % set all output variables to true, return to runAll
+        [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
+            STD_Pes, STD_PMX, TotNumWaves] = deal (true);
+        return
 
+    end
 % otherwise
 else
     % extract Pmax and the list of well fitted curves from the structure
     % that is returned from GUI
-    BadCyc  = SinuStr(1).output;
-    PIsoMax = SinuStr(2).output;
+    BadCyc  = RetStr.BadCyc;
+    PIsoMax = RetStr.PIsoMax;
     
     % calculate the number of peaks that were evaluated
     numPeaks = 0;

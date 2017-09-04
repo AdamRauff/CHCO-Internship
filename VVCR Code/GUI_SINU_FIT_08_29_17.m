@@ -100,10 +100,9 @@ set(handles.Phase_txt, 'String',num2str(IC(4)));
 [handles] = gui_sinu_plot (time, Pres, Iso1StVal, isovolTime, myfit, ...
     totIsoTimePoints, totIsoPresPoints, hObject, eventdata, handles); 
 
-% store first fit output into output structure
-handles.OutVar(1).output = myfit.BadCyc;  % waveFit
-handles.OutVar(2).output = myfit.PIsoMax; % P_max2
-handles.OutVar(3).output = myfit.RCoef;   % c_tot2
+% store first fit output into output structure; the output structure is
+% essentially the entire fit struct created by isovol_fit.
+handles.OutVar = myfit;
 
 % Update handles structure
 guidata(hObject, handles);
@@ -207,9 +206,7 @@ if ~isempty(WaveNumPosRm) && ~isempty(WaveNumNegRm)
         handles.InVar.ivPlotPres = FitStr.ivPlotPres;
 
         % store fit output into output structure
-        handles.OutVar(1).output = FitStr.fit.BadCyc;  % waveFit
-        handles.OutVar(2).output = FitStr.fit.PIsoMax; % P_max2
-        handles.OutVar(3).output = FitStr.fit.RCoef;   % c_tot2
+        handles.OutVar = FitStr.fit;
 
         % Plot the results
         [handles] = gui_sinu_plot (time, Pres, Iso1StVal, isovolTime, ...
@@ -403,9 +400,7 @@ handles.InVar.ivPlotPres = FitStr.ivPlotPres;
      totIsoTimePoints, totIsoPresPoints, hObject, eventdata, handles); 
 
 % store fit output into output structure
-handles.OutVar(1).output = FitStr.fit.BadCyc;  % waveFit
-handles.OutVar(2).output = FitStr.fit.PIsoMax; % P_max2
-handles.OutVar(3).output = FitStr.fit.RCoef;   % c_tot2
+handles.OutVar = FitStr.fit;
 
 % Update handles structure
 guidata(hObject, handles);
@@ -423,9 +418,8 @@ function Exit_Callback(hObject, ~, handles)
 % keep in mind when the exit button is pressed, the current
 % patient, i, will not be evaluated
                 
-% set outputs to false
-handles.OutVar(1).output = false;
-handles.OutVar(2).output = false;
+% set output to false
+handles.OutVar = false;
 
 % update handles globally
 guidata(hObject, handles);
@@ -441,8 +435,7 @@ function Discard_Callback(hObject, ~, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % set outputs to true, indicating Discard button
-handles.OutVar(1).output = true;
-handles.OutVar(2).output = true;
+handles.OutVar = true;
 
 % update handles globally
 guidata(hObject, handles)
@@ -502,9 +495,7 @@ if ~isempty(handles.UNDOivPlotTime)
             eventdata, handles);
 
     % store fit output into output structure
-    handles.OutVar(1).output = FitStr.fit.BadCyc;  % waveFit
-    handles.OutVar(2).output = FitStr.fit.PIsoMax; % P_max2
-    handles.OutVar(3).output = FitStr.fit.RCoef;   % c_tot2
+    handles.OutVar = FitStr.fit;
 end
 
 % Update handles structure
