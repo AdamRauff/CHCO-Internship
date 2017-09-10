@@ -1,19 +1,21 @@
 function varargout = GUI_SINU_FIT_08_29_17 (varargin)
 % GUI_SINU_FIT_08_29_17 MATLAB code for GUI_SINU_FIT_08_29_17.fig
-%      GUI_SINU_FIT_08_29_17, by itself, creates a new GUI_SINU_FIT_08_29_17 or raises the existing
-%      singleton*.
+%      GUI_SINU_FIT_08_29_17, by itself, creates a new GUI_SINU_FIT_08_29_17 
+%      or raises the existing singleton*.
 %
-%      H = GUI_SINU_FIT_08_29_17 returns the handle to a new GUI_SINU_FIT_08_29_17 or the handle to
-%      the existing singleton*.
+%      H = GUI_SINU_FIT_08_29_17 returns the handle to a new GUI_SINU_FIT_-
+%      08_29_17 or the handle to the existing singleton*.
 %
-%      GUI_SINU_FIT_08_29_17('CALLBACK',hObject,eventData,handles,...) calls the local
-%      function named CALLBACK in GUI_SINU_FIT_08_29_17.M with the given input arguments.
+%      GUI_SINU_FIT_08_29_17('CALLBACK',hObject,eventData,handles,...) calls
+%      the local function named CALLBACK in GUI_SINU_FIT_08_29_17.M with the 
+%      given input arguments.
 %
-%      GUI_SINU_FIT_08_29_17('Property','Value',...) creates a new GUI_SINU_FIT_08_29_17 or raises the
-%      existing singleton*.  Starting from the left, property value pairs are
-%      applied to the GUI before GUI_SINU_FIT_08_29_17_OpeningFcn gets called.  An
-%      unrecognized property name or invalid value makes property application
-%      stop.  All inputs are passed to GUI_SINU_FIT_08_29_17_OpeningFcn via varargin.
+%      GUI_SINU_FIT_08_29_17('Property','Value',...) creates a new GUI_SINU_-
+%      FIT_08_29_17 or raises the existing singleton*.  Starting from the left,
+%      property value pairs are applied to the GUI before GUI_SINU_FIT_08_29_-
+%      17_OpeningFcn gets called.  An unrecognized property name or invalid 
+%      value makes property application stop.  All inputs are passed to GUI_-
+%      SINU_FIT_08_29_17_OpeningFcn via varargin.
 %
 %      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
 %      instance to run (singleton)".
@@ -59,52 +61,31 @@ handles.output = hObject;
 % passed as PeakStruct from VVCR_* script
 handles.InVar = cell2mat(varargin);
 
-% Extract variables from structure for a more clear workflow
-% time and pressure vectors
-time = handles.InVar.Time_D; % recall this is the 2x sampled time vector
-Pres = handles.InVar.Pres_D; % recall this is the 2x sampled pressure vector
+% Extract Data, Indices/Values, and Fit Segments from passed structures.
+Data = handles.InVar.Data;
+Plot = handles.InVar.Plot;
+ivVal = handles.InVar.ivVal;
+ivSeg = handles.InVar.ivSeg;
+myfit = handles.InVar.Fit;  
 
-% extract isovolumic points (times). These are structures
-isovolTime = handles.InVar.ivTime_D;
+% Initialize UNDO structure.
+handles.UNDO.Fit = [];
 
-% Extract wave fits
-waveFit = handles.InVar.fit.BadCyc;
-
-% iso volumic points in array (for plotting)
-totIsoTimePoints = handles.InVar.ivPlotTime;
-totIsoPresPoints = handles.InVar.ivPlotPres;
-
-% intialize these variables for the undo button
-handles.UNDOivPlotTime = [];
-handles.UNDOivPlotPres = [];
-
-% EDP - end diastolic pressure
-Iso1StVal = handles.InVar.Iso1StVal;
-
-% regression constants
-myfit = handles.InVar.fit;  
-
-% initial conditions
-IC = handles.InVar.fit.InitIC;
-
-% intialize old variable - used for the undo button
-handles.UNDOivPlotTime = [];
+% store first fit output into output structure.
+handles.OutVar = myfit;
 
 % set editable text boxes with ICs
+IC = myfit.InitIC;
 set(handles.Mean_txt, 'String',num2str(IC(1)));
 set(handles.Amp_txt, 'String',num2str(IC(2)));
 set(handles.Freq_txt, 'String',num2str(IC(3)));
 set(handles.Phase_txt, 'String',num2str(IC(4)));
 
 % plot pressure, sinusoid fits
-[handles] = gui_sinu_plot (time, Pres, Iso1StVal, isovolTime, myfit, ...
-    totIsoTimePoints, totIsoPresPoints, hObject, eventdata, handles); 
+[handles] = gui_sinu_plot (Data, ivVal, ivSeg, myfit, Plot, ...
+    hObject, eventdata, handles); 
 
-% store first fit output into output structure; the output structure is
-% essentially the entire fit struct created by isovol_fit.
-handles.OutVar = myfit;
-
-% Update handles structure
+% Update handles.
 guidata(hObject, handles);
 
 % UIWAIT makes GUI_SINU_FIT_08_29_17 wait for user response (see UIRESUME)
@@ -118,46 +99,32 @@ function GraphCallBack(hObject, eventdata, handles)
 set(handles.figure1, 'pointer', 'watch');
 drawnow;
 
-% store the current isovolumic points as OldIsoT and OldIsoP
-% intialize these variables for the undo button
-handles.UNDOivPlotTime = handles.InVar.ivPlotTime;
-handles.UNDOivPlotPres = handles.InVar.ivPlotPres;
-handles.UNDOivTime_D = handles.InVar.ivTime_D;
-handles.UNDOIso1StIdx_D = handles.InVar.Iso1StIdx_D;
-handles.UNDOIso2StIdx_D = handles.InVar.Iso2StIdx_D;
-handles.UNDOivPres_D = handles.InVar.ivPres_D;
-handles.UNDOIso1StVal = handles.InVar.Iso1StVal;
-handles.UNDOdPmaxIdx = handles.InVar.dPmaxIdx;
-handles.UNDOdPminIdx = handles.InVar.dPminIdx;
+% obtain variables from InVar Struct for a clear workflow
+Data = handles.InVar.Data;
+Plot = handles.InVar.Plot;
+ivIdx = handles.InVar.ivIdx;
+ivVal = handles.InVar.ivVal;
+ivSeg = handles.InVar.ivSeg;
 
+% store the current structures in UNDO structure for the undo button.
+handles.UNDO.Fit  = handles.OutVar;
+handles.UNDO.Plot = Plot;
+handles.UNDO.ivIdx = ivIdx;
+handles.UNDO.ivVal = ivVal;
+handles.UNDO.ivSeg = ivSeg;
+       
 % get the current point
 cp(1,:) = [eventdata.IntersectionPoint(1), eventdata.IntersectionPoint(2)];
 disp('GUI_SINU_FIT>GraphCallBack:');
-disp(['    Time: ',num2str(cp(1))]);
+disp(['    Time:     ',num2str(cp(1))]);
 disp(['    Pressure: ',num2str(cp(2))]);
-
-% obtain variables from InVar Struct for a clear workflow
-% time and pressure vectors
-time = handles.InVar.Time_D;
-Pres = handles.InVar.Pres_D; % recall this is the 2x sampled pressure vector
-Oldtime = handles.InVar.Time; % old time vector. 1/2 the points
-
-Iso1StVal = handles.InVar.Iso1StVal;
-
-% EDP - end diastolic pressure
-Iso1StIdx = handles.InVar.Iso1StIdx_D;
-Iso2StIdx = handles.InVar.Iso2StIdx_D;
-
-% pass the time indexes of minima and maxima
-dPmaxIdx = handles.InVar.dPmaxIdx;
-dPminIdx = handles.InVar.dPminIdx;
 
 % find which waveform the interval was within. Note the click must be
 % between EDP and Negative EDP. the following two lines find (1) all EDP
 % times that are smaller than the time point of click (2) all negative EDP
 % times that are greater than the time point of click.
-WaveNumPosRm = find(time(Iso1StIdx)<cp(1));
-WaveNumNegRm = find(time(Iso2StIdx)>cp(1));
+WaveNumPosRm = find(Data.Time_D(ivIdx.Ps1_D)<cp(1));
+WaveNumNegRm = find(Data.Time_D(ivIdx.Ne1_D)>cp(1));
 
 if ~isempty(WaveNumPosRm) && ~isempty(WaveNumNegRm)
     
@@ -167,26 +134,24 @@ if ~isempty(WaveNumPosRm) && ~isempty(WaveNumNegRm)
     if ~isempty(WaveRm)
         disp(['    Wave: ', num2str(WaveRm), ' is being removed']);
         
-        % erase wave from isovolTime structure. make new structure with one
-        % less row.
-        Iso1StIdx(WaveRm) = [];
-        Iso2StIdx(WaveRm) = [];
-        Iso1StVal(WaveRm) = [];
-        dPmaxIdx(WaveRm) = [];
-        dPminIdx(WaveRm) = [];
+        % erase wave from iv1Time structure. make new structure with one
+        % less row. THIS KILLS EVERYTHING IN ivIdx & ivVal, NOT JUST THE
+        % ORIGINAL FIVE. UPDATE FOR KIND METHOD LATER.
+        ivIdx.Ps1(WaveRm)   = [];
+        ivIdx.Ne1(WaveRm)   = [];
+        ivIdx.Ps1_D(WaveRm) = [];
+        ivIdx.Ne1_D(WaveRm) = [];
+        ivIdx.dPmax(WaveRm) = [];
+        ivIdx.dPmin(WaveRm) = [];
 
-        [DatStr] = data_isovol (Iso1StIdx, Iso2StIdx, Oldtime, time, Pres, ...
-                                dPmaxIdx, dPminIdx, true);
-                               
-        isovolTime = DatStr.T;
-        isovolPres = DatStr.P;
+        ivVal.Ps1(WaveRm)   = [];
+        ivVal.Ne1(WaveRm)   = [];
+        ivVal.dPmax(WaveRm) = [];
+        ivVal.dPmin(WaveRm) = [];
 
         % Store changes
-        handles.InVar.Iso1StIdx_D = Iso1StIdx;
-        handles.InVar.Iso2StIdx_D = Iso2StIdx;
-        handles.InVar.Iso1StVal = Iso1StVal;
-        handles.InVar.dPmaxIdx = dPmaxIdx;
-        handles.InVar.dPminIdx = dPminIdx;
+        handles.InVar.ivIdx = ivIdx;
+        handles.InVar.ivVal = ivVal;
 
         % obtain current ICs
         Mea = str2double(get(handles.Mean_txt,'String'));
@@ -194,36 +159,35 @@ if ~isempty(WaveNumPosRm) && ~isempty(WaveNumNegRm)
         Fre = str2double(get(handles.Freq_txt,'String'));
         Pha = str2double(get(handles.Phase_txt,'String'));
 
-        ICS = [Mea Amp Fre Pha];
-        [FitStr] = isovol_fit (isovolPres, isovolTime, time, Pres, ICS);
-        
-        % update global handles - some from FitStr, others from above. If
-        % the Vanderpool method isn't tripped, then nothing really has changed
-        % from the call, so this is a just-in-case...
-        handles.InVar.ivTime_D = FitStr.ivTime_D;
-        handles.InVar.ivPres_D = FitStr.ivPres_D;
-        handles.InVar.ivPlotTime = FitStr.ivPlotTime;
-        handles.InVar.ivPlotPres = FitStr.ivPlotPres;
+        % Recompute the segments for this new set of IV indicies
+        [ivSeg] = data_isoseg (true, Data, ivIdx);
 
-        % store fit output into output structure
-        handles.OutVar = FitStr.fit;
+        ICS = [Mea Amp Fre Pha];
+        [Fit, ivSeg, Plot] = isovol_fit (ivSeg, Data.Time_D, Data.Pres_D, ICS);
+        
+        % update global handles from isovol_returned values. If the Vanderpool
+        % method isn't tripped, then ivSeg and Plot haven't changed, so this
+        % is a just-in-case...
+        handles.OutVar = Fit;
+
+        handles.InVar.ivSeg = ivSeg;
+        handles.IvVar.Plot  = Plot;
 
         % Plot the results
-        [handles] = gui_sinu_plot (time, Pres, Iso1StVal, isovolTime, ...
-            FitStr.fit, FitStr.ivPlotTime, FitStr.ivPlotPres, hObject, ...
-            eventdata, handles); 
+        [handles] = gui_sinu_plot (Data, ivVal, ivSeg, Fit, Plot, ...
+            hObject, eventdata, handles); 
+
     end
 end
 
-% update global handles
+% update global handles & set cursor back to normal
 guidata(hObject,handles);
-
-% Set cursor back to normal
 set(handles.figure1, 'pointer', 'arrow');
+
 end
 
 % --- Outputs from this function are returned to the command line.
-function varargout = GUI_SINU_FIT_08_29_17_OutputFcn(~, ~, handles) 
+function varargout = GUI_SINU_FIT_08_29_17_OutputFcn(hObject, ~, handles) 
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -233,7 +197,8 @@ function varargout = GUI_SINU_FIT_08_29_17_OutputFcn(~, ~, handles)
 varargout{1} = handles.OutVar;
 
 % Destroy the GUI
-delete(handles.figure1);
+delete(hObject);
+
 end
 
 % --- Executes on button press in Next.
@@ -247,15 +212,23 @@ uiresume(handles.figure1);
 end
 
 % --- Executes when user attempts to close figure1.
-function figure1_CloseRequestFcn(~, ~, handles)
+function figure1_CloseRequestFcn(hObject, ~, handles)
 % hObject    handle to figure1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hint: delete(hObject) closes the figure
-delete(handles.figure1); % output function does not execute after this!
+if isequal(get(hObject, 'waitstatus'), 'waiting')
+    % The GUI is still in UIWAIT, call UIRESUME
+    uiresume(hObject);
+ 
+    % If you close the figure, we understand that as stopping the analysis.
+    handles.OutVar = false;
+    guidata(hObject, handles);
+else
+    % The GUI is no longer waiting, just close it
+    delete(hObject);
+end
 
-% maybe flip some flag to stop execution of further code in VVCR code?
 end
 
 % --- Executes during object creation, after setting all properties.
@@ -354,6 +327,7 @@ function calculate_Callback(hObject, eventdata, handles)
 %Make the cusor a spinning wheel so user is aware program is busy
 set(handles.figure1, 'pointer', 'watch');
 drawnow;
+disp('GUI_SINU_FIT>calculate_Callback:');
 
 % calculate sinusoids based on new ICs!
 %%% obtain new ICs
@@ -362,51 +336,32 @@ Amp = str2double(get(handles.Amp_txt,'String'));
 Fre = str2double(get(handles.Freq_txt,'String'));
 Pha = str2double(get(handles.Phase_txt,'String'));
 
-%%% obtain variables from InVar Struct for a clear workflow
-% time and pressure vectors
-time = handles.InVar.Time_D;
-Pres = handles.InVar.Pres_D;
-Oldtime = handles.InVar.Time;
-
-% extract isovolumic points (times). These are structures
-isovolTime = handles.InVar.ivTime_D;
-
-% extract isovolumic points (pressures). These are structures
-isovolPres = handles.InVar.ivPres_D;
-
-% iso volumic points in array (for plotting)
-totIsoTimePoints = handles.InVar.ivPlotTime;
-totIsoPresPoints = handles.InVar.ivPlotPres;
-
-% EDP - end diastolic pressure
-Iso1StVal = handles.InVar.Iso1StVal;
-
-dPmaxIdx = handles.InVar.dPmaxIdx;
-dPminIdx = handles.InVar.dPminIdx;
+% Extract Data, Indices/Values, and Fit Segments from passed structures.
+Data = handles.InVar.Data;
+Plot = handles.InVar.Plot;
+ivIdx = handles.InVar.ivIdx;
+ivVal = handles.InVar.ivVal;
+ivSeg = handles.InVar.ivSeg;
 
 ICS = [Mea Amp Fre Pha];
 
-[FitStr] = isovol_fit ( isovolPres, isovolTime, time, Pres, ICS );
+[Fit, ivSeg, Plot] = isovol_fit (ivSeg, Data.Time_D, Data.Pres_D, ICS );
 
-% Update isovolumic points and global plotting vectors after return
-% from isovol_fit.
+% update global handles from isovol_returned values. If the Vanderpool
+% method isn't tripped, then ivSeg and Plot haven't changed, so this
+% is a just-in-case...
+handles.OutVar = Fit;
 
-handles.InVar.ivTime_D = FitStr.ivTime_D;
-handles.InVar.ivPres_D = FitStr.ivPres_D;
-handles.InVar.ivPlotTime = FitStr.ivPlotTime;
-handles.InVar.ivPlotPres = FitStr.ivPlotPres;
+handles.InVar.ivSeg = ivSeg;
+handles.IvVar.Plot  = Plot;
 
-[handles] = gui_sinu_plot (time, Pres, Iso1StVal, isovolTime, FitStr.fit, ...
-     totIsoTimePoints, totIsoPresPoints, hObject, eventdata, handles); 
+[handles] = gui_sinu_plot (Data, ivVal, ivSeg, Fit, Plot, ...
+    hObject, eventdata, handles); 
 
-% store fit output into output structure
-handles.OutVar = FitStr.fit;
-
-% Update handles structure
-guidata(hObject, handles);
-
-% Set cursor back to normal
+% update global handles & set cursor back to normal
+guidata(hObject,handles);
 set(handles.figure1, 'pointer', 'arrow');
+
 end
 
 % --- Executes on button press in Exit.
@@ -456,67 +411,56 @@ drawnow;
 
 % if the handles.Old variables have been created (user has clicked on the
 % plot and removed pressure waveform(s).
-if ~isempty(handles.UNDOivPlotTime)
-    % restore the old isovolumic points 
-    handles.InVar.ivPlotTime = handles.UNDOivPlotTime;
-    handles.InVar.ivPlotPres = handles.UNDOivPlotPres;
-    handles.InVar.ivTime_D = handles.UNDOivTime_D;
-    handles.InVar.Iso1StIdx_D = handles.UNDOIso1StIdx_D;
-    handles.InVar.Iso2StIdx_D = handles.UNDOIso2StIdx_D;
-    handles.InVar.ivPres_D = handles.UNDOivPres_D;
-    handles.InVar.Iso1StVal = handles.UNDOIso1StVal;
-    handles.InVar.dPmaxIdx = handles.UNDOdPmaxIdx;
-    handles.InVar.dPminIdx = handles.UNDOdPminIdx;
+if ~isempty(handles.UNDO.Fit)
+    disp('GUI_SINU_FIT>Undo_Callback: Restoring Previous Fit & Plot');
+    handles.OutVar = handles.UNDO.Fit;
+
+    handles.InVar.Plot  = handles.UNDO.Plot;
+    handles.InVar.ivIdx = handles.UNDO.ivIdx;
+    handles.InVar.ivVal = handles.UNDO.ivVal;
+    handles.InVar.ivSeg = handles.UNDO.ivSeg; 
     
-    % calculate sinusoids based on current ICs!
-    Mea = str2double(get(handles.Mean_txt,'String'));
-    Amp = str2double(get(handles.Amp_txt,'String'));
-    Fre = str2double(get(handles.Freq_txt,'String'));
-    Pha = str2double(get(handles.Phase_txt,'String'));
+    % Extract Data, Indices/Values, and Fit Segments from passed structures.
+    Fit  = handles.OutVar;
+    Data = handles.InVar.Data;
+    Plot = handles.InVar.Plot;
+    ivIdx = handles.InVar.ivIdx;
+    ivVal = handles.InVar.ivVal;
+    ivSeg = handles.InVar.ivSeg;
 
-    % obtain variables from InVar Struct for a clear workflow
-    % this pulls data out of PeakStruct as passed to GUI_SINU_FIT
-    time = handles.InVar.Time_D;
-    Pres = handles.InVar.Pres_D;
-    isovolTime = handles.InVar.ivTime_D;
-    isovolPres = handles.InVar.ivPres_D;
-    % iso volumic points in array (for plotting)
-    totIsoTimePoints = handles.InVar.ivPlotTime;
-    totIsoPresPoints = handles.InVar.ivPlotPres;
-    % Iso1StVal - end diastolic pressure
-    Iso1StVal = handles.InVar.Iso1StVal;
+%%% WHY PERFORM FIT AGAIN? JUST REPLOT...?
+%   % calculate sinusoids based on current ICs!
+%   Mea = str2double(get(handles.Mean_txt,'String'));
+%   Amp = str2double(get(handles.Amp_txt,'String'));
+%   Fre = str2double(get(handles.Freq_txt,'String'));
+%   Pha = str2double(get(handles.Phase_txt,'String'));
+%   % pre - allocate 
+%   ICS = [Mea Amp Fre Pha];
+%   [FitStr] = isovol_fit (ivSeg, Data.Time_D, Data.Pres_D, ICS);
 
-    % pre - allocate 
-    ICS = [Mea Amp Fre Pha];
-    [FitStr] = isovol_fit ( isovolPres, isovolTime, time, Pres, ICS );
+    [handles] = gui_sinu_plot (Data, ivVal, ivSeg, Fit, Plot, ...
+        hObject, eventdata, handles); 
 
-    [handles] = gui_sinu_plot (time, Pres, Iso1StVal, isovolTime, ...
-            FitStr.fit, FitStr.ivPlotTime, FitStr.ivPlotPres, hObject, ...
-            eventdata, handles);
+else
 
-    % store fit output into output structure
-    handles.OutVar = FitStr.fit;
+    disp('GUI_SINU_FIT>Undo_Callback: Nothing to Undo!');
+
 end
 
-% Update handles structure
-guidata(hObject, handles);
-
-% Set cursor back to normal
+% update global handles & set cursor back to normal
+guidata(hObject,handles);
 set(handles.figure1, 'pointer', 'arrow');
+
 end
 
 % --- Function that updates the main plot
-function [handles] = gui_sinu_plot (time, Pres, Iso1StVal, isovolTime, fit, ...
-                         totIsoTimePoints, totIsoPresPoints, hObject, ...
-                         eventdata, handles);
+function [handles] = gui_sinu_plot (Data, ivVal, ivSeg, Fit, Plot, ...
+                         hObject, eventdata, handles);
 
 axes(handles.pressure_axes);
 
-c_tot2 = fit.RCoef;
-P_max2 = fit.PIsoMax;
-
-h = plot(time,Pres,'b', ...
-         totIsoTimePoints,totIsoPresPoints,'ro');
+h = plot(Data.Time_D,Data.Pres_D,'b', ...
+         Plot.ivPlotTime,Plot.ivPlotPres,'ro');
 set(h, 'HitTest', 'off');
 
 set(handles.pressure_axes,'ButtonDownFcn', ...
@@ -525,35 +469,36 @@ set(handles.pressure_axes,'fontsize',12);
 
 title('Sinusoidal Fitting','FontSize',20);
 xlabel('Time [s]','FontSize',18);
-ylabel('Pressue [mmHg]','FontSize',18);
+ylabel('Data.Pres_Dsue [mmHg]','FontSize',18);
 
 hold on;
 
-PmaxT = zeros(length(Iso1StVal),1);
+mysz = length(ivVal.Ps1);
+PmaxT = zeros(mysz,1);
 
 % Attain the sinusoid fit for all points (so Pmax can be visualized
-for i = 1:length(Iso1StVal)
+for i = 1:mysz
 
     % obtain the range of time of each peak
-    interval =  ...
-      time(isovolTime(i).PosIso(1,1)):0.002:time(isovolTime(i).NegIso(end,1));
+    interval = Data.Time_D(ivSeg.iv1Time(i).PosIso(1,1)):0.002: ...
+        Data.Time_D(ivSeg.iv1Time(i).NegIso(end,1));
 
     % plug into Naeiji equation that was just solved for
-    FitSinePres = c_tot2(i,1) + c_tot2(i,2)*sin(c_tot2(i,3)*interval + ...
-      c_tot2(i,4));
+    FitSinePres = Fit.RCoef(i,1) + Fit.RCoef(i,2)*sin(Fit.RCoef(i,3)* ...
+      interval + Fit.RCoef(i,4));
 
     % find time point corresponding to Pmax
-    [~, Idx] = min(abs(FitSinePres-P_max2(i)));
+    [~, Idx] = min(abs(FitSinePres-Fit.PIsoMax(i)));
 
     PmaxT(i) = interval(Idx);
 
-    plot(interval, FitSinePres, 'k--', PmaxT(i), P_max2(i), 'go');
+    plot(interval, FitSinePres, 'k--', PmaxT(i), Fit.PIsoMax(i), 'go');
     hold on;
 end
 
 % check the range of pressure values of Pmax. if the max p_max value is
 % over 450, rescale y axis to (0, 300), so individual waveforms can be seen
-if max(P_max2) > 450
+if max(Fit.PIsoMax) > 450
     ylim([0, 300]);
 end
 
@@ -563,4 +508,5 @@ legend('Pressure', 'Isovolumic Points',  'Sinusoid Fit','Pmax', ...
 box on;
 grid on;
 hold off;
+
 end

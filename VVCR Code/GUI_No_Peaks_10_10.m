@@ -57,19 +57,20 @@ handles.output = hObject;
 
 % set the input variable in the global handles environment
 handles.InVar = cell2mat(varargin);
+handles.OutVar = false;
 
 % Extract variables from structure for a more clear workflow
-time = handles.InVar.Time_D;
-Pres = handles.InVar.Pres_D;
-dPdt = handles.InVar.dPdt_D;
+time = handles.InVar.Data.Time;
+Pres = handles.InVar.Data.Pres;
+dPdt = handles.InVar.Data.dPdt;
 
-dPminIdx = handles.InVar.dPminIdx;
-dPminVal = handles.InVar.dPminVal;
+dPminIdx = handles.InVar.Ext.dPminIdx;
+dPminVal = handles.InVar.Ext.dPminVal;
 % update number of Minima
 set(handles.Min_num, 'String',num2str(length(dPminVal)));
 
-dPmaxIdx = handles.InVar.dPmaxIdx;
-dPmaxVal = handles.InVar.dPmaxVal;
+dPmaxIdx = handles.InVar.Ext.dPmaxIdx;
+dPmaxVal = handles.InVar.Ext.dPmaxVal;
 % update number of maxima
 set(handles.Max_num, 'String', num2str(length(dPmaxVal)));
 
@@ -130,11 +131,11 @@ drawnow;
 
 % store current mins and maxs as old min,maxs. This is done so the undo
 % button can function
-handles.UNDOdPminIdx = handles.InVar.dPminIdx;
-handles.UNDOdPminVal = handles.InVar.dPminVal;
+handles.UNDOdPminIdx = handles.InVar.Ext.dPminIdx;
+handles.UNDOdPminVal = handles.InVar.Ext.dPminVal;
 
-handles.dPmaxIdx = handles.InVar.dPmaxIdx;
-handles.dPmaxVal = handles.InVar.dPmaxVal;
+handles.dPmaxIdx = handles.InVar.Ext.dPmaxIdx;
+handles.dPmaxVal = handles.InVar.Ext.dPmaxVal;
 
 % get the current point
 cp(1,:) = [eventdata.IntersectionPoint(1), eventdata.IntersectionPoint(2)];
@@ -143,13 +144,13 @@ cp(1,:) = [eventdata.IntersectionPoint(1), eventdata.IntersectionPoint(2)];
 % disp(['    Pressure: ',num2str(cp(2))]);
 
 % Extract variables from structure for a more clear workflow
-time = handles.InVar.Time_D;
-Pres = handles.InVar.Pres_D;
-dPdt = handles.InVar.dPdt_D;
-dPminIdx = handles.InVar.dPminIdx;
-dPminVal = handles.InVar.dPminVal;
-dPmaxIdx = handles.InVar.dPmaxIdx;
-dPmaxVal = handles.InVar.dPmaxVal;
+time = handles.InVar.Data.Time;
+Pres = handles.InVar.Data.Pres;
+dPdt = handles.InVar.Data.dPdt;
+dPminIdx = handles.InVar.Ext.dPminIdx;
+dPminVal = handles.InVar.Ext.dPminVal;
+dPmaxIdx = handles.InVar.Ext.dPmaxIdx;
+dPmaxVal = handles.InVar.Ext.dPmaxVal;
 
 % find indices of critical points within +- 0.5 seconds 
 TPksInds = find(time(dPmaxIdx)>cp(1)-0.5 & time(dPmaxIdx)<cp(1)+0.5);
@@ -169,8 +170,8 @@ if isempty(TMnsdst)
     dPmaxVal(dPmaxValInd) = [];
     
     % update handles (global variable)
-    handles.InVar.dPmaxIdx = dPmaxIdx;
-    handles.InVar.dPmaxVal = dPmaxVal;
+    handles.InVar.Ext.dPmaxIdx = dPmaxIdx;
+    handles.InVar.Ext.dPmaxVal = dPmaxVal;
     
     % update number of maxima
     set(handles.Max_num, 'String', num2str(length(dPmaxVal)));
@@ -185,8 +186,8 @@ elseif min(TPksdst) < min(TMnsdst)
     dPmaxVal(dPmaxValInd) = [];
     
     % update handles (global variable)
-    handles.InVar.dPmaxIdx = dPmaxIdx;
-    handles.InVar.dPmaxVal = dPmaxVal;
+    handles.InVar.Ext.dPmaxIdx = dPmaxIdx;
+    handles.InVar.Ext.dPmaxVal = dPmaxVal;
     
     % update number of maxima
     set(handles.Max_num, 'String', num2str(length(dPmaxVal)));
@@ -201,8 +202,8 @@ elseif isempty(TPksdst)
     dPminVal(MnsInd) = [];
     
     % update handles (global variable)
-    handles.InVar.dPminIdx = dPminIdx;
-    handles.InVar.dPminVal = dPminVal;
+    handles.InVar.Ext.dPminIdx = dPminIdx;
+    handles.InVar.Ext.dPminVal = dPminVal;
     
     % update number of minima
     set(handles.Min_num, 'String',num2str(length(dPminVal)));
@@ -217,8 +218,8 @@ elseif min(TPksdst) > min(TMnsdst)
     dPminVal(MnsInd) = [];
     
     % update handles (global variable)
-    handles.InVar.dPminIdx = dPminIdx;
-    handles.InVar.dPminVal = dPminVal;
+    handles.InVar.Ext.dPminIdx = dPminIdx;
+    handles.InVar.Ext.dPminVal = dPminVal;
     
     % update number of minima
     set(handles.Min_num, 'String',num2str(length(dPminVal)));
@@ -272,14 +273,12 @@ function varargout = GUI_No_Peaks_10_10_OutputFcn(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% update global handles
-guidata(hObject,handles);
-
 % Get default command line output from handles structure
 varargout{1} = handles.InVar;
 
 % Destroy the GUI
-delete(handles.figure1);
+delete(hObject);
+
 end
 
 % --- Executes on button press in Undo.
@@ -295,19 +294,19 @@ if ~isempty(handles.UNDOdPminIdx)
     drawnow;
 
     % retrieve the old critical points
-    handles.InVar.dPminIdx = handles.UNDOdPminIdx;
-    handles.InVar.dPminVal = handles.UNDOdPminVal;
-    handles.InVar.dPmaxIdx = handles.dPmaxIdx;
-    handles.InVar.dPmaxVal = handles.dPmaxVal;
+    handles.InVar.Ext.dPminIdx = handles.UNDOdPminIdx;
+    handles.InVar.Ext.dPminVal = handles.UNDOdPminVal;
+    handles.InVar.Ext.dPmaxIdx = handles.dPmaxIdx;
+    handles.InVar.Ext.dPmaxVal = handles.dPmaxVal;
 
     % Extract variables from structure for a more clear workflow
     time = handles.InVar.Time_D;
     Pres = handles.InVar.Pres_D;
     dPdt = handles.InVar.dPdt_D;
-    dPminIdx = handles.InVar.dPminIdx;
-    dPminVal = handles.InVar.dPminVal;
-    dPmaxIdx = handles.InVar.dPmaxIdx;
-    dPmaxVal = handles.InVar.dPmaxVal;
+    dPminIdx = handles.InVar.Ext.dPminIdx;
+    dPminVal = handles.InVar.Ext.dPminVal;
+    dPmaxIdx = handles.InVar.Ext.dPmaxIdx;
+    dPmaxVal = handles.InVar.Ext.dPmaxVal;
 
     % update number of minima
     set(handles.Min_num, 'String',num2str(length(dPminVal)));
@@ -375,7 +374,7 @@ handles.InVar.TotNumWaves = numWaves;
 guidata(hObject,handles);
     
 % check the status: check if # Minima == # Maxima
-if length(handles.InVar.dPminIdx) == length(handles.InVar.dPmaxIdx)
+if length(handles.InVar.Ext.dPminIdx) == length(handles.InVar.Ext.dPmaxIdx)
     
     % call on uiresume so output function executes
     uiresume(handles.figure1);
@@ -387,15 +386,23 @@ end
 end
 
 % --- Executes when user attempts to close figure1.
-function figure1_CloseRequestFcn(~, ~, handles)
+function figure1_CloseRequestFcn(hObject, ~, handles)
 % hObject    handle to figure1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hint: delete(hObject) closes the figure
-delete(handles.figure1); % output function does not execute after this!
+if isequal(get(hObject, 'waitstatus'), 'waiting')
+    % The GUI is still in UIWAIT, call UIRESUME
+    uiresume(hObject);
 
-% maybe flip some flag to stop execution of further code in VVCR code?
+    % If you close the figure, we understand that as stopping the analysis.
+    handles.InVar = false;
+    guidata(hObject, handles);
+else
+    % The GUI is no longer waiting, just close it
+    delete(hObject);
+end
+
 end
 
 % --- Executes on button press in Exit.
@@ -405,7 +412,7 @@ function Exit_Callback(hObject, ~, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % set 1 output to false
-handles.InVar.dPmaxIdx = false;
+handles.InVar.Ext.dPmaxIdx = false;
 
 % update handles globally
 guidata(hObject, handles)
