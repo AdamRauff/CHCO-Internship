@@ -8,6 +8,10 @@ clc;
 
 % bring up UI that allows user to select a folder (directory)
 Fold_name = uigetdir('','Select folder containing txt files with pressure data');
+if ~Fold_name
+    disp('runAll: uigetdir closed.');
+    return;
+end
 
 % attach a forward slash to the end of Fold_name so folder address ends
 % with /
@@ -70,7 +74,7 @@ for i = 1:length(top)
     % check to see if .txt file, then run VVCR analysis
     if regexp (top_name, 'txt$')
         
-        TXT_FLAG = false; % this flag turns true after VVCR_FINAL succesfully ran
+        TXT_FLAG = false; % this flag turns true after VVCR_*.m succesfully ran
         % there could be a scenario of a .txt file not being a pressure
         % data file, a corrupted file, empty, etc.
         
@@ -111,7 +115,7 @@ for i = 1:length(top)
         % somewhere, so if it is a pressure file that could not be opened,
         % it is remarked
 %         try
-            [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, STD_Pes, STD_PMX, TotNumWaves] = VVCR_FINAL_5_22_17(Fold_name,top_name);
+            [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, STD_Pes, STD_PMX, TotNumWaves] = VVCR_MULTIH_08_09_17(Fold_name,top_name);
             
             % check to see if outputs are false or true
             % EXIT

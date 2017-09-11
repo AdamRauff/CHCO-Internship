@@ -57,45 +57,46 @@ handles.output = hObject;
 
 % set the input variable in the global handles environment
 handles.InVar = cell2mat(varargin);
+handles.OutVar = false;
 
 % Extract variables from structure for a more clear workflow
-time = handles.InVar(1).Data;
-Pres = handles.InVar(2).Data;
-dPdt = handles.InVar(3).Data;
+time = handles.InVar.Data.Time;
+Pres = handles.InVar.Data.Pres;
+dPdt = handles.InVar.Data.dPdt;
 
-MinIdx = handles.InVar(1).Min;
-Minima = handles.InVar(2).Min;
+dPminIdx = handles.InVar.Ext.dPminIdx;
+dPminVal = handles.InVar.Ext.dPminVal;
 % update number of Minima
-set(handles.Min_num, 'String',num2str(length(Minima)));
+set(handles.Min_num, 'String',num2str(length(dPminVal)));
 
-pksT = handles.InVar(1).Max;
-pks = handles.InVar(2).Max;
+dPmaxIdx = handles.InVar.Ext.dPmaxIdx;
+dPmaxVal = handles.InVar.Ext.dPmaxVal;
 % update number of maxima
-set(handles.Max_num, 'String', num2str(length(pks)));
+set(handles.Max_num, 'String', num2str(length(dPmaxVal)));
 
 % update axes of status
-if length(pks) == length(Minima)
+if length(dPmaxVal) == length(dPminVal)
     % display green check
     axes(handles.status_axes);
-    imshow(handles.InVar(1).IM); axis image; axis off
+    imshow(handles.InVar.Green_Check); axis image; axis off
 else
     % display red x
     axes(handles.status_axes);
-    imshow(handles.InVar(2).IM); axis image; axis off
+    imshow(handles.InVar.Red_X); axis image; axis off
 end
 
 % set the total number of complete waveforms (editable text)
-set(handles.NumWaves, 'String',num2str(length(pks)));
+set(handles.NumWaves, 'String',num2str(length(dPmaxVal)));
 
 % intialize these variables - used for undo button
-handles.OldMinIdx = [];
-handles.OldMinima = [];
-handles.OldpksT = [];
-handles.Oldpks = [];
+handles.UNDOdPminIdx = [];
+handles.UNDOdPminVal = [];
+handles.dPmaxIdx = [];
+handles.dPmaxVal = [];
 
 % plot pressure, Dp/dt, and minima and maxima on appropriate axes
 axes(handles.pressure_axes);
-h = plot(time,Pres,'b',time(pksT), Pres(pksT), 'ro', time(MinIdx), Pres(MinIdx), 'ko');
+h = plot(time,Pres,'b',time(dPmaxIdx), Pres(dPmaxIdx), 'ro', time(dPminIdx), Pres(dPminIdx), 'ko');
 set(h, 'HitTest', 'off');
 set(handles.pressure_axes,'ButtonDownFcn', @(hObject, eventdata)GraphCallBack(hObject, eventdata, handles));
 set(handles.pressure_axes,'fontsize',11);
@@ -106,7 +107,7 @@ box on
 grid on
 
 axes(handles.dpdt_axes);
-h2 = plot(time,dPdt, 'b', time(pksT), pks, 'ro', time(MinIdx), Minima, 'ko');
+h2 = plot(time,dPdt, 'b', time(dPmaxIdx), dPmaxVal, 'ro', time(dPminIdx), dPminVal, 'ko');
 set(h2, 'HitTest','off');
 set(handles.dpdt_axes, 'ButtonDownFcn', @(hObject, eventdata)GraphCallBack(hObject, eventdata, handles));
 set(handles.dpdt_axes,'fontsize',11);
@@ -130,65 +131,66 @@ drawnow;
 
 % store current mins and maxs as old min,maxs. This is done so the undo
 % button can function
-handles.OldMinIdx = handles.InVar(1).Min;
-handles.OldMinima = handles.InVar(2).Min;
+handles.UNDOdPminIdx = handles.InVar.Ext.dPminIdx;
+handles.UNDOdPminVal = handles.InVar.Ext.dPminVal;
 
-handles.OldpksT = handles.InVar(1).Max;
-handles.Oldpks = handles.InVar(2).Max;
+handles.dPmaxIdx = handles.InVar.Ext.dPmaxIdx;
+handles.dPmaxVal = handles.InVar.Ext.dPmaxVal;
 
 % get the current point
 cp(1,:) = [eventdata.IntersectionPoint(1), eventdata.IntersectionPoint(2)];
-% disp(['Time: ',num2str(cp(1))]);
-% disp(['Pressure: ',num2str(cp(2))]);
+% disp('GUI_No_Peaks:');
+% disp(['    Time: ',num2str(cp(1))]);
+% disp(['    Pressure: ',num2str(cp(2))]);
 
 % Extract variables from structure for a more clear workflow
-time = handles.InVar(1).Data;
-Pres = handles.InVar(2).Data;
-dPdt = handles.InVar(3).Data;
-MinIdx = handles.InVar(1).Min;
-Minima = handles.InVar(2).Min;
-pksT = handles.InVar(1).Max;
-pks = handles.InVar(2).Max;
+time = handles.InVar.Data.Time;
+Pres = handles.InVar.Data.Pres;
+dPdt = handles.InVar.Data.dPdt;
+dPminIdx = handles.InVar.Ext.dPminIdx;
+dPminVal = handles.InVar.Ext.dPminVal;
+dPmaxIdx = handles.InVar.Ext.dPmaxIdx;
+dPmaxVal = handles.InVar.Ext.dPmaxVal;
 
 % find indices of critical points within +- 0.5 seconds 
-TPksInds = find(time(pksT)>cp(1)-0.5 & time(pksT)<cp(1)+0.5);
-TMnsInds = find(time(MinIdx)>cp(1)-0.5 & time(MinIdx)<cp(1)+0.5);
+TPksInds = find(time(dPmaxIdx)>cp(1)-0.5 & time(dPmaxIdx)<cp(1)+0.5);
+TMnsInds = find(time(dPminIdx)>cp(1)-0.5 & time(dPminIdx)<cp(1)+0.5);
 
 % find distances of critical point within the neighborhood
-TPksdst = abs(time(pksT(TPksInds))-cp(1));
-TMnsdst = abs(time(MinIdx(TMnsInds))-cp(1));
+TPksdst = abs(time(dPmaxIdx(TPksInds))-cp(1));
+TMnsdst = abs(time(dPminIdx(TMnsInds))-cp(1));
 
 if isempty(TMnsdst) 
     % remove the closest maximum (of dPdt)
     [~, Idx] = min(TPksdst); % get index of minimum number
-    pksInd = TPksInds(Idx); % get index of vector (or scalar) returned by find()
+    dPmaxValInd = TPksInds(Idx); % get index of vector (or scalar) returned by find()
     
     % remove peak
-    pksT(pksInd) = [];
-    pks(pksInd) = [];
+    dPmaxIdx(dPmaxValInd) = [];
+    dPmaxVal(dPmaxValInd) = [];
     
     % update handles (global variable)
-    handles.InVar(1).Max = pksT;
-    handles.InVar(2).Max = pks;
+    handles.InVar.Ext.dPmaxIdx = dPmaxIdx;
+    handles.InVar.Ext.dPmaxVal = dPmaxVal;
     
     % update number of maxima
-    set(handles.Max_num, 'String', num2str(length(pks)));
+    set(handles.Max_num, 'String', num2str(length(dPmaxVal)));
     
 elseif min(TPksdst) < min(TMnsdst)
     % remove the closest maximum (of dPdt)
     [~, Idx] = min(TPksdst); % get index of minimum number
-    pksInd = TPksInds(Idx); % get index of vector (or scalar) returned by find()
+    dPmaxValInd = TPksInds(Idx); % get index of vector (or scalar) returned by find()
     
     % remove peak
-    pksT(pksInd) = [];
-    pks(pksInd) = [];
+    dPmaxIdx(dPmaxValInd) = [];
+    dPmaxVal(dPmaxValInd) = [];
     
     % update handles (global variable)
-    handles.InVar(1).Max = pksT;
-    handles.InVar(2).Max = pks;
+    handles.InVar.Ext.dPmaxIdx = dPmaxIdx;
+    handles.InVar.Ext.dPmaxVal = dPmaxVal;
     
     % update number of maxima
-    set(handles.Max_num, 'String', num2str(length(pks)));
+    set(handles.Max_num, 'String', num2str(length(dPmaxVal)));
     
 elseif isempty(TPksdst) 
     % remove closest minimum (of dPdt)
@@ -196,15 +198,15 @@ elseif isempty(TPksdst)
     MnsInd = TMnsInds(Idx); % get index of vector returned by find()
     
     % remove min
-    MinIdx(MnsInd) = [];
-    Minima(MnsInd) = [];
+    dPminIdx(MnsInd) = [];
+    dPminVal(MnsInd) = [];
     
     % update handles (global variable)
-    handles.InVar(1).Min = MinIdx;
-    handles.InVar(2).Min = Minima;
+    handles.InVar.Ext.dPminIdx = dPminIdx;
+    handles.InVar.Ext.dPminVal = dPminVal;
     
     % update number of minima
-    set(handles.Min_num, 'String',num2str(length(Minima)));
+    set(handles.Min_num, 'String',num2str(length(dPminVal)));
     
 elseif min(TPksdst) > min(TMnsdst)
     % remove closest minimum (of dPdt)
@@ -212,26 +214,26 @@ elseif min(TPksdst) > min(TMnsdst)
     MnsInd = TMnsInds(Idx); % get index of vector returned by find()
     
     % remove min
-    MinIdx(MnsInd) = [];
-    Minima(MnsInd) = [];
+    dPminIdx(MnsInd) = [];
+    dPminVal(MnsInd) = [];
     
     % update handles (global variable)
-    handles.InVar(1).Min = MinIdx;
-    handles.InVar(2).Min = Minima;
+    handles.InVar.Ext.dPminIdx = dPminIdx;
+    handles.InVar.Ext.dPminVal = dPminVal;
     
     % update number of minima
-    set(handles.Min_num, 'String',num2str(length(Minima)));
+    set(handles.Min_num, 'String',num2str(length(dPminVal)));
 end
 
 % update axes of status
-if length(pks) == length(Minima)
+if length(dPmaxVal) == length(dPminVal)
     % display green check
     axes(handles.status_axes);
-    imshow(handles.InVar(1).IM); axis image; axis off
+    imshow(handles.InVar.Green_Check); axis image; axis off
 else
     % display red x
     axes(handles.status_axes);
-    imshow(handles.InVar(2).IM); axis image; axis off
+    imshow(handles.InVar.Red_X); axis image; axis off
 end
 
 % update global handles
@@ -239,7 +241,7 @@ guidata(hObject,handles);
 
 % re-plot pressure graph
 axes(handles.pressure_axes);
-h = plot(time,Pres,'b',time(pksT), Pres(pksT), 'ro', time(MinIdx), Pres(MinIdx), 'ko');
+h = plot(time,Pres,'b',time(dPmaxIdx), Pres(dPmaxIdx), 'ro', time(dPminIdx), Pres(dPminIdx), 'ko');
 set(h, 'HitTest', 'off');
 set(handles.pressure_axes,'ButtonDownFcn', @(hObject, eventdata)GraphCallBack(hObject, eventdata, handles));
 set(handles.pressure_axes,'fontsize',11);
@@ -251,7 +253,7 @@ grid on
 
 % re-plot dP/dt graph
 axes(handles.dpdt_axes);
-h2 = plot(time,dPdt, 'b', time(pksT), pks, 'ro', time(MinIdx), Minima, 'ko');
+h2 = plot(time,dPdt, 'b', time(dPmaxIdx), dPmaxVal, 'ro', time(dPminIdx), dPminVal, 'ko');
 set(h2, 'HitTest','off');
 set(handles.dpdt_axes, 'ButtonDownFcn', @(hObject, eventdata)GraphCallBack(hObject, eventdata, handles));
 set(handles.dpdt_axes,'fontsize',11);
@@ -271,14 +273,12 @@ function varargout = GUI_No_Peaks_10_10_OutputFcn(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% update global handles
-guidata(hObject,handles);
-
 % Get default command line output from handles structure
 varargout{1} = handles.InVar;
 
 % Destroy the GUI
-delete(handles.figure1);
+delete(hObject);
+
 end
 
 % --- Executes on button press in Undo.
@@ -287,42 +287,42 @@ function Undo_Callback(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-if ~isempty(handles.OldMinIdx) 
+if ~isempty(handles.UNDOdPminIdx) 
 
     %Make the cusor a spinning wheel so user is aware program is busy
     set(handles.figure1, 'pointer', 'watch');
     drawnow;
 
     % retrieve the old critical points
-    handles.InVar(1).Min = handles.OldMinIdx;
-    handles.InVar(2).Min = handles.OldMinima;
-    handles.InVar(1).Max = handles.OldpksT;
-    handles.InVar(2).Max = handles.Oldpks;
+    handles.InVar.Ext.dPminIdx = handles.UNDOdPminIdx;
+    handles.InVar.Ext.dPminVal = handles.UNDOdPminVal;
+    handles.InVar.Ext.dPmaxIdx = handles.dPmaxIdx;
+    handles.InVar.Ext.dPmaxVal = handles.dPmaxVal;
 
     % Extract variables from structure for a more clear workflow
-    time = handles.InVar(1).Data;
-    Pres = handles.InVar(2).Data;
-    dPdt = handles.InVar(3).Data;
-    MinIdx = handles.InVar(1).Min;
-    Minima = handles.InVar(2).Min;
-    pksT = handles.InVar(1).Max;
-    pks = handles.InVar(2).Max;
+    time = handles.InVar.Time_D;
+    Pres = handles.InVar.Pres_D;
+    dPdt = handles.InVar.dPdt_D;
+    dPminIdx = handles.InVar.Ext.dPminIdx;
+    dPminVal = handles.InVar.Ext.dPminVal;
+    dPmaxIdx = handles.InVar.Ext.dPmaxIdx;
+    dPmaxVal = handles.InVar.Ext.dPmaxVal;
 
     % update number of minima
-    set(handles.Min_num, 'String',num2str(length(Minima)));
+    set(handles.Min_num, 'String',num2str(length(dPminVal)));
 
     % update number of maxima
-    set(handles.Max_num, 'String', num2str(length(pks)));
+    set(handles.Max_num, 'String', num2str(length(dPmaxVal)));
 
     % update axes of status
-    if length(pks) == length(Minima)
+    if length(dPmaxVal) == length(dPminVal)
         % display green check
         axes(handles.status_axes);
-        imshow(handles.InVar(1).IM); axis image; axis off
+        imshow(handles.InVar.Green_Check); axis image; axis off
     else
         % display red x
         axes(handles.status_axes);
-        imshow(handles.InVar(2).IM); axis image; axis off
+        imshow(handles.InVar.Red_X); axis image; axis off
     end
 
     % update global handles
@@ -330,7 +330,7 @@ if ~isempty(handles.OldMinIdx)
 
     % re-plot pressure graph
     axes(handles.pressure_axes);
-    h = plot(time,Pres,'b',time(pksT), Pres(pksT), 'ro', time(MinIdx), Pres(MinIdx), 'ko');
+    h = plot(time,Pres,'b',time(dPmaxIdx), Pres(dPmaxIdx), 'ro', time(dPminIdx), Pres(dPminIdx), 'ko');
     set(h, 'HitTest', 'off');
     set(handles.pressure_axes,'ButtonDownFcn', @(hObject, eventdata)GraphCallBack(hObject, eventdata, handles));
     set(handles.pressure_axes,'fontsize',11);
@@ -342,12 +342,12 @@ if ~isempty(handles.OldMinIdx)
 
     % re-plot dP/dt graph
     axes(handles.dpdt_axes);
-    h2 = plot(time,dPdt, 'b', time(pksT), pks, 'ro', time(MinIdx), Minima, 'ko');
+    h2 = plot(time,dPdt, 'b', time(dPmaxIdx), dPmaxVal, 'ro', time(dPminIdx), dPminVal, 'ko');
     set(h2, 'HitTest','off');
     set(handles.dpdt_axes, 'ButtonDownFcn', @(hObject, eventdata)GraphCallBack(hObject, eventdata, handles));
     set(handles.dpdt_axes,'fontsize',11);
     ylabel('dP/dt [mmHg/s]','FontSize',18);
-    legend('dP/dt','Maxima', 'Minima', 'Location', 'northoutside', 'Orientation', 'horizontal');
+    legend('dP/dt','Maxima', 'dPminVal', 'Location', 'northoutside', 'Orientation', 'horizontal');
     box on;
     grid on;
 
@@ -368,13 +368,13 @@ function Next_Callback(hObject, ~, handles) %#ok<DEFNU>
 % grab the total number of complete waveforms from the editable text
 numWaves = uint8(str2double(get(handles.NumWaves, 'String')));
 
-handles.InVar(3).Max = numWaves;
+handles.InVar.TotNumWaves = numWaves;
 
 % update global handles
 guidata(hObject,handles);
     
 % check the status: check if # Minima == # Maxima
-if length(handles.InVar(1).Min) == length(handles.InVar(1).Max)
+if length(handles.InVar.Ext.dPminIdx) == length(handles.InVar.Ext.dPmaxIdx)
     
     % call on uiresume so output function executes
     uiresume(handles.figure1);
@@ -386,15 +386,23 @@ end
 end
 
 % --- Executes when user attempts to close figure1.
-function figure1_CloseRequestFcn(~, ~, handles)
+function figure1_CloseRequestFcn(hObject, ~, handles)
 % hObject    handle to figure1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hint: delete(hObject) closes the figure
-delete(handles.figure1); % output function does not execute after this!
+if isequal(get(hObject, 'waitstatus'), 'waiting')
+    % The GUI is still in UIWAIT, call UIRESUME
+    uiresume(hObject);
 
-% maybe flip some flag to stop execution of further code in VVCR code?
+    % If you close the figure, we understand that as stopping the analysis.
+    handles.InVar = false;
+    guidata(hObject, handles);
+else
+    % The GUI is no longer waiting, just close it
+    delete(hObject);
+end
+
 end
 
 % --- Executes on button press in Exit.
@@ -404,7 +412,7 @@ function Exit_Callback(hObject, ~, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % set 1 output to false
-handles.InVar(1).Max = false;
+handles.InVar.Ext.dPmaxIdx = false;
 
 % update handles globally
 guidata(hObject, handles)
@@ -419,7 +427,7 @@ function Discard_Callback(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-handles.InVar(3).Max = true;
+handles.InVar.TotNumWaves = true;
 
 % update handles globally
 guidata(hObject, handles)
