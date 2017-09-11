@@ -1,22 +1,19 @@
-function [Ret1, Ret2, Ret3] = isovol_fit (ivSeg, timeDoub, PresDoub, ICS)
+function [Ret1, Ret2, Ret3] = isovol_fit (ivSeg, Data, ICS)
 %
-% ivSeg    - Struct of all pres and time fitting values:
-%              iv1Pres/iv1Time/iv2Pres/iv2Time 1st level structs; Time labels
-%                actually contain indices, not real times.
-%              PosIso/NegIso 2nd level structs; values for contract and relax
-% timeDoub - Vector; Time for entire dataset in doubled data
-% PresDoub - Vector; Pressure for entire dataset in doubled data
-% ICS      - Struct or Vector; If called from VVCR_ (first call), is struct
-%            needed for individual-cycle ICs; if called from a GUI, contains
-%            contstant initial conditions for fit.
+% ivSeg  - Struct of all pres and time fitting values:
+%            iv1Pres/iv1Time/iv2Pres/iv2Time 1st level structs; Time labels
+%              actually contain indices, not real times.
+%            PosIso/NegIso 2nd level structs; values for contract and relax
+% Data   - Structure containing Time and Pressure.
+% ICS    - Struct or Vector; If called from VVCR_ (first call), is struct
+%          needed for individual-cycle ICs; if called from a GUI, contains
+%          contstant initial conditions for fit.
 
-% Set existing ivSeg to insure continuity if nothing changes. 
+% Set existing ivSeg to minimally insure continuity if nothing changes. 
 Ret2 = ivSeg;
 
-% Values for Takaguichi fit
-iv1Pres = ivSeg.iv1Pres;
-iv1Time = ivSeg.iv1Time; 
 % Values for Kind fit; note that Pres actually contains P and dP/dt values.
+% THESE WILL COME IN WITH ivSeg STRUCTURE.
 %iv2Pres = ivSeg.iv2Pres;
 %iv2Time = ivSeg.iv2Time; 
 
@@ -26,15 +23,15 @@ opts1.MaxFunctionEvaluations = 2000;
 opts1.MaxIterations = 1000;
 
 % Variables for main fit
-nfits = length(iv1Pres);
+nfits = length(ivSeg.iv1Pres);
 c_tot2 = zeros(nfits,4);
 P_max2 = zeros(nfits,1);
 waveFit = zeros(nfits,1);
 r_square2 = zeros(nfits,1);
 
 % Ploting vectors of the fitting data for GUI_SINU_FIT  
-totIsoTimePoints = [];
-totIsoPresPoints = [];
+Ret3.ivPlotTime = [];
+Ret3.ivPlotPres = [];
 
 % Variables for adding points to SINU_GUI plots (within Vanderpool method)
 VanderCyc = zeros(nfits,1);
@@ -42,11 +39,12 @@ ADD_TPoints = [];
 ADD_PPoints = []; 
 
 % scroll through the number of rows (pressure waves) in the
-% structures: iv1Time and iv1Pres
+% structures: ivSeg.iv1Time and ivSeg.iv1Pres
 for i = 1:nfits
     
-    WaveTs = [timeDoub(iv1Time(i).PosIso)'; timeDoub(iv1Time(i).NegIso)'];
-    WavePs = [iv1Pres(i).PosIso; iv1Pres(i).NegIso];
+    WaveTs = [Data.Time_D(ivSeg.iv1Time(i).PosIso)'; ...
+        Data.Time_D(ivSeg.iv1Time(i).NegIso)'];
+    WavePs = [ivSeg.iv1Pres(i).PosIso; ivSeg.iv1Pres(i).NegIso];
     
     % this equation is from Naeiji et al, single beat method of VVC
     sin_fun2 = @(P)(P(1)+P(2)*sin(P(3)*WaveTs+P(4)))-WavePs; 
@@ -93,15 +91,16 @@ for i = 1:nfits
     % plotting - first pass (call from VVCR_); otherwise, reconsitute these
     % arrays if needed just outside this loop.
 
-    totIsoTimePoints = [totIsoTimePoints; WaveTs];
-    totIsoPresPoints = [totIsoPresPoints; WavePs];
+    Ret3.ivPlotTime = [Ret3.ivPlotTime; WaveTs];
+    Ret3.ivPlotPres = [Ret3.ivPlotPres; WavePs];
    
     % AR 6/5/17 -----------------------------------------------
     % adding points succesively to beginning of systole to make better fit
     % of sick patients with wide curves
     
     % obtain maximum pressure point on actual curve
-    PresMax = max(PresDoub(iv1Time(i).PosIso(1,1):1:iv1Time(i).NegIso(end,1)));
+    PresMax = max(Data.Pres_D(ivSeg.iv1Time(i).PosIso(1,1):1: ...
+        ivSeg.iv1Time(i).NegIso(end,1)));
     if r_square2(i) > 0.80 && P_max2(i) < PresMax
        
         % keep count of how many points added to systole side
@@ -112,16 +111,22 @@ for i = 1:nfits
 
         while P_max2(i) < PresMax
             
-            % add point to iv1Time(i).PosIso and corresponding iv1Pres(i).PosIso
-            iv1Time(i).PosIso = [(iv1Time(i).PosIso(1,1))-1; iv1Time(i).PosIso];
-            iv1Pres(i).PosIso = [PresDoub(iv1Time(i).PosIso(1,1)); iv1Pres(i).PosIso];
+            % add point to iv1Time(i).PosIso and iv1Pres(i).PosIso
+            ivSeg.iv1Time(i).PosIso = ...
+                [(ivSeg.iv1Time(i).PosIso(1,1))-1; ivSeg.iv1Time(i).PosIso];
+            ivSeg.iv1Pres(i).PosIso = ...
+                [Data.Pres_D(ivSeg.iv1Time(i).PosIso(1,1)); ...
+                ivSeg.iv1Pres(i).PosIso];
 
-            temp_ADD_TPoints = [ADD_TPoints; timeDoub(iv1Time(i).PosIso(1,1))];
-            temp_ADD_PPoints = [ADD_PPoints; PresDoub(iv1Time(i).PosIso(1,1))];
+            temp_ADD_TPoints = ...
+                [ADD_TPoints; Data.Time_D(ivSeg.iv1Time(i).PosIso(1,1))];
+            temp_ADD_PPoints = ...
+                [ADD_PPoints; Data.Pres_D(ivSeg.iv1Time(i).PosIso(1,1))];
 
             % update Wave(x)s variables
-            WaveTs = [timeDoub(iv1Time(i).PosIso)'; timeDoub(iv1Time(i).NegIso)'];
-            WavePs = [iv1Pres(i).PosIso; iv1Pres(i).NegIso];
+            WaveTs = [Data.Time_D(ivSeg.iv1Time(i).PosIso)'; ...
+                Data.Time_D(ivSeg.iv1Time(i).NegIso)'];
+            WavePs = [ivSeg.iv1Pres(i).PosIso; ivSeg.iv1Pres(i).NegIso];
 
             % re-fit sinusiod
             % equation from Naeiji et al, single beat method of VVC
@@ -187,16 +192,15 @@ end
 %% if iso points have been added, re-compose the totIsoPnts variables
 if any(VanderCyc)
 
-    totIsoTimePoints = [totIsoTimePoints; ADD_TPoints];
-    totIsoPresPoints = [totIsoPresPoints; ADD_PPoints];
+    Ret3.ivPlotTime = [Ret3.ivPlotTime; ADD_TPoints];
+    Ret3.ivPlotPres = [Ret3.ivPlotPres; ADD_PPoints];
 
     temp = 1:1:nfits;
     disp(['    isovol_fit: Vanderpool Points added on cycles ' ...
         num2str(temp(logical(VanderCyc)))]);
 
-    % These vars are passed in but may be updated by Vanderpool section.
-    Ret2.iv1Time = iv1Time;
-    Ret2.iv1Pres = iv1Pres;
+    % Update ivSeg; iv1Time & iv1Pres may be updated in Vanderpool section.
+    Ret2 = ivSeg;
 
 end
 
@@ -209,11 +213,6 @@ Ret1.InitIC  = c2;        % First Intial conditions used
 Ret1.RCoef   = c_tot2;    % First regression constants
 Ret1.PIsoMax = P_max2;    % Pmax values obtained from fit
 Ret1.VCyc    = VanderCyc; % Were points added to failing waveforms?
-
-% This data is generated by the fit itself, so must be stored here.
-% THIS SHOULD BE CHANGED TO POINTS
-Ret3.ivPlotTime  = totIsoTimePoints; % Plotting Points
-Ret3.ivPlotPres  = totIsoPresPoints;
 
 % print to command line the waves that were not fit correctly. This is used
 % as a debugger to check that the "bad" waves, the ones that don't have a

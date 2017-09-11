@@ -163,7 +163,7 @@ if ~isempty(WaveNumPosRm) && ~isempty(WaveNumNegRm)
         [ivSeg] = data_isoseg (true, Data, ivIdx);
 
         ICS = [Mea Amp Fre Pha];
-        [Fit, ivSeg, Plot] = isovol_fit (ivSeg, Data.Time_D, Data.Pres_D, ICS);
+        [Fit, ivSeg, Plot] = isovol_fit (ivSeg, Data, ICS);
         
         % update global handles from isovol_returned values. If the Vanderpool
         % method isn't tripped, then ivSeg and Plot haven't changed, so this
@@ -345,7 +345,7 @@ ivSeg = handles.InVar.ivSeg;
 
 ICS = [Mea Amp Fre Pha];
 
-[Fit, ivSeg, Plot] = isovol_fit (ivSeg, Data.Time_D, Data.Pres_D, ICS );
+[Fit, ivSeg, Plot] = isovol_fit (ivSeg, Data, ICS );
 
 % update global handles from isovol_returned values. If the Vanderpool
 % method isn't tripped, then ivSeg and Plot haven't changed, so this
@@ -427,16 +427,6 @@ if ~isempty(handles.UNDO.Fit)
     ivIdx = handles.InVar.ivIdx;
     ivVal = handles.InVar.ivVal;
     ivSeg = handles.InVar.ivSeg;
-
-%%% WHY PERFORM FIT AGAIN? JUST REPLOT...?
-%   % calculate sinusoids based on current ICs!
-%   Mea = str2double(get(handles.Mean_txt,'String'));
-%   Amp = str2double(get(handles.Amp_txt,'String'));
-%   Fre = str2double(get(handles.Freq_txt,'String'));
-%   Pha = str2double(get(handles.Phase_txt,'String'));
-%   % pre - allocate 
-%   ICS = [Mea Amp Fre Pha];
-%   [FitStr] = isovol_fit (ivSeg, Data.Time_D, Data.Pres_D, ICS);
 
     [handles] = gui_sinu_plot (Data, ivVal, ivSeg, Fit, Plot, ...
         hObject, eventdata, handles); 

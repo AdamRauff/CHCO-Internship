@@ -128,7 +128,7 @@ ICS.Pres = Data.Pres;
 ICS.dPmaxIdx = ivIdx.dPmax;
 ICS.dPminIdx = ivIdx.dPmin;
 
-[Fit, ivSeg, Plot] = isovol_fit (ivSeg, Data.Time_D, Data.Pres_D, ICS);
+[Fit, ivSeg, Plot] = isovol_fit (ivSeg, Data, ICS);
 
 % Package all structures for passing to GUI_SINU_FIT
 SinuStr.Fit  = Fit;
