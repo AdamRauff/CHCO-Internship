@@ -82,8 +82,7 @@ set(handles.Freq_txt, 'String',num2str(IC(3)));
 set(handles.Phase_txt, 'String',num2str(IC(4)));
 
 % plot pressure, sinusoid fits
-[handles] = gui_sinu_plot (Data, ivVal, ivSeg, myfit, Plot, ...
-    hObject, eventdata, handles); 
+[handles] = gui_sinu_plot (Data, ivVal, ivSeg, myfit, Plot, handles);
 
 % Update handles.
 guidata(hObject, handles);
@@ -174,8 +173,7 @@ if ~isempty(WaveNumPosRm) && ~isempty(WaveNumNegRm)
         handles.IvVar.Plot  = Plot;
 
         % Plot the results
-        [handles] = gui_sinu_plot (Data, ivVal, ivSeg, Fit, Plot, ...
-            hObject, eventdata, handles); 
+        [handles] = gui_sinu_plot (Data, ivVal, ivSeg, Fit, Plot, handles);
 
     end
 end
@@ -355,8 +353,7 @@ handles.OutVar = Fit;
 handles.InVar.ivSeg = ivSeg;
 handles.IvVar.Plot  = Plot;
 
-[handles] = gui_sinu_plot (Data, ivVal, ivSeg, Fit, Plot, ...
-    hObject, eventdata, handles); 
+[handles] = gui_sinu_plot (Data, ivVal, ivSeg, Fit, Plot, handles);
 
 % update global handles & set cursor back to normal
 guidata(hObject,handles);
@@ -428,8 +425,7 @@ if ~isempty(handles.UNDO.Fit)
     ivVal = handles.InVar.ivVal;
     ivSeg = handles.InVar.ivSeg;
 
-    [handles] = gui_sinu_plot (Data, ivVal, ivSeg, Fit, Plot, ...
-        hObject, eventdata, handles); 
+    [handles] = gui_sinu_plot (Data, ivVal, ivSeg, Fit, Plot, handles);
 
 else
 
@@ -444,8 +440,7 @@ set(handles.figure1, 'pointer', 'arrow');
 end
 
 % --- Function that updates the main plot
-function [handles] = gui_sinu_plot (Data, ivVal, ivSeg, Fit, Plot, ...
-                         hObject, eventdata, handles);
+function [handles] = gui_sinu_plot (Data, ivVal, ivSeg, Fit, Plot, handles);
 
 axes(handles.pressure_axes);
 
