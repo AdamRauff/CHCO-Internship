@@ -7,7 +7,7 @@ function [ AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, STD_
 % if thrid digit/entry of filename is numeric == human file
 % otherwise, calf file --> use calf loadp function
 if FileName(1) == 'H' && ischar(FileName(2)) && ~isnan(str2double(FileName(3)));
-    [Pres, dPdt, Rvals Pnam, Pmrn, file, ~, ~]=loadp_10_10_16(PathName,FileName,100);
+    [Pres, dPdt, ~, Pnam, Pmrn, file, ~, ~]=loadp_10_10_16(PathName,FileName,100);
     dat_typ = 1;
 else
     [Pres, dPdt, Rvals, file, ~]=load_calf_p_5_17_17(PathName,FileName,100);
@@ -26,9 +26,9 @@ if length(Pres) == 1 && Pres == 0
 end
 
 %% (2,3) Filter pressure data & create time vector; find dP/dt Extrema.
-[Data_O] = data_filter (dat_typ, Pres, dPdt, Rvals);
-[Extr] = data_maxmin (Data_O);
-Data_O.time_per = Extr.time_per;
+[Data_O] = data_filter (dat_typ, Pres, dPdt);
+
+[Extrema] = data_maxmin (Data_O);
 
 %% (4) GUI for Manual Deletion of Mins and Maxs
 
@@ -38,7 +38,7 @@ Data_O.time_per = Extr.time_per;
 
 % Pressure and derivative, their extrema
 PeakStr.Data = Data_O;
-PeakStr.Extr = Extr;
+PeakStr.Ext = Extrema;
 
 % Images
 Green_Check = imread('check.png');
@@ -63,7 +63,7 @@ if ~isstruct(NoPeaksRet)
 end
 
 % if the exit button has been pressed
-if NoPeaksRet.Extr.dPmaxIdx == false
+if NoPeaksRet.Ext.dPmaxIdx == false
 
     % set all output variables to false, return to runAll
     [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
@@ -84,11 +84,11 @@ elseif NoPeaksRet.TotNumWaves == true
 else
     
     % update minima and maxima per user filter GUI
-    Extr.dPmaxIdx = NoPeaksRet.Extr.dPmaxIdx;
-    Extr.dPmaxVal = NoPeaksRet.Extr.dPmaxVal;
+    Extrema.dPmaxIdx = NoPeaksRet.Ext.dPmaxIdx;
+    Extrema.dPmaxVal = NoPeaksRet.Ext.dPmaxVal;
 
-    Extr.dPminIdx = NoPeaksRet.Extr.dPminIdx;
-    Extr.dPminVal = NoPeaksRet.Extr.dPminVal;
+    Extrema.dPminIdx = NoPeaksRet.Ext.dPminIdx;
+    Extrema.dPminVal = NoPeaksRet.Ext.dPminVal;
 
     % obtain number of total waveforms
     TotNumWaves = NoPeaksRet.TotNumWaves;
@@ -98,7 +98,7 @@ end
 clear NoPeaksRet
 
 %% (5) Find isovolumic timings for Takaguichi & Kind method.
-[ivIdx, ivVal, badcyc] = data_isoidx (Data_O, Extr);
+[ivIdx, ivVal, badcyc] = data_isoidx (Data_O, Extrema);
 
 % if there were no good pressure waveforms left, then skip patient
 % DO SOMETHING ELSE HERE: FILTER AT DIFFERENT FREQUENCY, TRY NO FILTER, ETC.
@@ -123,26 +123,15 @@ clear Data_O
 % frequnecy is the conversion to angular frequency 2*pi/T
 % multiplied by the number of waves found over the time period
 % ICs structure for first pass - enables individual computation of ICs
-%ICS.Freq = double(((2*pi)*TotNumWaves)/(Data.time_end)); % OLD METHOD
-ICS.Freq = 2*pi/Data.time_per;
+ICS.Freq = double(((2*pi)*TotNumWaves)/(Data.time_end));
 ICS.Pres = Data.Pres;
 ICS.dPmaxIdx = ivIdx.dPmax;
 ICS.dPminIdx = ivIdx.dPmin;
 
-
-[FitT, ivSeg, Plot] = fit_takeuchi (ivSeg, Data, ICS);
-[FitK] = fit_kind (ivSeg, ivIdx, Data, FitT);
-
-keyboard;
-% What was average frequency ratio between Takeuchi and Data?
-%temp = mean(FitT.RCoef(FitT.BadCyc~=1,:));
-%AveFreq = temp(3)/(2*pi);
-%[double(((2*pi)*TotNumWaves)/(Data.time_end)) 2*pi/Data.time_per]
-%[AveFreq 1/Data.time_per AveFreq*Data.time_per]
+[Fit, ivSeg, Plot] = isovol_fit (ivSeg, Data, ICS);
 
 % Package all structures for passing to GUI_SINU_FIT
-SinuStr.FitT = FitT;
-SinuStr.FitK = FitK;
+SinuStr.Fit  = Fit;
 SinuStr.Data = Data;
 SinuStr.Plot = Plot;
 
