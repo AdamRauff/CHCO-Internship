@@ -66,10 +66,10 @@ Data = handles.InVar.Data;
 Plot = handles.InVar.Plot;
 ivVal = handles.InVar.ivVal;
 ivSeg = handles.InVar.ivSeg;
-myfit = handles.InVar.Fit;  
+myfit = handles.InVar.FitT;  
 
 % Initialize UNDO structure.
-handles.UNDO.Fit = [];
+handles.UNDO.FitT = [];
 
 % store first fit output into output structure.
 handles.OutVar = myfit;
@@ -106,11 +106,10 @@ ivVal = handles.InVar.ivVal;
 ivSeg = handles.InVar.ivSeg;
 
 % store the current structures in UNDO structure for the undo button.
-handles.UNDO.Fit  = handles.OutVar;
+handles.UNDO.FitT  = handles.OutVar;
 handles.UNDO.Plot = Plot;
 handles.UNDO.ivIdx = ivIdx;
 handles.UNDO.ivVal = ivVal;
-handles.UNDO.ivSeg = ivSeg;
        
 % get the current point
 cp(1,:) = [eventdata.IntersectionPoint(1), eventdata.IntersectionPoint(2)];
@@ -162,18 +161,18 @@ if ~isempty(WaveNumPosRm) && ~isempty(WaveNumNegRm)
         [ivSeg] = data_isoseg (true, Data, ivIdx);
 
         ICS = [Mea Amp Fre Pha];
-        [Fit, ivSeg, Plot] = isovol_fit (ivSeg, Data, ICS);
+        [FitT, ivSeg, Plot] = fit_takeuchi (ivSeg, Data, ICS);
         
         % update global handles from isovol_returned values. If the Vanderpool
         % method isn't tripped, then ivSeg and Plot haven't changed, so this
         % is a just-in-case...
-        handles.OutVar = Fit;
+        handles.OutVar = FitT;
 
         handles.InVar.ivSeg = ivSeg;
         handles.IvVar.Plot  = Plot;
 
         % Plot the results
-        [handles] = gui_sinu_plot (Data, ivVal, ivSeg, Fit, Plot, handles);
+        [handles] = gui_sinu_plot (Data, ivVal, ivSeg, FitT, Plot, handles);
 
     end
 end
@@ -317,7 +316,7 @@ end
 end
 
 % --- Executes on button press in calculate.
-function calculate_Callback(hObject, eventdata, handles)
+function calculate_Callback(hObject, ~, handles)
 % hObject    handle to calculate (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -328,32 +327,28 @@ drawnow;
 disp('GUI_SINU_FIT>calculate_Callback:');
 
 % calculate sinusoids based on new ICs!
-%%% obtain new ICs
 Mea = str2double(get(handles.Mean_txt,'String'));
 Amp = str2double(get(handles.Amp_txt,'String'));
 Fre = str2double(get(handles.Freq_txt,'String'));
 Pha = str2double(get(handles.Phase_txt,'String'));
+ICS = [Mea Amp Fre Pha];
 
-% Extract Data, Indices/Values, and Fit Segments from passed structures.
+% Extract Data, Values, and Fit Segments from passed structures; get fits.
 Data = handles.InVar.Data;
-Plot = handles.InVar.Plot;
-ivIdx = handles.InVar.ivIdx;
 ivVal = handles.InVar.ivVal;
 ivSeg = handles.InVar.ivSeg;
 
-ICS = [Mea Amp Fre Pha];
-
-[Fit, ivSeg, Plot] = isovol_fit (ivSeg, Data, ICS );
+[FitT, ivSeg, Plot] = fit_takeuchi (ivSeg, Data, ICS);
 
 % update global handles from isovol_returned values. If the Vanderpool
 % method isn't tripped, then ivSeg and Plot haven't changed, so this
 % is a just-in-case...
-handles.OutVar = Fit;
+handles.OutVar = FitT;
 
 handles.InVar.ivSeg = ivSeg;
 handles.IvVar.Plot  = Plot;
 
-[handles] = gui_sinu_plot (Data, ivVal, ivSeg, Fit, Plot, handles);
+[handles] = gui_sinu_plot (Data, ivVal, ivSeg, FitT, Plot, handles);
 
 % update global handles & set cursor back to normal
 guidata(hObject,handles);
@@ -397,7 +392,7 @@ uiresume(handles.figure1);
 end
 
 % --- Executes on button press in Undo.
-function Undo_Callback(hObject, eventdata, handles)
+function Undo_Callback(hObject, ~, handles)
 % hObject    handle to Undo (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -408,24 +403,23 @@ drawnow;
 
 % if the handles.Old variables have been created (user has clicked on the
 % plot and removed pressure waveform(s).
-if ~isempty(handles.UNDO.Fit)
+if ~isempty(handles.UNDO.FitT)
     disp('GUI_SINU_FIT>Undo_Callback: Restoring Previous Fit & Plot');
-    handles.OutVar = handles.UNDO.Fit;
+    handles.OutVar = handles.UNDO.FitT;
 
     handles.InVar.Plot  = handles.UNDO.Plot;
     handles.InVar.ivIdx = handles.UNDO.ivIdx;
     handles.InVar.ivVal = handles.UNDO.ivVal;
     handles.InVar.ivSeg = handles.UNDO.ivSeg; 
     
-    % Extract Data, Indices/Values, and Fit Segments from passed structures.
-    Fit  = handles.OutVar;
+    % Extract Data, Values, Fit Segments, Plots, & Segments from handles.
+    FitT = handles.OutVar;
     Data = handles.InVar.Data;
     Plot = handles.InVar.Plot;
-    ivIdx = handles.InVar.ivIdx;
     ivVal = handles.InVar.ivVal;
     ivSeg = handles.InVar.ivSeg;
 
-    [handles] = gui_sinu_plot (Data, ivVal, ivSeg, Fit, Plot, handles);
+    [handles] = gui_sinu_plot (Data, ivVal, ivSeg, FitT, Plot, handles);
 
 else
 
@@ -458,26 +452,28 @@ ylabel('Data.Pres_Dsue [mmHg]','FontSize',18);
 
 hold on;
 
+mystp = Data.time_step/2;
 mysz = length(ivVal.Ps1);
 PmaxT = zeros(mysz,1);
 
 % Attain the sinusoid fit for all points (so Pmax can be visualized
 for i = 1:mysz
 
-    % obtain the range of time of each peak
-    interval = Data.Time_D(ivSeg.iv1Time(i).PosIso(1,1)):0.002: ...
+    % obtain the range of time of each peak, then normalize to zero
+    FitSineTime = Data.Time_D(ivSeg.iv1Time(i).PosIso(1,1)):mystp: ...
         Data.Time_D(ivSeg.iv1Time(i).NegIso(end,1));
 
-    % plug into Naeiji equation that was just solved for
+    % plug into Naeiji equation that was just solved for; normalize range
+    % to start at one (as was done in fitting).
     FitSinePres = Fit.RCoef(i,1) + Fit.RCoef(i,2)*sin(Fit.RCoef(i,3)* ...
-      interval + Fit.RCoef(i,4));
+      (FitSineTime-FitSineTime(1)) + Fit.RCoef(i,4));
 
     % find time point corresponding to Pmax
     [~, Idx] = min(abs(FitSinePres-Fit.PIsoMax(i)));
 
-    PmaxT(i) = interval(Idx);
+    PmaxT(i) = FitSineTime(Idx);
 
-    plot(interval, FitSinePres, 'k--', PmaxT(i), Fit.PIsoMax(i), 'go');
+    plot(FitSineTime, FitSinePres, 'k--', PmaxT(i), Fit.PIsoMax(i), 'go');
     hold on;
 end
 

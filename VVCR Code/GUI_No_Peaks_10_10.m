@@ -63,7 +63,7 @@ handles.OutVar = false;
 
 % Extract variables from structure for a more clear workflow
 Data = handles.InVar.Data;
-Extr = handles.InVar.Ext;
+Extr = handles.InVar.Extr;
 
 % intialize these variables - used for undo button
 handles.UNDO.Extr = [];
@@ -92,7 +92,7 @@ drawnow;
 
 % store current mins and maxs as old min,maxs. This is done so the undo
 % button can function
-handles.UNDO.Extr = handles.InVar.Ext;
+handles.UNDO.Extr = handles.InVar.Extr;
 
 % get the current point
 cp(1,:) = [eventdata.IntersectionPoint(1), eventdata.IntersectionPoint(2)];
@@ -102,7 +102,7 @@ cp(1,:) = [eventdata.IntersectionPoint(1), eventdata.IntersectionPoint(2)];
 
 % Extract variables from structure for a more clear workflow
 Data = handles.InVar.Data;
-Extr = handles.InVar.Ext;
+Extr = handles.InVar.Extr;
 
 % find indices of critical points within +- 0.5 seconds 
 TMxIdx = find(Data.Time(Extr.dPmaxIdx)>cp(1)-0.5 & ...
@@ -153,7 +153,7 @@ elseif min(TMxDist) > min(TMnDist)
 end
     
 % update handles (global variable)
-handles.InVar.Ext = Extr;
+handles.InVar.Extr = Extr;
 
 % update number of maxima/minima
 set(handles.Max_num, 'String', num2str(length(Extr.dPmaxVal)));
@@ -197,11 +197,11 @@ if ~isempty(handles.UNDO.Extr)
     drawnow;
 
     % retrieve the old critical points
-    handles.InVar.Ext = handles.UNDO.Extr;
+    handles.InVar.Extr = handles.UNDO.Extr;
 
     % Extract variables from structure for a more clear workflow
     Data = handles.InVar.Data;
-    Extr = handles.InVar.Ext;
+    Extr = handles.InVar.Extr;
 
     % update number of maxima/minima
     set(handles.Max_num, 'String', num2str(length(Extr.dPmaxVal)));
@@ -230,7 +230,7 @@ function Next_Callback(hObject, ~, handles) %#ok<DEFNU>
 
 % grab the total number of complete waveforms from the editable text
 numWaves = uint8(str2double(get(handles.NumWaves, 'String')));
-Extr = handles.InVar.Ext; 
+Extr = handles.InVar.Extr; 
 
 handles.InVar.TotNumWaves = numWaves;
 
@@ -356,7 +356,8 @@ box on
 grid on
 
 axes(handles.dpdt_axes);
-h2 = plot(Data.Time, Data.dPdt, 'b', ...
+h2 = plot(Data.Time, Data.OrigdPdt, 'g', ...
+        Data.Time, Data.dPdt, 'b', ...
         Data.Time(Extr.dPmaxIdx), Extr.dPmaxVal, 'ro', ...
         Data.Time(Extr.dPminIdx), Extr.dPminVal, 'ko');
 
