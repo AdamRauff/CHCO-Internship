@@ -1,0 +1,37 @@
+% ll GUI_*m VVCR_MULTIH_*m data_* isovol_fit.m runAll_08_10_17.m
+-rw-r--r--+ 1 hunterk None 12212 Sep 11 09:47 GUI_No_Peaks_10_10.m
+-rw-r--r--+ 1 hunterk None 16485 Sep 11 09:23 GUI_SINU_FIT_08_29_17.m
+-rw-r--r--+ 1 hunterk None  6230 Sep 10 20:06 VVCR_MULTIH_08_09_17.m
+-rw-r--r--+ 1 hunterk None   634 Sep  9 15:06 data_double.m
+-rw-r--r--+ 1 hunterk None  1414 Sep  9 18:01 data_filter.m
+-rw-r--r--+ 1 hunterk None  9203 Sep  9 17:48 data_isoidx.m
+-rw-r--r--+ 1 hunterk None  1852 Sep 10 16:02 data_isoseg.m
+-rw-r--r--+ 1 hunterk None   864 Sep  9 15:02 data_maxmin.m
+-rw-r--r--+ 1 hunterk None  8066 Sep 10 20:10 isovol_fit.m
+-rw-r--r--  1 hunterk None  9826 Sep  9 20:26 runAll_08_10_17.m
+% wc GUI_*m VVCR_MULTIH_*m data_* isovol_fit.m runAll_08_10_17.m
+  375  1476 12212 GUI_No_Peaks_10_10.m
+  497  2027 16485 GUI_SINU_FIT_08_29_17.m
+  205   851  6230 VVCR_MULTIH_08_09_17.m
+   18    86   634 data_double.m
+   39   211  1414 data_filter.m
+  269  1308  9203 data_isoidx.m
+   52   213  1852 data_isoseg.m
+   26   103   864 data_maxmin.m
+  226   942  8066 isovol_fit.m
+  257  1182  9826 runAll_08_10_17.m
+ 1964  8399 66786 total
+
+% ll GUI_*m VVCR_FINAL_5_22_17.m runAll_10_10.m
+-rw-r--r-- 1 hunterk None 15415 Aug  9 15:23 GUI_No_Peaks_10_10.m
+-rw-r--r-- 1 hunterk None 34082 Aug  9 15:23 GUI_SINU_FIT_10_03.m
+-rw-r--r-- 1 hunterk None 20599 Aug  9 15:23 VVCR_FINAL_5_22_17.m
+-rw-r--r-- 1 hunterk None  9757 Aug  9 15:23 runAll_10_10.m
+% wc GUI_*m VVCR_FINAL_5_22_17.m runAll_10_10.m
+  452  1757 15415 GUI_No_Peaks_10_10.m
+  959  3851 34082 GUI_SINU_FIT_10_03.m
+  631  2729 20599 VVCR_FINAL_5_22_17.m
+  252  1175  9757 runAll_10_10.m
+ 2294  9512 79853 total
+
+

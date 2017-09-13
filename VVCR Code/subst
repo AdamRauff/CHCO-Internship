@@ -17,20 +17,20 @@ foreach $name (@ARGV) {
       $orig = $_;
 
 ### FIRST SUBST
-      s/pksT/dPmaxIdx/g;
-      s/pks/dPmaxVal/g;
-      s/MinIdx/dPminIdx/g;
-      s/Minima/dPminVal/g;
+#     s/pksT/dPmaxIdx/g;
+#     s/pks/dPmaxVal/g;
+#     s/MinIdx/dPminIdx/g;
+#     s/Minima/dPminVal/g;
 
-      s/isovoltime/isovolTime/g;
-      s/isovol/isovolPres/g;
-      s/isovolPresTime/isovolTime/g;
+#     s/isovoltime/isovolTime/g;
+#     s/isovol/isovolPres/g;
+#     s/isovolPresTime/isovolTime/g;
 
-      s/EDP_NT/Iso2StIdx/g;
-      s/EDP_NT_Doub/Iso2StIdx_Doub/g;
-      s/EDP_T/Iso1StIdx/g;
-      s/EDP_N/Iso2StVal/g;
-      s/EDP/Iso1StVal/g;
+#     s/EDP_NT/Iso2StIdx/g;
+#     s/EDP_NT_Doub/Iso2StIdx_Doub/g;
+#     s/EDP_T/Iso1StIdx/g;
+#     s/EDP_N/Iso2StVal/g;
+#     s/EDP/Iso1StVal/g;
 
 ### SECOND SUBST
 #     s/\(1\)\.ivt/\.ivTime_D/g;
@@ -78,13 +78,55 @@ foreach $name (@ARGV) {
 #     s/\(1\)\.IM/.Green_Check/g;
 #     s/\(2\)\.IM/.Red_X/g;
 
-
 ### FIX ERROR :)
 #     s/\.fit\.BadCyct/\.Time/g;
 
 ### CLEANUP SUBST
 #     s/\.OldpksT/\.dPmaxIdx/;
 #     s/\.Oldpks/\.dPmaxVal/;
+
+### REVISIONS FOR KIND METHOD
+#     s/isovolPres/iv1Pres/g;
+#     s/isovolTime/iv1Time/g;
+#     s/ivTime_D/iv1Time_D/g;
+#     s/ivPres_D/iv1Pres_D/g;
+
+#     s/Iso1StVal/iv1PsVal/g;
+#     s/Iso1StIdx/iv1PsIdx/g;
+#     s/Iso2StVal/iv1NeVal/g;
+#     s/Iso2StIdx/iv1NeIdx/g;
+
+#     s/bad_curve/badpts1/g;
+
+### REVISIONS FOR data_isotim
+#     s/iv1PsIdx/ivIdx.Ps1/g;
+#     s/iv1PsVal/ivVal.Ps1/g;
+#     s/iv1NeIdx/ivIdx.Ne1/g;
+#     s/iv1NeVal/ivVal.Ne1/g;
+#     s/iv2PeIdx/ivIdx.Pe2/g;
+#     s/iv2PeVal/ivVal.Pe2/g;
+#     s/iv2NsIdx/ivIdx.Ns2/g;
+#     s/iv2NsVal/ivVal.Ns2/g;
+#     s/iv2NeIdx/ivIdx.Ne2/g;
+#     s/iv2NeVal/ivVal.Ne2/g;
+
+#     s/dPmaxIdx/ivIdx.dPmax/g;
+#     s/dPmaxVal/ivVal.dPmax/g;
+#     s/dPminIdx/ivIdx.dPmin/g;
+#     s/dPminVal/ivVal.dPmin/g;
+
+#     s/dPdt/Dat.dPdt/g;
+#     s/Pres/Dat.Pres/g;
+
+### REVISIONS FOR GUI_NoPeaks
+#     s/\bdPmaxIdx\b/Extr.dPmaxIdx/g;
+#     s/\bdPmaxVal\b/Extr.dPmaxVal/g;
+#     s/\bdPminIdx\b/Extr.dPminIdx/g;
+#     s/\bdPminVal\b/Extr.dPminVal/g;
+
+      s/\btime\b/Data.Time/g;
+      s/\bPres\b/Data.Pres/g;
+      s/\bdPdt\b/Data.dPdt/g;
 
       print OUT $_;
 

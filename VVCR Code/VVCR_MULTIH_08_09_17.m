@@ -133,7 +133,6 @@ ICS.dPminIdx = ivIdx.dPmin;
 [FitT, ivSeg, Plot] = fit_takeuchi (ivSeg, Data, ICS);
 [FitK] = fit_kind (ivSeg, ivIdx, Data, FitT);
 
-keyboard;
 % What was average frequency ratio between Takeuchi and Data?
 %temp = mean(FitT.RCoef(FitT.BadCyc~=1,:));
 %AveFreq = temp(3)/(2*pi);
