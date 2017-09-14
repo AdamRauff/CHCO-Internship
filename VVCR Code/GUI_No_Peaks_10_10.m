@@ -276,7 +276,7 @@ function Exit_Callback(hObject, ~, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % set 1 output to false
-handles.InVar.Ext.dPmaxIdx = false;
+handles.InVar.TotNumWaves = false;
 
 % update handles globally
 guidata(hObject, handles)

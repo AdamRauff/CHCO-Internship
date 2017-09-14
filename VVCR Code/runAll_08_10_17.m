@@ -115,60 +115,67 @@ for i = 1:length(top)
         % somewhere, so if it is a pressure file that could not be opened,
         % it is remarked
 %         try
-            [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, STD_Pes, STD_PMX, TotNumWaves] = VVCR_MULTIH_08_09_17(Fold_name,top_name);
+            [Res, Pat] = VVCR_MULTIH_08_09_17(Fold_name,top_name);
             
-            % check to see if outputs are false or true
-            % EXIT
-            if AVG_Pes == false
-                % exit for loop
-                % keep in mind when the exit button is pressed, the current
-                % patient, i, will not be evaluated
-                if fileCount >= 1
-                    disp(['The last file analyzed was: ', top(i-1).name]);
-                else
-                    disp('No File was Analyzed in this session');
-                end
-                
-                break
-                
-            % Discard Patient
-            elseif AVG_Pes == true
-                % proceed to next iteration of i (next patient)
-                
-                disp(['File ',top(i).name, ' is skipped']);
-                
-                % write to csv
-                
-                filechk = which(csvName);
-
-                % if file does not exist, creat one, and write all the headers to it
-                if isempty(filechk)
-                    fd0 = fopen(csvName, 'w');
-                    fprintf(fd0, 'Pnam, Pmrn, file, AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Num_Peaks, STD_Pes, STD_PMX, TotNumWaves\n');
-                else
-                    % if file exists, append to it
-                    fd0 = fopen(csvName, 'a');
-                    
-                    if i == 1 || fileCount == 0 
-                        fprintf(fd0, ' ,\n');
+            if ~isstruct(Res)
+                % check to see if outputs are false or true
+                % EXIT
+                if Res == false
+                    % exit for loop
+                    % keep in mind when the exit button is pressed, the current
+                    % patient, i, will not be evaluated
+                    if fileCount >= 1
+                        disp(['The last file analyzed was: ', top(i-1).name]);
+                    else
+                        disp('No File was Analyzed in this session');
                     end
+
+                    break
+
+                % Discard Patient
+                elseif Res == true
+                    % proceed to next iteration of i (next patient)
+
+                    disp(['File ',top(i).name, ' is skipped']);
+
+                    % write to csv
+
+                    filechk = which(csvName);
+
+                    % if file does not exist, creat one, and write all the 
+                    % headers to it
+                    if isempty(filechk)
+                        fd0 = fopen(csvName, 'w');
+                        fprintf(fd0, ['Pnam, Pmrn, file, AVG_Pes, ' ...
+                            'AVG_Pmax, VVCR_UT, VVCR_KH, Num_Peaks, ' ...
+                            'STD_Pes, STD_PMX, TotNumWaves\n']);
+                    else
+                        % if Pat.FileNam exists, append to it
+                        fd0 = fopen(csvName, 'a');
+
+                        if i == 1 || fileCount == 0 
+                            fprintf(fd0, ' ,\n');
+                        end
+                    end
+
+                    myStr = ['This, Pat.FileNam, ',top(i).name, ...
+                        ', was, skipped, becuase, user, determined, ' ...
+                        'something, was, wrong'];
+                    fprintf(fd0,[myStr, '\n']);
+
+                    % close file
+                    fclose(fd0);
+
+                    % remark iteration of i that was skipped
+                    FileSkpTrck = i;
+
+                    % skip to next iteration of i
+                    continue 
                 end
-                
-                myStr = ['This, file, ',top(i).name, ', was, skipped, becuase, user, determined, something, was, wrong'];
-                fprintf(fd0,[myStr, '\n']);
-                
-                % close file
-                fclose(fd0);
-                
-                % remark iteration of i that was skipped
-                FileSkpTrck = i;
-                
-                % skip to next iteration of i
-                continue 
             end
             % ----------------------------------------------------------
-            % check Pnam and Pmrn, to make sure they do not give valid
-            % names and mrn. The analyzed data must be anonymized!!!
+            % check Pat.Nam and Pat.MRN, to make sure they do not give
+            % valid names and mrn. The analyzed data must be anonymized!!!
             % ----------------------------------------------------------
             
             TXT_FLAG = true; % text file was readable by loadp
@@ -187,12 +194,12 @@ for i = 1:length(top)
             
 %         catch
 %             disp('file could not be analyzed');
-%             disp(['name of file: ',top_name]);
+%             disp(['name of Pat.FileNam: ',top_name]);
             
 %         end
         
         if TXT_FLAG == true
-            % check to if RV_data.csv file exists
+            % check to if RV_data.csv Pat.FileNam exists
             filechk = which(csvName);
 
             % if file does not exist, creat one, and write all the headers to it
@@ -214,24 +221,24 @@ for i = 1:length(top)
             end
             
             % Name, MRN, Filename
-            fprintf(fd0, '%s, %s, %s,', Pnam{1}, Pmrn{1}, file);
+            fprintf(fd0, '%s, %s, %s,', Pat.Nam{1}, Pat.MRN{1}, Pat.FileNam);
                     
             % average Pes and Pmax - end systolic pressure (Pes), and
             % maximum pressure (Pmax) obtained from equation of Naeiji
             % (Mean + 2*amp)
-            fprintf(fd0, '%10.6f, %10.6f,' , AVG_Pes, AVG_Pmax);
+            fprintf(fd0, '%10.6f, %10.6f,' , Res.Pes_Mean, Res.Pmax_Mean);
             
             % print VVCR - ventricular vascular coupling ratio
             % UT - Dr. Uyen Troung
             % KH - Dr. Kendall Hunter
-            % VVCR_KH = 1/VVCR_UT, they are reciprocals
-            fprintf(fd0, '%8.6f, %8.6f,', VVCR_UT, VVCR_KH);
+            % Res.VVCRnorm_Mean = 1/Res.VVCRinv_Mean, they are reciprocals
+            fprintf(fd0, '%8.6f, %8.6f,', Res.VVCRinv_Mean, Res.VVCRnorm_Mean);
             
             % print the standard deviations of Pmax and Pes, the number
             % of analyzed peaks, and the total number of waves
-            fprintf(fd0, '%i, %10.6f, %10.6f, %i\n', numPeaks, STD_Pes, STD_PMX, TotNumWaves);
+            fprintf(fd0, '%i, %10.6f, %10.6f, %i\n', Res.numPeaks, Res.Pes_StD, Res.Pmax_StD, Res.TotNumWaves);
             
-            % close file
+            % close Pat.FileNam
             fclose(fd0);
             
             % print to command window how many files were analyzed

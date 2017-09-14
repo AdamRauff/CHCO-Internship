@@ -1,25 +1,25 @@
-function [ AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, STD_Pes, STD_PMX, TotNumWaves] = VVCR_MULTIH_08_09_17( PathName, FileName)
+function [ Res, Pat ] = VVCR_MULTIH_08_09_17( PathName, FileName)
 
-%% (1) Read in data from the given file
-% determine if file is from calf or humans to apply apprpriate loadp
+%% (1) Read in data from the given Pat.FileNam
+% determine if Pat.FileNam is from calf or humans to apply apprpriate loadp
 % function
 
-% if thrid digit/entry of filename is numeric == human file
-% otherwise, calf file --> use calf loadp function
+% if thrid digit/entry of Pat.FileNamname is numeric == human Pat.FileNam
+% otherwise, calf Pat.FileNam --> use calf loadp function
 if FileName(1) == 'H' && ischar(FileName(2)) && ~isnan(str2double(FileName(3)));
-    [Pres, dPdt, Rvals Pnam, Pmrn, file, ~, ~]=loadp_10_10_16(PathName,FileName,100);
+    [Pres, dPdt, Rvals, Pat.Nam, Pat.MRN, Pat.FileNam, ~, ~]=loadp_10_10_16(PathName,FileName,100);
     dat_typ = 1;
 else
-    [Pres, dPdt, Rvals, file, ~]=load_calf_p_5_17_17(PathName,FileName,100);
+    [Pres, dPdt, Rvals, Pat.FileNam, ~]=load_calf_p_5_17_17(PathName,FileName,100);
     dat_typ = 0;
 end
 
 % check to see if RV array was NOT found by loaddp
 if length(Pres) == 1 && Pres == 0
 
-    % set all outputs to true --> skip file, return to runAll
-    [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
-        STD_Pes, STD_PMX, TotNumWaves] = deal (false);
+    % set output vars to true --> skip Pat.FileNam, return to runAll
+    Res = false;
+    Pat = false;
     disp('VVCR_MULTIH: Loadp did not detect an RV column');
     return
 
@@ -55,29 +55,28 @@ clear PeakStr Green_Check Red_X
 
 if ~isstruct(NoPeaksRet)
 
-    [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
-        STD_Pes, STD_PMX, TotNumWaves] = deal (false);
+    Res = false;
+    Pat = false;
     disp('VVCR_MULTIH: GUI_No_Peaks closed.');
     return
 
 end
 
 % if the exit button has been pressed
-if NoPeaksRet.Extr.dPmaxIdx == false
+if NoPeaksRet.TotNumWaves == false
 
-    % set all output variables to false, return to runAll
-    [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
-        STD_Pes, STD_PMX, TotNumWaves] = deal (false);
+    Res = false;
+    Pat = false;
     disp('VVCR_MULTIH: You chose to exit the analysis');
-    disp(['    The file ', FileName, ' was not evaluated!']);
+    disp(['    The Pat.FileNam ', FileName, ' was not evaluated!']);
     return
 
 % if the discard patient button has been pressed
 elseif NoPeaksRet.TotNumWaves == true
 
-     % set all output variables to true, return to runAll
-    [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
-        STD_Pes, STD_PMX, TotNumWaves] = deal (true);
+    Res = true;
+    Pat = true;
+    disp('VVCR_MULTIH: patient discarded pre-analysis.');
     return
 
 % otherwise
@@ -91,7 +90,7 @@ else
     Extr.dPminVal = NoPeaksRet.Extr.dPminVal;
 
     % obtain number of total waveforms
-    TotNumWaves = NoPeaksRet.TotNumWaves;
+    Res.TotNumWaves = NoPeaksRet.TotNumWaves;
 
 end
 
@@ -105,8 +104,8 @@ clear NoPeaksRet
 if isempty(ivIdx.Ps1)
 
      % set all output variables to true, return to runAll
-    [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
-        STD_Pes, STD_PMX, TotNumWaves] = deal (true);
+    Res = true;
+    Pat = true;
     return
 
 end
@@ -123,7 +122,7 @@ clear Data_O
 % frequnecy is the conversion to angular frequency 2*pi/T
 % multiplied by the number of waves found over the time period
 % ICs structure for first pass - enables individual computation of ICs
-%ICS.Freq = double(((2*pi)*TotNumWaves)/(Data.time_end)); % OLD METHOD
+%ICS.Freq = double(((2*pi)*Res.TotNumWaves)/(Data.time_end)); % OLD METHOD
 ICS.Freq = 2*pi/Data.time_per;
 ICS.Pres = Data.Pres;
 ICS.dPmaxIdx = ivIdx.dPmax;
@@ -136,7 +135,7 @@ ICS.dPminIdx = ivIdx.dPmin;
 % What was average frequency ratio between Takeuchi and Data?
 %temp = mean(FitT.RCoef(FitT.BadCyc~=1,:));
 %AveFreq = temp(3)/(2*pi);
-%[double(((2*pi)*TotNumWaves)/(Data.time_end)) 2*pi/Data.time_per]
+%[double(((2*pi)*Res.TotNumWaves)/(Data.time_end)) 2*pi/Data.time_per]
 %[AveFreq 1/Data.time_per AveFreq*Data.time_per]
 
 % Package all structures for passing to GUI_SINU_FIT
@@ -162,18 +161,19 @@ if ~isstruct(RetStr)
     if RetStr == false
     
         % set all output variables to false, return to runAll
-        [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
-            STD_Pes, STD_PMX, TotNumWaves] = deal (false);
-        disp('VVCR_MULTIH: GUI_SINU_FIT closed/exit pressed.');
+        Res = false;
+        Pat = false;
+        disp('VVCR_MULTIH: You chose to exit the analysis');
+        disp(['    The Pat.FileNam ', FileName, ' was not evaluated!']);
         return
 
     % if the discard patient button has been pressed
     elseif RetStr == true
     
-         % set all output variables to true, return to runAll
-        [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
-            STD_Pes, STD_PMX, TotNumWaves] = deal (true);
-        disp('VVCR_MULTIH: patient discarded.');
+        % set all output variables to true, return to runAll
+        Res = true;
+        Pat = true;
+        disp('VVCR_MULTIH: patient discarded post-analysis.');
         return
 
     end
@@ -185,31 +185,41 @@ else
     PIsoMax = RetStr.PIsoMax;
     
     % calculate the number of peaks that were evaluated
-    numPeaks = 0;
+    Res.numPeaks = 0;
     for i = 1:length(BadCyc)
         if BadCyc(i) ~= 1
-            numPeaks = numPeaks + 1;
+            Res.numPeaks = Res.numPeaks + 1;
         end
     end
+
+    % Send whole datasets back to runAll (might use them)... this may be
+    % unnecessary, delete if so...
+    Res.PIsoMax = PIsoMax;
+    Res.Pes     = Data.Pes;
+    Res.BadCyc  = BadCyc;
+
     %OKAY! here are the final values and we can FINALLY calculate VVCR.
+    GOOD_Pes = Data.P_es(BadCyc~=1);
+    GOOD_Pmx = PIsoMax(BadCyc~=1);
 
-    % average Pes for the waves that fit well
-    AVG_Pes = mean(Data.P_es(BadCyc~=1)); 
-    
-    % standard deviation of Pes
-    STD_Pes = std(Data.P_es(BadCyc~=1));
+    % mean, std Pes for the waves that fit well
+    Res.Pes_Mean = mean(GOOD_Pes);
+    Res.Pes_StD  = std(GOOD_Pes);
 
-    % average P_max for the waves that fit well
-    AVG_Pmax = mean(PIsoMax(BadCyc~=1)); 
-    
-    % standard deviation of Pmax
-    STD_PMX = std(PIsoMax(BadCyc~=1));
+    % mean, std P_max for the waves that fit well
+    Res.Pmax_Mean = mean(GOOD_Pmx);
+    Res.Pmax_StD  = std(GOOD_Pmx);
 
     %from Uyen Truongs VVCR paper
-    VVCR_UT = AVG_Pes/(AVG_Pmax-AVG_Pes); 
+    Res.VVCRinv_Mean = GOOD_Pes./(GOOD_Pmx-GOOD_Pes); 
+    Res.VVCRinv_StD  = std(Res.VVCRinv_Mean);
+    Res.VVCRinv_Mean = mean(Res.VVCRinv_Mean);
 
     % Hunter's 
-    VVCR_KH = (AVG_Pmax/AVG_Pes)-1;
+    Res.VVCRnorm_Mean = (GOOD_Pmx./GOOD_Pes)-1;
+    Res.VVCRnorm_StD  = std(Res.VVCRnorm_Mean);
+    Res.VVCRnorm_Mean = mean(Res.VVCRnorm_Mean);
+
 end
 
 end
