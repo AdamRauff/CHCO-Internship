@@ -225,17 +225,17 @@ for i = 1:length(top)
             % average Pes and Pmax - end systolic pressure (Pes), and
             % maximum pressure (Pmax) obtained from equation of Naeiji
             % (Mean + 2*amp)
-            fprintf(fd0, '%10.6f, %10.6f,' , Res.Pes_Mean, Res.Pmax_Mean);
+            fprintf(fd0, '%10.6f, %10.6f,' , Res.P_es_Mean, Res.PmaxT_Mean);
             
             % print VVCR - ventricular vascular coupling ratio
             % UT - Dr. Uyen Troung
             % KH - Dr. Kendall Hunter
-            % Res.VVCRnorm_Mean = 1/Res.VVCRinv_Mean, they are reciprocals
-            fprintf(fd0, '%8.6f, %8.6f,', Res.VVCRinv_Mean, Res.VVCRnorm_Mean);
+            % Res.VVCRnT_Mean = 1/Res.VVCRiT_Mean, they are reciprocals
+            fprintf(fd0, '%8.6f, %8.6f,', Res.VVCRiT_Mean, Res.VVCRnT_Mean);
             
             % print the standard deviations of Pmax and Pes, the number
             % of analyzed peaks, and the total number of waves
-            fprintf(fd0, '%i, %10.6f, %10.6f, %i\n', Res.numPeaks, Res.Pes_StD, Res.Pmax_StD, Res.TotNumWaves);
+            fprintf(fd0, '%i, %10.6f, %10.6f, %i\n', Res.numPeaks, Res.P_es_StD, Res.PmaxT_StD, Res.TotNumWaves);
             
             % close Pat.FileNam
             fclose(fd0);

@@ -66,23 +66,25 @@ Data = handles.InVar.Data;
 Plot = handles.InVar.Plot;
 ivVal = handles.InVar.ivVal;
 ivSeg = handles.InVar.ivSeg;
-myfit = handles.InVar.FitT;  
+FitT = handles.InVar.FitT;  
 
 % Initialize UNDO structure.
 handles.UNDO.FitT = [];
 
 % store first fit output into output structure.
-handles.OutVar = myfit;
+Res.FitT = handles.InVar.FitT;
+Res.FitK = handles.InVar.FitK;
+handles.OutVar = Res;
 
 % set editable text boxes with ICs
-IC = myfit.InitIC;
+IC = FitT.InitIC;
 set(handles.Mean_txt, 'String',num2str(IC(1)));
 set(handles.Amp_txt, 'String',num2str(IC(2)));
 set(handles.Freq_txt, 'String',num2str(IC(3)));
 set(handles.Phase_txt, 'String',num2str(IC(4)));
 
 % plot pressure, sinusoid fits
-[handles] = gui_sinu_plot (Data, ivVal, ivSeg, myfit, Plot, handles);
+[handles] = gui_sinu_plot (Data, ivVal, ivSeg, FitT, Plot, handles);
 
 % Update handles.
 guidata(hObject, handles);
@@ -106,10 +108,11 @@ ivVal = handles.InVar.ivVal;
 ivSeg = handles.InVar.ivSeg;
 
 % store the current structures in UNDO structure for the undo button.
-handles.UNDO.FitT  = handles.OutVar;
+handles.UNDO.Res  = handles.OutVar;
 handles.UNDO.Plot = Plot;
 handles.UNDO.ivIdx = ivIdx;
 handles.UNDO.ivVal = ivVal;
+handles.UNDO.ivSeg = ivSeg;
        
 % get the current point
 cp(1,:) = [eventdata.IntersectionPoint(1), eventdata.IntersectionPoint(2)];
@@ -162,11 +165,14 @@ if ~isempty(WaveNumPosRm) && ~isempty(WaveNumNegRm)
 
         ICS = [Mea Amp Fre Pha];
         [FitT, ivSeg, Plot] = fit_takeuchi (ivSeg, Data, ICS);
+        [FitK] = fit_kind (ivSeg, ivIdx, Data, FitT);
         
         % update global handles from isovol_returned values. If the Vanderpool
         % method isn't tripped, then ivSeg and Plot haven't changed, so this
         % is a just-in-case...
-        handles.OutVar = FitT;
+        Res.FitT = FitT;
+        Res.FitK = FitK;
+        handles.OutVar = Res;
 
         handles.InVar.ivSeg = ivSeg;
         handles.IvVar.Plot  = Plot;
@@ -339,11 +345,14 @@ ivVal = handles.InVar.ivVal;
 ivSeg = handles.InVar.ivSeg;
 
 [FitT, ivSeg, Plot] = fit_takeuchi (ivSeg, Data, ICS);
+[FitK] = fit_kind (ivSeg, ivIdx, Data, FitT);
 
 % update global handles from isovol_returned values. If the Vanderpool
 % method isn't tripped, then ivSeg and Plot haven't changed, so this
 % is a just-in-case...
-handles.OutVar = FitT;
+Res.FitT = FitT;
+Res.FitK = FitK;
+handles.OutVar = Res;
 
 handles.InVar.ivSeg = ivSeg;
 handles.IvVar.Plot  = Plot;
@@ -403,9 +412,9 @@ drawnow;
 
 % if the handles.Old variables have been created (user has clicked on the
 % plot and removed pressure waveform(s).
-if ~isempty(handles.UNDO.FitT)
+if ~isempty(handles.UNDO.Res)
     disp('GUI_SINU_FIT>Undo_Callback: Restoring Previous Fit & Plot');
-    handles.OutVar = handles.UNDO.FitT;
+    handles.OutVar = handles.UNDO.Res;
 
     handles.InVar.Plot  = handles.UNDO.Plot;
     handles.InVar.ivIdx = handles.UNDO.ivIdx;

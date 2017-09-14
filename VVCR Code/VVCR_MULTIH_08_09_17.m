@@ -181,8 +181,12 @@ if ~isstruct(RetStr)
 else
     % extract Pmax and the list of well fitted curves from the structure
     % that is returned from GUI
-    BadCyc  = RetStr.BadCyc;
-    PIsoMax = RetStr.PIsoMax;
+    BadCyc  = RetStr.FitT.BadCyc;
+
+    % Initialize return structure to contain ALL fitting data.
+    Res.FitT = RetStr.FitT;
+    Res.FitK = RetStr.FitK;
+    Res.P_es = Data.P_es;
     
     % calculate the number of peaks that were evaluated
     Res.numPeaks = 0;
@@ -192,33 +196,39 @@ else
         end
     end
 
-    % Send whole datasets back to runAll (might use them)... this may be
-    % unnecessary, delete if so...
-    Res.PIsoMax = PIsoMax;
-    Res.Pes     = Data.Pes;
-    Res.BadCyc  = BadCyc;
-
     %OKAY! here are the final values and we can FINALLY calculate VVCR.
-    GOOD_Pes = Data.P_es(BadCyc~=1);
-    GOOD_Pmx = PIsoMax(BadCyc~=1);
+    PIsoMaxT = RetStr.FitT.PIsoMax;
+    PIsoMaxK = RetStr.FitK.RCoef(:,1);
+
+    GOOD_P_es  = Data.P_es(BadCyc~=1);
+    GOOD_PmxT = PIsoMaxT(BadCyc~=1);
+    GOOD_PmxK = PIsoMaxK(BadCyc~=1);
 
     % mean, std Pes for the waves that fit well
-    Res.Pes_Mean = mean(GOOD_Pes);
-    Res.Pes_StD  = std(GOOD_Pes);
+    Res.P_es_Mean = mean(GOOD_P_es);
+    Res.P_es_StD  = std(GOOD_P_es);
 
     % mean, std P_max for the waves that fit well
-    Res.Pmax_Mean = mean(GOOD_Pmx);
-    Res.Pmax_StD  = std(GOOD_Pmx);
+    Res.PmaxT_Mean = mean(GOOD_PmxT);
+    Res.PmaxT_StD  = std(GOOD_PmxT);
+    Res.PmaxK_Mean = mean(GOOD_PmxK);
+    Res.PmaxK_StD  = std(GOOD_PmxK);
 
     %from Uyen Truongs VVCR paper
-    Res.VVCRinv_Mean = GOOD_Pes./(GOOD_Pmx-GOOD_Pes); 
-    Res.VVCRinv_StD  = std(Res.VVCRinv_Mean);
-    Res.VVCRinv_Mean = mean(Res.VVCRinv_Mean);
+    Res.VVCRiT_Mean = GOOD_P_es./(GOOD_PmxT-GOOD_P_es); 
+    Res.VVCRiT_StD  = std(Res.VVCRiT_Mean);
+    Res.VVCRiT_Mean = mean(Res.VVCRiT_Mean);
+    Res.VVCRiK_Mean = GOOD_P_es./(GOOD_PmxK-GOOD_P_es); 
+    Res.VVCRiK_StD  = std(Res.VVCRiK_Mean);
+    Res.VVCRiK_Mean = mean(Res.VVCRiK_Mean);
 
     % Hunter's 
-    Res.VVCRnorm_Mean = (GOOD_Pmx./GOOD_Pes)-1;
-    Res.VVCRnorm_StD  = std(Res.VVCRnorm_Mean);
-    Res.VVCRnorm_Mean = mean(Res.VVCRnorm_Mean);
+    Res.VVCRnT_Mean = (GOOD_PmxT./GOOD_P_es)-1;
+    Res.VVCRnT_StD  = std(Res.VVCRnT_Mean);
+    Res.VVCRnT_Mean = mean(Res.VVCRnT_Mean);
+    Res.VVCRnK_Mean = (GOOD_PmxK./GOOD_P_es)-1;
+    Res.VVCRnK_StD  = std(Res.VVCRnK_Mean);
+    Res.VVCRnK_Mean = mean(Res.VVCRnK_Mean);
 
 end
 

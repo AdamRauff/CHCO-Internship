@@ -130,18 +130,21 @@ foreach $name (@ARGV) {
 #       s/\bdPdt\b/Data.dPdt/g;
 
 ### REVISIONS FOR runAll
-        s/\bAVG_Pes\b/Res.Pes_Mean/g;
-        s/\bAVG_Pmax\b/Res.Pmax_Mean/g;
-        s/\bVVCR_UT\b/Res.VVCRinv_Mean/g;
-        s/\bVVCR_KH\b/Res.VVCRnorm_Mean/g;
-        s/\bPnam\b/Pat.Nam/g;
-        s/\bPmrn\b/Pat.MRN/g;
-        s/\bfile\b/Pat.FileNam/g;
-        s/\bnumPeaks\b/Res.numPeaks/g;
-        s/\bSTD_Pes\b/Res.Pes_StD/g;
-        s/\bSTD_PMX\b/Res.Pmax_StD/g;
-        s/\bTotNumWaves\b/Res.TotNumWaves/g;
+#       s/\bAVG_Pes\b/Res.Pes_Mean/g;
+#       s/\bAVG_Pmax\b/Res.Pmax_Mean/g;
+#       s/\bVVCR_UT\b/Res.VVCRinv_Mean/g;
+#       s/\bVVCR_KH\b/Res.VVCRnorm_Mean/g;
+#       s/\bPnam\b/Pat.Nam/g;
+#       s/\bPmrn\b/Pat.MRN/g;
+#       s/\bfile\b/Pat.FileNam/g;
+#       s/\bnumPeaks\b/Res.numPeaks/g;
+#       s/\bSTD_Pes\b/Res.Pes_StD/g;
+#       s/\bSTD_PMX\b/Res.Pmax_StD/g;
+#       s/\bTotNumWaves\b/Res.TotNumWaves/g;
 
+### 2nd REVISIONS FOR runAll
+        s/\bRes.VVCRinv_Mean\b/Res.VVCRiT_Mean/g;
+        s/\bRes.VVCRnorm_Mean\b/Res.VVCRnT_Mean/g;
         print OUT $_;
 
         if ( $orig ne $_ ) {
