@@ -74,7 +74,7 @@ for i = 1:length(top)
     % check to see if .txt file, then run VVCR analysis
     if regexp (top_name, 'txt$')
         
-        TXT_FLAG = false; % this flag turns true after VVCR_*.m succesfully ran
+        TXT_FLAG = false; % this flag turns true after VVCR_* succesfully ran
         % there could be a scenario of a .txt file not being a pressure
         % data file, a corrupted file, empty, etc.
         
@@ -113,7 +113,8 @@ for i = 1:length(top)
         % add try catch here. In case txt file is not pressure data, or
         % what not. In the catch, record the name of the text file
         % somewhere, so if it is a pressure file that could not be opened,
-        % it is remarked try
+        % it is remarked
+        % Did this within the load_calf file, it is a good idea!! Thanks Adam!
             [Res, Pat] = VVCR_MULTIH_08_09_17(Fold_name,top_name);
             
             if ~isstruct(Res)
@@ -145,9 +146,12 @@ for i = 1:length(top)
                     % headers to it
                     if isempty(filechk)
                         fd0 = fopen(csvName, 'w');
-                        fprintf(fd0, ['Pnam, Pmrn, file, AVG_Pes, ' ...
-                            'AVG_Pmax, VVCR_UT, VVCR_KH, Num_Peaks, ' ...
-                            'STD_Pes, STD_PMX, TotNumWaves\n']);
+                        fprintf(fd0, ['Pnam, Pmrn, file, Pes_Mean, ' ...
+                            'Pes_StD, PmaxT_Mean, PmaxT_StD, PmaxK_Mean, ' ...
+                            'PmaxK_Std, VVCRiT_Mean, VVCRiT_StD, ' ...
+                            'VVCRnT_Mean, VVCRnT_StD, VVCRiK_Mean, ' ...
+                            'VVCRiK_StD, VVCRnK_Mean, VVCRnK_StD, ' ...  
+                            'Num_Peaks, TotNumWaves\n']);
                     else
                         % if Pat.FileNam exists, append to it
                         fd0 = fopen(csvName, 'a');
@@ -191,12 +195,6 @@ for i = 1:length(top)
                 NewAnalyzedTxt = [NewAnalyzedTxt; top_name];
             end
             
-%         catch
-%             disp('file could not be analyzed');
-%             disp(['name of Pat.FileNam: ',top_name]);
-            
-%         end
-        
         if TXT_FLAG == true
             % check to if RV_data.csv Pat.FileNam exists
             filechk = which(csvName);
@@ -204,16 +202,20 @@ for i = 1:length(top)
             % if file does not exist, creat one, and write all the headers to it
             if isempty(filechk)
                 fd0 = fopen(csvName, 'w');
-                fprintf(fd0, 'Pnam, Pmrn, file, AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Num_Peaks, STD_Pes, STD_PMX, TotNumWaves\n');
+                fprintf(fd0, ['Pnam, Pmrn, file, Pes_Mean, Pes_StD, ' ...
+                    'PmaxT_Mean, PmaxT_StD, PmaxK_Mean, PmaxK_Std, ' ...
+                    'VVCRiT_Mean, VVCRiT_StD, VVCRnT_Mean, VVCRnT_StD, ' ...  
+                    'VVCRiK_Mean, VVCRiK_StD, VVCRnK_Mean, VVCRnK_StD, ' ...  
+                    'Num_Peaks, TotNumWaves\n']);
             else
                 % if file exists, append to it
                 fd0 = fopen(csvName, 'a');
                 
-                % After a subsequent session begins, the program appended data to the
-                % last filled cell. This statement makes sure to start a new
-                % line before printing the data, to ensure the appended data is
-                % recorded separatly, and does not corrupt the data of the last
-                % cell
+                % After a subsequent session begins, the program appended data
+                % to the last filled cell. This statement makes sure to start
+                % a new line before printing the data, to ensure the appended
+                % data is recorded separatly, and does not corrupt the data of
+                % the last cell
                 if i == 1 || fileCount == 1
                     fprintf(fd0, ' ,\n');
                 end
@@ -222,20 +224,25 @@ for i = 1:length(top)
             % Name, MRN, Filename
             fprintf(fd0, '%s, %s, %s,', Pat.Nam{1}, Pat.MRN{1}, Pat.FileNam);
                     
-            % average Pes and Pmax - end systolic pressure (Pes), and
-            % maximum pressure (Pmax) obtained from equation of Naeiji
-            % (Mean + 2*amp)
-            fprintf(fd0, '%10.6f, %10.6f,' , Res.P_es_Mean, Res.PmaxT_Mean);
+            % Pes and both Pmax - end systolic pressure (Pes), and maximum
+            % isovolumic pressure (Pmax) obtained from Takeuchi (Mean + 2*amp)
+            % and Kind (Pmax) methods
+            fprintf(fd0, '%10.6f, %10.6f,' , Res.P_es_Mean, Res.P_es_StD);
+            fprintf(fd0, '%10.6f, %10.6f,' , Res.PmaxT_Mean, Res.PmaxT_StD);
+            fprintf(fd0, '%10.6f, %10.6f,' , Res.PmaxK_Mean, Res.PmaxK_StD);
             
             % print VVCR - ventricular vascular coupling ratio
             % UT - Dr. Uyen Troung
             % KH - Dr. Kendall Hunter
             % Res.VVCRnT_Mean = 1/Res.VVCRiT_Mean, they are reciprocals
-            fprintf(fd0, '%8.6f, %8.6f,', Res.VVCRiT_Mean, Res.VVCRnT_Mean);
+            fprintf(fd0, '%8.6f, %8.6f,', Res.VVCRiT_Mean, Res.VVCRiT_StD);
+            fprintf(fd0, '%8.6f, %8.6f,', Res.VVCRnT_Mean, Res.VVCRnT_StD);
+            fprintf(fd0, '%8.6f, %8.6f,', Res.VVCRiK_Mean, Res.VVCRiK_StD);
+            fprintf(fd0, '%8.6f, %8.6f,', Res.VVCRnK_Mean, Res.VVCRnK_StD);
             
-            % print the standard deviations of Pmax and Pes, the number
-            % of analyzed peaks, and the total number of waves
-            fprintf(fd0, '%i, %10.6f, %10.6f, %i\n', Res.numPeaks, Res.P_es_StD, Res.PmaxT_StD, Res.TotNumWaves);
+            % the number of analyzed peaks and the total number of waves
+            fprintf(fd0, '%i, %i\n', Res.numPeaks, ...
+                Res.TotNumWaves);
             
             % close Pat.FileNam
             fclose(fd0);

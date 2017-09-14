@@ -30,17 +30,24 @@ if isa(file(1),'char')
     end
 %     tmp = textscan(fd0, '%s %s %s %s',1);
     for i = 1 : 7
-        if strcmp(tmp{i},'Time')
-            Time = i;  
+        try
+            if strcmp(tmp{i},'Time')
+                Time = i;  
             
-        elseif strcmp(tmp{i}, 'Millar') && strcmp(tmp{i+1}, 'Pressure') && strcmp(tmp{i+2}, 'SG')
-            MPSG = i;
+            elseif strcmp(tmp{i}, 'Millar') && strcmp(tmp{i+1}, 'Pressure') ...
+                && strcmp(tmp{i+2}, 'SG')
+
+                MPSG = i;
         
-        elseif strcmp(tmp{i}, 'Pressure') && strcmp(tmp{i+1}, 'Systemic')
-            RVPres = i-2;
+            elseif strcmp(tmp{i}, 'Pressure') && strcmp(tmp{i+1}, 'Systemic')
+                RVPres = i-2;
         
-        elseif strcmp(tmp{i}, 'Systemic') && strcmp(tmp{i+1}, 'pressure')
-            SysPres = i-2;
+            elseif strcmp(tmp{i}, 'Systemic') && strcmp(tmp{i+1}, 'pressure')
+                SysPres = i-2;
+            end
+        catch ME
+            Pres = 0; dPdt = 0; Rvals = 0; file = 0; npath = 0;
+            return;
         end
     end
     DataALL = textscan(fd0, '%s %s %s %s');  % Read all lines

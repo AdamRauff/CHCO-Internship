@@ -7,10 +7,12 @@ function [ Res, Pat ] = VVCR_MULTIH_08_09_17( PathName, FileName)
 % if thrid digit/entry of Pat.FileNamname is numeric == human Pat.FileNam
 % otherwise, calf Pat.FileNam --> use calf loadp function
 if FileName(1) == 'H' && ischar(FileName(2)) && ~isnan(str2double(FileName(3)));
-    [Pres, dPdt, Rvals, Pat.Nam, Pat.MRN, Pat.FileNam, ~, ~]=loadp_10_10_16(PathName,FileName,100);
+    [Pres, dPdt, Rvals, Pat.Nam, Pat.MRN, Pat.FileNam, ~, ~] = ...
+        loadp_10_10_16(PathName, FileName, 1);
     dat_typ = 1;
 else
-    [Pres, dPdt, Rvals, Pat.FileNam, ~]=load_calf_p_5_17_17(PathName,FileName,100);
+    [Pres, dPdt, Rvals, Pat.FileNam, ~] = ...
+        load_calf_p_5_17_17(PathName, FileName, 100);
     dat_typ = 0;
 end
 

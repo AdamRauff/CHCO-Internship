@@ -88,11 +88,11 @@ if isa(file(1),'char')
     end
 
     if sm == 1
-        disp('    Using (S), (D) marks to gate on load');
+        %disp('    loadp: using (S), (D) marks to gate on load');
         tmp = find(Pre_trig<0);
         Rvals = abs(Pre_trig(tmp));
         fclose(fd0);
-        disp(['Witt Scientific Pressure File: [...]' redname ' loaded.']);
+        %disp(['Witt Scientific Pressure File: [...]' redname ' loaded.']);
         if debug
             plot(Pres); hold on;
             cycMN = abs(Pre_trig(tmp));
