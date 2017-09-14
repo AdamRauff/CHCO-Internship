@@ -113,8 +113,7 @@ for i = 1:length(top)
         % add try catch here. In case txt file is not pressure data, or
         % what not. In the catch, record the name of the text file
         % somewhere, so if it is a pressure file that could not be opened,
-        % it is remarked
-%         try
+        % it is remarked try
             [Res, Pat] = VVCR_MULTIH_08_09_17(Fold_name,top_name);
             
             if ~isstruct(Res)

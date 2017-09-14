@@ -215,7 +215,7 @@ for i = 1:mysz
     ivVal.Pe2(i) = Dat.Pres(Pend);
     ivIdx.Pe2(i) = Pend;
 
-    % Find pres at (dP/dt)min, then find ±20% change, these are start and end
+    % Find pres at (dP/dt)min, then find Â±20% change, these are start and end
     % of Kind neg iso segment.
     Pcut = 1.20*Dat.Pres(ivIdx.dPmin(i));
     Pstr = ivIdx.dPmin(i);
