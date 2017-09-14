@@ -35,9 +35,9 @@ for i = 1:nfits
         Data.Time_D(ivSeg.iv2Time(i).NegIso), dPtimes, ...
 	ivSeg.iv2Pres(i).PosIso, ivSeg.iv2Pres(i).NegIso);	
     
-    % deriving the initial values from the data
+    % Deriving the initial values from the data
     % P1 Pmax from Takeuchi(?)
-    % P2 guess small, like 2-5.
+    % P2 Pmin, guess small, like 2-5.
     % P3 use Time(ivIdx.Ps1) - that will be close
     % P4 use 60% (that's what's in their figure!)
     c2 = [FitT.PIsoMax(i), 2, Data.Time_D(ivIdx.Ps1_D(i)), 0.6];
@@ -57,6 +57,13 @@ for i = 1:nfits
     if Ret1.Rsq(i) < 0.90
        Ret1.BadCyc(i) = 1; 
     end
+
+    if any( (c-lb) < 0 ) || any ( (ub-c) < 0 )
+       disp(['    fit_kind: fit bounds violated on cycle ' ...
+           num2str(i, '%02i')]);
+       Ret1.BadCyc(i) = 1;
+    end
+
     
     %getting all the c values in a matrix
     Ret1.RCoef(i,:) = c; 

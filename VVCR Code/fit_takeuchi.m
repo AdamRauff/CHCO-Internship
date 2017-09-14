@@ -57,9 +57,10 @@ for i = 1:nfits
         % ICs passed in from GUI
         c2 = ICS;
     else
-        % deriving the initial values from the data
-        % mean - average pressure value between dp/dt max and min (top of
-        % curve)
+        % Deriving the initial values from the data. Freq is an average
+        % found of the function. Mean is the specific average pressure
+        % value between dp/dt max and min (top of curve) specific to this
+        % cycle.
         T1 = ICS.dPmaxIdx(i);
         T2 = ICS.dPminIdx(i);
         Mea = mean(double(ICS.Pres(T1:T2)));
@@ -67,9 +68,9 @@ for i = 1:nfits
         % Amplitude is about twice the mean
         Amp = double(1.8*Mea);
     
-        % keep in mind this means the initial conditions of every wave fit may
-        % be slightly different, While values entered via GUI make ICs same for
-        % all waves.
+        % keep in mind this means the initial conditions of every wave fit
+        % may be slightly different, While values entered via GUI make ICs
+        % same for all waves.
         c2 = [Mea, Amp, 1.5*ICS.Freq, -pi/2];
         Ret1.CycICs(i,:)= c2; % Saved cycle specific ICs
     end
