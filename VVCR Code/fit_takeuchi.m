@@ -93,11 +93,9 @@ for i = 1:nfits
        Ret1.BadCyc(i) = 1; 
     end
     
-    %getting all the c values in a matrix
-    Ret1.RCoef(i,:)=c; 
-    
-    %first equation pmax, A+B
-    Ret1.PIsoMax(i)=c(1)+abs(c(2)); 
+    % Store all coefficients, Pmax for return
+    Ret1.RCoef(i,:) = c;
+    Ret1.PIsoMax(i) = c(1)+abs(c(2));
 
     % store the time points and pressure points in one array for easy
     % plotting - first pass (call from VVCR_); otherwise, reconsitute these
@@ -144,17 +142,16 @@ for i = 1:nfits
 
             % re-fit sinusiod
             % equation from Naeiji et al, single beat method of VVC
-            sin_fun2=@(P)(P(1)+P(2)*sin(P(3)*WaveTsNorm+P(4)))-WavePs; 
+            sin_fun2 = @(P)(P(1)+P(2)*sin(P(3)*WaveTsNorm+P(4)))-WavePs; 
 
             %least squares fitting
             [c,resnorm,~] = lsqnonlin (sin_fun2,c2,lb,ub,opts1);
 
             % r^2 value; if the fit was bad, mark that wave.
-            Psine_RV2=(c(1)+c(2)*sin(c(3)*WaveTsNorm+c(4)));
-            Ret1.Rsq(i)=1-resnorm/norm(Psine_RV2-mean(Psine_RV2))^2;
+            Psine_RV2 = (c(1)+c(2)*sin(c(3)*WaveTsNorm+c(4)));
+            Ret1.Rsq(i) = 1-resnorm/norm(Psine_RV2-mean(Psine_RV2))^2;
 
-            % if the fit of the wave was bad, mark that wave. Only mark that
-            % points are added if we actually take the result.
+            % Only mark that points are added if we actually take the result.
             if Ret1.Rsq(i) <0.90
                Ret1.BadCyc(i) = 1;
                Ret1.VCyc(i) = 0;
@@ -163,12 +160,10 @@ for i = 1:nfits
                Ret1.VCyc(i) = 1;
             end
             
-            %getting all the c values in a matrix
-            Ret1.RCoef(i,:)=c; 
-    
-            %first equation pmax, A+B
-            Ret1.PIsoMax(i)=c(1)+abs(c(2));
-            
+            % Store all coefficients, Pmax for return
+            Ret1.RCoef(i,:) = c;
+            Ret1.PIsoMax(i) = c(1)+abs(c(2));
+
             % increment count to keep track of added points
             count = count +1;
             
@@ -176,8 +171,9 @@ for i = 1:nfits
             if count >= 10 && (Ret1.PIsoMax(i) < PresMax || Ret1.BadCyc(i) == 1)
 
 
-                disp('    fit_takeuchi: Added nine points on systolic side of curve,');
-                disp('        and Pmax remains short of actual pressure (Vanderpool)');
+                disp(['    fit_takeuchi: Added nine points on '
+                    'systolic side of curve, and Pmax']);
+                disp('        remains short of actual pressure');
                 disp(['        Wave ',num2str(i, '%02i'), ' is excluded']);
 
                 Ret1.BadCyc(i) = 1;

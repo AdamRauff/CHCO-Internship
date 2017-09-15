@@ -52,19 +52,20 @@ for i = 1:nfits
         % ICs passed in from GUI
         c2 = ICS;
     else
-        % deriving the initial values from the data
-        % mean - average pressure value between dp/dt max and min (top of
-        % curve)
+        % Deriving the initial values from the data. Freq is an average
+        % found of the function. Mean is the specific average pressure
+        % value between dp/dt max and min (top of curve) specific to this
+        % cycle.
         T1 = ICS.dPmaxIdx(i);
         T2 = ICS.dPminIdx(i);
         Mea = mean(double(ICS.Pres(T1:T2)));
     
-        % Amplitude is twice the mean
+        % Amplitude is about twice the mean
         Amp = double(1.8*Mea);
     
-        % keep in mind this means the initial conditions of every wave fit may
-        % be slightly different, While values entered via GUI make ICs same for
-        % all waves.
+        % keep in mind this means the initial conditions of every wave fit
+        % may be slightly different, While values entered via GUI make ICs
+        % same for all waves.
         c2 = [Mea, Amp, ICS.Freq, -0.5];
         Ret1.CycICs(i,:)= c2; % Saved cycle specific ICs
     end
@@ -72,19 +73,16 @@ for i = 1:nfits
     [c,resnorm,~] = lsqnonlin (sin_fun2,c2,[],[],opts1);
     
     % r^2 value; if the fit was bad, mark that wave.
-    Psine_RV2=(c(1)+c(2)*sin(c(3)*WaveTs+c(4)));
-    Ret1.Rsq(i)=1-resnorm/norm(Psine_RV2-mean(Psine_RV2))^2;
+    Psine_RV2 = (c(1)+c(2)*sin(c(3)*WaveTs+c(4)));
+    Ret1.Rsq(i) = 1-resnorm/norm(Psine_RV2-mean(Psine_RV2))^2;
     
-    % if the fit of the wave was bad, mark that wave
     if Ret1.Rsq(i) <0.90
        Ret1.BadCyc(i) = 1; 
     end
     
-    %getting all the c values in a matrix
-    Ret1.RCoef(i,:)=c; 
-    
-    %first equation pmax, A+B
-    Ret1.PIsoMax(i)=c(1)+abs(c(2)); 
+    % Store all coefficients, Pmax for return
+    Ret1.RCoef(i,:) = c;
+    Ret1.PIsoMax(i) = c(1)+abs(c(2));
 
     % store the time points and pressure points in one array for easy
     % plotting - first pass (call from VVCR_); otherwise, reconsitute these
@@ -129,18 +127,16 @@ for i = 1:nfits
 
             % re-fit sinusiod
             % equation from Naeiji et al, single beat method of VVC
-            sin_fun2=@(P)(P(1)+P(2)*sin(P(3)*WaveTs+P(4)))-WavePs; 
+            sin_fun2 = @(P)(P(1)+P(2)*sin(P(3)*WaveTs+P(4)))-WavePs; 
 
             %least squares fitting
-            [c,resnorm,~]=lsqnonlin(sin_fun2,c2); 
+            [c,resnorm,~] = lsqnonlin (sin_fun2,c2,[],[],opts1); 
 
-            Psine_RV2=(c(1)+c(2)*sin(c(3)*WaveTs+c(4)));
+            % r^2 value; if the fit was bad, mark that wave.
+            Psine_RV2 = (c(1)+c(2)*sin(c(3)*WaveTs+c(4)));
+            Ret1.Rsq(i) = 1-resnorm/norm(Psine_RV2-mean(Psine_RV2))^2;
 
-            % r^2 value
-            Ret1.Rsq(i)=1-resnorm/norm(Psine_RV2-mean(Psine_RV2))^2;
-
-            % if the fit of the wave was bad, mark that wave. Only mark that
-            % points are added if we actually take the result.
+            % Only mark that points are added if we actually take the result.
             if Ret1.Rsq(i) <0.90
                Ret1.BadCyc(i) = 1;
                Ret1.VCyc(i) = 0;
@@ -149,11 +145,9 @@ for i = 1:nfits
                Ret1.VCyc(i) = 1;
             end
             
-            %getting all the c values in a matrix
-            Ret1.RCoef(i,:)=c; 
-    
-            %first equation pmax, A+B
-            Ret1.PIsoMax(i)=c(1)+abs(c(2));
+            % Store all coefficients, Pmax for return
+            Ret1.RCoef(i,:) = c;
+            Ret1.PIsoMax(i) = c(1)+abs(c(2));
             
             % increment count to keep track of added points
             count = count +1;
@@ -162,9 +156,10 @@ for i = 1:nfits
             if count >= 10 && (Ret1.PIsoMax(i) < PresMax || Ret1.BadCyc(i) == 1)
 
 
-                disp('    fit_takeuchi_o: Added nine points on systolic side of curve, and Pmax');
+                disp(['    fit_takeuchi_o: Added nine points on ' ...
+                    'systolic side of curve, and Pmax']);
                 disp('        remains short of actual pressure');
-                disp(['        Wave: ',num2str(i), 'is excluded']);
+                disp(['        Wave ',num2str(i, '%02i'), ' is excluded']);
 
                 Ret1.BadCyc(i) = 1;
                 Ret1.VCyc(i) = 0;
@@ -196,7 +191,7 @@ if any(Ret1.VCyc)
 
     temp = 1:1:nfits;
     disp(['    fit_takeuchi_o: Vanderpool Points added on cycles ' ...
-        num2str(temp(logical(Ret1.VCyc)))]);
+        num2str(temp(logical(Ret1.VCyc)),'%02i ')]);
 
     % Update ivSeg; iv1Time & iv1Pres may be updated in Vanderpool section.
     Ret2 = ivSeg;
@@ -213,8 +208,8 @@ end
 % good fit, are not utilized in the VVCR calculation.
 indX = find(Ret1.BadCyc==1); % find indices of the bad waves
 if ~isempty(indX)
-    disp('    fit_takeuchi_o: The following waves did NOT have a good fit (will not be included)');
-    disp(['        Wave(s): ', num2str(indX')]);
+    disp('    fit_takeuchi_o: The following waves did NOT have a good fit');
+    disp(['        (will not be included) Wave(s): ', num2str(indX','%02i ')]);
 else
     disp('    fit_takeuchi_o: All waves seemed to fit well!');
 end
