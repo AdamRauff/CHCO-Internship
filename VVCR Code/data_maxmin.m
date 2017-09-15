@@ -26,6 +26,8 @@ if Ret.dPminIdx(end) < Ret.dPmaxIdx(end)
 end
 
 % This isn't working... Rvals isn't consistent... Donno why, it should be!
+% It wasn't working because loadp wasn't being asked to gate using the ()-
+% indicators in the WITT files... it may work now...
 %mysz = length(Ret.dPmaxIdx);
 %Ret.Period = zeros(mysz,2);
 

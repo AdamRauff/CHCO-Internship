@@ -27,17 +27,17 @@ if length(Pres) == 1 && Pres == 0
 
 end
 
-%% (2,3) Filter pressure data & create time vector; find dP/dt Extrema.
+%% (2) Filter pressure data & create time vector.
 [Data_O] = data_filter (dat_typ, Pres, dPdt, Rvals);
-[Extr] = data_maxmin (Data_O);
-Data_O.time_per = Extr.time_per;
 
-%% (4) GUI for Manual Deletion of Mins and Maxs, plus check index finding.
+%% (3) Determine all indexing for analysis.
 for i = 1:2
-    % The GUI allows the user to manually delete inappropriate minima and
-    % maxima. In order to do that, The following information must be passed
-    % onto the GUI:
+    % Capture Extrema and record number found.
+    [Extr] = data_maxmin (Data_O);
+    Data_O.time_per = Extr.time_per;
+    OrigTot = (length(Extr.dPminIdx)+length(Extr.dPmaxIdx))/2;
 
+    % Call GUI for assessment of extrema. Build input structure.
     % Pressure and derivative, their extrema
     PeakStr.Data = Data_O;
     PeakStr.Extr = Extr;
@@ -49,12 +49,11 @@ for i = 1:2
     Red_X = imread('ex.png');
     PeakStr.Red_X = Red_X;
 
-    % call on GUI. Notice the structure we just made is passed to the GUI, and
-    % the GUI passes back a refined structure
+    % call on GUI.
     NoPeaksRet = GUI_No_Peaks_10_10(PeakStr);
-
     clear PeakStr Green_Check Red_X
 
+    % Interpret return structure.
     if ~isstruct(NoPeaksRet)
 
         Res = false;
@@ -96,13 +95,20 @@ for i = 1:2
     end
     clear NoPeaksRet
 
-%% (5) Find isovolumic timings for Takaguichi & Kind method.
+    % Find isovolumic timings for Takaguichi & Kind method.
     [ivIdx, ivVal, badcyc] = data_isoidx (Data_O, Extr);
 
-    Found = length(ivIdx.Ps1)/length(Res.TotNumWaves);
-    if (i == 1 && Found < 0.5)
-        disp(['VVCR_MULTIH: succesfully gated ' num2str(Found,'%4.1f%%') ...
-            ' of max/min cycles. Retrying with raw data.']);
+    % If very few timings were found, filtering may be a problem.
+    Found  = length(ivIdx.Ps1)/Res.TotNumWaves;
+    Reject = Res.TotNumWaves/OrigTot;
+    if (i == 1 && Found < 0.5) || (i == 1 && Reject < 0.5)
+        if Found < 0.5
+            disp(['VVCR_MULTIH: succesfully gated only ' num2str(Found, ...
+                '%4.1f%%') ' of max/min cycles. Retrying with raw data.']);
+        else
+            disp(['VVCR_MULTIH: user rejected  ' num2str(1-Reject, ...
+                '%4.1f%%') ' of max/min cycles. Retrying with raw data.']);
+        end
         Data_O.FiltPres = Data_O.Pres;
         Data_O.FiltdPdt = Data_O.dPdt;
         Data_O.Pres = Data_O.OrigPres; 
@@ -156,6 +162,7 @@ ICS.dPminIdx = ivIdx.dPmin;
 
 % Package all structures for passing to GUI_SINU_FIT
 SinuStr.FitT = FitT;
+SinuStr.FitO = FitO;
 SinuStr.FitK = FitK;
 SinuStr.Data = Data;
 SinuStr.Plot = Plot;
@@ -201,6 +208,7 @@ else
 
     % Initialize return structure to contain ALL fitting data.
     Res.FitT = RetStr.FitT;
+    Res.FitO = RetStr.FitO;
     Res.FitK = RetStr.FitK;
     Res.P_es = Data.P_es;
     
@@ -214,10 +222,12 @@ else
 
     %OKAY! here are the final values and we can FINALLY calculate VVCR.
     PIsoMaxT = RetStr.FitT.PIsoMax;
+    PIsoMaxO = RetStr.FitO.PIsoMax;
     PIsoMaxK = RetStr.FitK.RCoef(:,1);
 
     GOOD_P_es  = Data.P_es(BadCyc~=1);
     GOOD_PmxT = PIsoMaxT(BadCyc~=1);
+    GOOD_PmxO = PIsoMaxT(BadCyc~=1);
     GOOD_PmxK = PIsoMaxK(BadCyc~=1);
 
     % mean, std Pes for the waves that fit well
@@ -227,6 +237,8 @@ else
     % mean, std P_max for the waves that fit well
     Res.PmaxT_Mean = mean(GOOD_PmxT);
     Res.PmaxT_StD  = std(GOOD_PmxT);
+    Res.PmaxO_Mean = mean(GOOD_PmxO);
+    Res.PmaxO_StD  = std(GOOD_PmxO);
     Res.PmaxK_Mean = mean(GOOD_PmxK);
     Res.PmaxK_StD  = std(GOOD_PmxK);
 
@@ -234,6 +246,12 @@ else
     Res.VVCRiT_Mean = GOOD_P_es./(GOOD_PmxT-GOOD_P_es); 
     Res.VVCRiT_StD  = std(Res.VVCRiT_Mean);
     Res.VVCRiT_Mean = mean(Res.VVCRiT_Mean);
+
+    Res.VVCRiO_Mean = GOOD_P_es./(GOOD_PmxO-GOOD_P_es); 
+    Res.VVCRiO_StD  = std(Res.VVCRiO_Mean);
+    Res.VVCRiO_Mean = mean(Res.VVCRiO_Mean);
+    Res.VVCRiO_MeanO = Res.P_es_Mean/(Res.PmaxO_Mean-Res.P_es_Mean);
+
     Res.VVCRiK_Mean = GOOD_P_es./(GOOD_PmxK-GOOD_P_es); 
     Res.VVCRiK_StD  = std(Res.VVCRiK_Mean);
     Res.VVCRiK_Mean = mean(Res.VVCRiK_Mean);
@@ -242,6 +260,12 @@ else
     Res.VVCRnT_Mean = (GOOD_PmxT./GOOD_P_es)-1;
     Res.VVCRnT_StD  = std(Res.VVCRnT_Mean);
     Res.VVCRnT_Mean = mean(Res.VVCRnT_Mean);
+
+    Res.VVCRnO_Mean = (GOOD_PmxO./GOOD_P_es)-1;
+    Res.VVCRnO_StD  = std(Res.VVCRnO_Mean);
+    Res.VVCRnO_Mean = mean(Res.VVCRnO_Mean);
+    Res.VVCRnO_MeanO = (Res.PmaxO_Mean/Res.P_es_Mean)-1;
+
     Res.VVCRnK_Mean = (GOOD_PmxK./GOOD_P_es)-1;
     Res.VVCRnK_StD  = std(Res.VVCRnK_Mean);
     Res.VVCRnK_Mean = mean(Res.VVCRnK_Mean);

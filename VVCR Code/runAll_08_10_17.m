@@ -110,103 +110,99 @@ for i = 1:length(top)
         % print current file being analyzed
         disp(['Current File: ', top_name]);
         
-        % add try catch here. In case txt file is not pressure data, or
-        % what not. In the catch, record the name of the text file
-        % somewhere, so if it is a pressure file that could not be opened,
-        % it is remarked
+        % add try catch here. In case txt file is not pressure data, or what
+        % not. In the catch, record the name of the text file somewhere, so
+        % if it is a pressure file that could not be opened, it is remarked
         % Did this within the load_calf file, it is a good idea!! Thanks Adam!
-            [Res, Pat] = VVCR_MULTIH_08_09_17(Fold_name,top_name);
-            
-            if ~isstruct(Res)
-                % check to see if outputs are false or true
-                % EXIT
-                if Res == false
-                    % exit for loop
-                    % keep in mind when the exit button is pressed, the current
-                    % patient, i, will not be evaluated
-                    if fileCount >= 1
-                        disp(['The last file analyzed was: ', top(i-1).name]);
-                    else
-                        disp('No File was Analyzed in this session');
-                    end
+        [Res, Pat] = VVCR_MULTIH_08_09_17(Fold_name,top_name);
+        
+        header = ['Pnam, Pmrn, file, Pes_Mean, Pes_StD, PmaxT_Mean, ' ...
+            'PmaxT_StD, PmaxK_Mean, PmaxK_StD, PmaxO_Mean, PmaxO_Std, ' ...
+            'VVCRiT_Mean, VVCRiT_StD, VVCRnT_Mean, VVCRnT_StD, ' ...
+            'VVCRiK_Mean, VVCRiK_StD, VVCRnK_Mean, VVCRnK_StD, ' ...  
+            'VVCRiO_Mean, VVCRiO_StD, VVCRnO_Mean, VVCRnO_StD, ' ...
+            'Num_Peaks, TotNumWaves\n'];
 
-                    break
-
-                % Discard Patient
-                elseif Res == true
-                    % proceed to next iteration of i (next patient)
-
-                    disp(['File ',top(i).name, ' is skipped']);
-
-                    % write to csv
-
-                    filechk = which(csvName);
-
-                    % if file does not exist, creat one, and write all the 
-                    % headers to it
-                    if isempty(filechk)
-                        fd0 = fopen(csvName, 'w');
-                        fprintf(fd0, ['Pnam, Pmrn, file, Pes_Mean, ' ...
-                            'Pes_StD, PmaxT_Mean, PmaxT_StD, PmaxK_Mean, ' ...
-                            'PmaxK_Std, VVCRiT_Mean, VVCRiT_StD, ' ...
-                            'VVCRnT_Mean, VVCRnT_StD, VVCRiK_Mean, ' ...
-                            'VVCRiK_StD, VVCRnK_Mean, VVCRnK_StD, ' ...  
-                            'Num_Peaks, TotNumWaves\n']);
-                    else
-                        % if Pat.FileNam exists, append to it
-                        fd0 = fopen(csvName, 'a');
-
-                        if i == 1 || fileCount == 0 
-                            fprintf(fd0, ' ,\n');
-                        end
-                    end
-
-                    myStr = ['This, Pat.FileNam, ',top(i).name, ...
-                        ', was, skipped, becuase, user, determined, ' ...
-                        'something, was, wrong'];
-                    fprintf(fd0,[myStr, '\n']);
-
-                    % close file
-                    fclose(fd0);
-
-                    % remark iteration of i that was skipped
-                    FileSkpTrck = i;
-
-                    % skip to next iteration of i
-                    continue 
+        if ~isstruct(Res)
+            % check to see if outputs are false or true
+            % EXIT
+            if Res == false
+                % exit for loop
+                % keep in mind when the exit button is pressed, the current
+                % patient, i, will not be evaluated
+                if fileCount >= 1
+                    disp(['The last file analyzed was: ', top(i-1).name]);
+                else
+                    disp('No File was Analyzed in this session');
                 end
+
+                break
+
+            % Discard Patient
+            elseif Res == true
+                % proceed to next iteration of i (next patient)
+
+                disp(['File ',top(i).name, ' is skipped']);
+
+                % write to csv
+
+                filechk = which(csvName);
+
+                % if file does not exist, create one & write header line.
+                if isempty(filechk)
+                    fd0 = fopen(csvName, 'w');
+                    fprintf(fd0, header);
+                else
+                    % if Pat.FileNam exists, append to it
+                    fd0 = fopen(csvName, 'a');
+
+                    if i == 1 || fileCount == 0 
+                        fprintf(fd0, ' ,\n');
+                    end
+                end
+
+                myStr = ['This, Pat.FileNam, ',top(i).name, ...
+                    ', was, skipped, becuase, user, determined, ' ...
+                    'something, was, wrong'];
+                fprintf(fd0,[myStr, '\n']);
+
+                % close file
+                fclose(fd0);
+
+                % remark iteration of i that was skipped
+                FileSkpTrck = i;
+
+                % skip to next iteration of i
+                continue 
             end
-            % ----------------------------------------------------------
-            % check Pat.Nam and Pat.MRN, to make sure they do not give
-            % valid names and mrn. The analyzed data must be anonymized!!!
-            % ----------------------------------------------------------
-            
-            TXT_FLAG = true; % text file was readable by loadp
-            fileCount = fileCount + 1;
-            
-            % record the indice of the file associated with each fileCount
-            FileCountIter(fileCount) = i;
-            
-            % record the name of the file. this is used to make sure 2 of
-            % the same files aren't analyzed
-            if isempty(NewAnalyzedTxt)
-                NewAnalyzedTxt = top_name;
-            else
-                NewAnalyzedTxt = [NewAnalyzedTxt; top_name];
-            end
-            
+        end
+        % ----------------------------------------------------------
+        % check Pat.Nam and Pat.MRN, to make sure they do not give
+        % valid names and mrn. The analyzed data must be anonymized!!!
+        % ----------------------------------------------------------
+
+        TXT_FLAG = true; % text file was readable by loadp
+        fileCount = fileCount + 1;
+
+        % record the indice of the file associated with each fileCount
+        FileCountIter(fileCount) = i;
+
+        % record the name of the file. this is used to make sure 2 of
+        % the same files aren't analyzed
+        if isempty(NewAnalyzedTxt)
+            NewAnalyzedTxt = top_name;
+        else
+            NewAnalyzedTxt = [NewAnalyzedTxt; top_name];
+        end
+
         if TXT_FLAG == true
             % check to if RV_data.csv Pat.FileNam exists
             filechk = which(csvName);
 
-            % if file does not exist, creat one, and write all the headers to it
+            % if file does not exist, create one & write header line.
             if isempty(filechk)
                 fd0 = fopen(csvName, 'w');
-                fprintf(fd0, ['Pnam, Pmrn, file, Pes_Mean, Pes_StD, ' ...
-                    'PmaxT_Mean, PmaxT_StD, PmaxK_Mean, PmaxK_Std, ' ...
-                    'VVCRiT_Mean, VVCRiT_StD, VVCRnT_Mean, VVCRnT_StD, ' ...  
-                    'VVCRiK_Mean, VVCRiK_StD, VVCRnK_Mean, VVCRnK_StD, ' ...  
-                    'Num_Peaks, TotNumWaves\n']);
+                fprintf(fd0, header);
             else
                 % if file exists, append to it
                 fd0 = fopen(csvName, 'a');
@@ -220,30 +216,32 @@ for i = 1:length(top)
                     fprintf(fd0, ' ,\n');
                 end
             end
-            
+
             % Name, MRN, Filename
             fprintf(fd0, '%s, %s, %s,', Pat.Nam{1}, Pat.MRN{1}, Pat.FileNam);
-                    
+
             % Pes and both Pmax - end systolic pressure (Pes), and maximum
             % isovolumic pressure (Pmax) obtained from Takeuchi (Mean + 2*amp)
             % and Kind (Pmax) methods
             fprintf(fd0, '%10.6f, %10.6f,' , Res.P_es_Mean, Res.P_es_StD);
             fprintf(fd0, '%10.6f, %10.6f,' , Res.PmaxT_Mean, Res.PmaxT_StD);
             fprintf(fd0, '%10.6f, %10.6f,' , Res.PmaxK_Mean, Res.PmaxK_StD);
-            
+            fprintf(fd0, '%10.6f, %10.6f,' , Res.PmaxO_Mean, Res.PmaxO_StD);
+
             % print VVCR - ventricular vascular coupling ratio
             % UT - Dr. Uyen Troung
             % KH - Dr. Kendall Hunter
             % Res.VVCRnT_Mean = 1/Res.VVCRiT_Mean, they are reciprocals
             fprintf(fd0, '%8.6f, %8.6f,', Res.VVCRiT_Mean, Res.VVCRiT_StD);
-            fprintf(fd0, '%8.6f, %8.6f,', Res.VVCRnT_Mean, Res.VVCRnT_StD);
+            fprintf(fd0, '%9.5f, %9.5f,', Res.VVCRnT_Mean, Res.VVCRnT_StD);
             fprintf(fd0, '%8.6f, %8.6f,', Res.VVCRiK_Mean, Res.VVCRiK_StD);
-            fprintf(fd0, '%8.6f, %8.6f,', Res.VVCRnK_Mean, Res.VVCRnK_StD);
-            
+            fprintf(fd0, '%9.5f, %9.5f,', Res.VVCRnK_Mean, Res.VVCRnK_StD);
+            fprintf(fd0, '%8.6f, %8.6f,', Res.VVCRiO_Mean, Res.VVCRiO_StD);
+            fprintf(fd0, '%9.5f, %9.5f,', Res.VVCRnO_Mean, Res.VVCRnO_StD);
+
             % the number of analyzed peaks and the total number of waves
-            fprintf(fd0, '%i, %i\n', Res.numPeaks, ...
-                Res.TotNumWaves);
-            
+            fprintf(fd0, '%i, %i\n', Res.numPeaks, Res.TotNumWaves);
+
             % close Pat.FileNam
             fclose(fd0);
             

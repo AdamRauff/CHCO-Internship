@@ -73,6 +73,7 @@ handles.UNDO.FitT = [];
 
 % store first fit output into output structure.
 Res.FitT = handles.InVar.FitT;
+Res.FitO = handles.InVar.FitO;
 Res.FitK = handles.InVar.FitK;
 handles.OutVar = Res;
 
@@ -165,12 +166,14 @@ if ~isempty(WaveNumPosRm) && ~isempty(WaveNumNegRm)
 
         ICS = [Mea Amp Fre Pha];
         [FitT, ivSeg, Plot] = fit_takeuchi (ivSeg, Data, ICS);
+        [FitO] = fit_takeuchi_o (ivSeg, Data, ICS);
         [FitK] = fit_kind (ivSeg, ivIdx, Data, FitT);
         
         % update global handles from isovol_returned values. If the Vanderpool
         % method isn't tripped, then ivSeg and Plot haven't changed, so this
         % is a just-in-case...
         Res.FitT = FitT;
+        Res.FitO = FitO;
         Res.FitK = FitK;
         handles.OutVar = Res;
 
@@ -345,12 +348,14 @@ ivVal = handles.InVar.ivVal;
 ivSeg = handles.InVar.ivSeg;
 
 [FitT, ivSeg, Plot] = fit_takeuchi (ivSeg, Data, ICS);
+[FitO] = fit_takeuchi_o (ivSeg, Data, ICS);
 [FitK] = fit_kind (ivSeg, ivIdx, Data, FitT);
 
 % update global handles from isovol_returned values. If the Vanderpool
 % method isn't tripped, then ivSeg and Plot haven't changed, so this
 % is a just-in-case...
 Res.FitT = FitT;
+Res.FitO = FitO;
 Res.FitK = FitK;
 handles.OutVar = Res;
 
