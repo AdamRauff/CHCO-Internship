@@ -77,11 +77,11 @@ for i = 1:nfits
 
     lb = [  0.0   0.0    ICS.Freq -2*pi/3];
     ub = [500.0 500.0  2*ICS.Freq   -pi/3];
-    [c,resnorm,~] = lsqnonlin (sin_fun2,c2,lb,ub,opts1);
-    
+    [c,SSE,~] = lsqnonlin (sin_fun2,c2,lb,ub,opts1);
+
     % r^2 value; if the fit was bad, mark that wave.
-    Psine_RV2 = (c(1)+c(2)*sin(c(3)*WaveTsNorm+c(4)));
-    Ret1.Rsq(i) = 1-resnorm/norm(Psine_RV2-mean(Psine_RV2))^2;
+    SSTO = norm(WavePs-mean(WavePs))^2;
+    Ret1.Rsq(i) = 1-SSE/SSTO;
     
     if Ret1.Rsq(i) <0.90
        Ret1.BadCyc(i) = 1; 
@@ -145,11 +145,11 @@ for i = 1:nfits
             sin_fun2 = @(P)(P(1)+P(2)*sin(P(3)*WaveTsNorm+P(4)))-WavePs; 
 
             %least squares fitting
-            [c,resnorm,~] = lsqnonlin (sin_fun2,c2,lb,ub,opts1);
+            [c,SSE,~] = lsqnonlin (sin_fun2,c2,lb,ub,opts1);
 
             % r^2 value; if the fit was bad, mark that wave.
-            Psine_RV2 = (c(1)+c(2)*sin(c(3)*WaveTsNorm+c(4)));
-            Ret1.Rsq(i) = 1-resnorm/norm(Psine_RV2-mean(Psine_RV2))^2;
+            SSTO = norm(WavePs-mean(WavePs))^2;
+            Ret1.Rsq(i) = 1-SSE/SSTO;
 
             % Only mark that points are added if we actually take the result.
             if Ret1.Rsq(i) <0.90
@@ -226,5 +226,6 @@ if ~isempty(indX)
     disp('    fit_takeuchi: The following waves did NOT have a good fit');
     disp(['        (will not be included) Wave(s): ', num2str(indX','%02i ')]);
 else
-    disp('    fit_takeuchi: All waves seemed to fit well!');
+    disp(['    fit_takeuchi: All waves fit well, ave R^2 = ' ...
+        num2str(mean(Ret1.Rsq(i)),'%5.3f') '.']);
 end

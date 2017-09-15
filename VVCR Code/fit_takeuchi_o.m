@@ -1,4 +1,4 @@
-function [Ret1, Ret2, Ret3] = fit_takeuchi_o (ivSeg, Data, ICS)
+function [Ret1] = fit_takeuchi_o (ivSeg, Data, ICS)
 %
 % ivSeg  - Struct of all pres and time fitting values:
 %            iv1Pres/iv1Time/iv2Pres/iv2Time 1st level structs; Time labels
@@ -66,15 +66,15 @@ for i = 1:nfits
         % keep in mind this means the initial conditions of every wave fit
         % may be slightly different, While values entered via GUI make ICs
         % same for all waves.
-        c2 = [Mea, Amp, ICS.Freq, -0.5];
+        c2 = [Mea, Amp, ICS.Freq_o, -0.5];
         Ret1.CycICs(i,:)= c2; % Saved cycle specific ICs
     end
 
-    [c,resnorm,~] = lsqnonlin (sin_fun2,c2,[],[],opts1);
+    [c,SSE,~] = lsqnonlin (sin_fun2,c2,[],[],opts1);
     
     % r^2 value; if the fit was bad, mark that wave.
-    Psine_RV2 = (c(1)+c(2)*sin(c(3)*WaveTs+c(4)));
-    Ret1.Rsq(i) = 1-resnorm/norm(Psine_RV2-mean(Psine_RV2))^2;
+    SSTO = norm(WavePs-mean(WavePs))^2;
+    Ret1.Rsq(i) = 1-SSE/SSTO;
     
     if Ret1.Rsq(i) <0.90
        Ret1.BadCyc(i) = 1; 
@@ -130,11 +130,11 @@ for i = 1:nfits
             sin_fun2 = @(P)(P(1)+P(2)*sin(P(3)*WaveTs+P(4)))-WavePs; 
 
             %least squares fitting
-            [c,resnorm,~] = lsqnonlin (sin_fun2,c2,[],[],opts1); 
+            [c,SSE,~] = lsqnonlin (sin_fun2,c2,[],[],opts1); 
 
             % r^2 value; if the fit was bad, mark that wave.
-            Psine_RV2 = (c(1)+c(2)*sin(c(3)*WaveTs+c(4)));
-            Ret1.Rsq(i) = 1-resnorm/norm(Psine_RV2-mean(Psine_RV2))^2;
+            SSTO = norm(WavePs-mean(WavePs))^2;
+            Ret1.Rsq(i) = 1-SSE/SSTO;
 
             % Only mark that points are added if we actually take the result.
             if Ret1.Rsq(i) <0.90
@@ -211,5 +211,6 @@ if ~isempty(indX)
     disp('    fit_takeuchi_o: The following waves did NOT have a good fit');
     disp(['        (will not be included) Wave(s): ', num2str(indX','%02i ')]);
 else
-    disp('    fit_takeuchi_o: All waves seemed to fit well!');
+    disp(['    fit_takeuchi_o: All waves fit well, ave R^2 = ' ...
+        num2str(mean(Ret1.Rsq(i)),'%5.3f') '.']);
 end

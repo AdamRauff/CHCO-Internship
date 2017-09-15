@@ -45,14 +45,12 @@ for i = 1:nfits
 
     lb = [Data.P_es(i)  0.0            -0.1   0.2];
     ub = [        1000 30.0  Data.Time(end)   0.8];
-    [c,resnorm,~] = lsqnonlin (sin_fun2,c2,lb,ub,opts1);
+    [c,SSE,~] = lsqnonlin (sin_fun2,c2,lb,ub,opts1);
     
-    pnull1 = zeros(size(ivSeg.iv2Pres(i).PosIso));
-    pnull2 = zeros(size(ivSeg.iv2Pres(i).NegIso));
     % r^2 value; if the fit was bad, mark that wave.
-    Psine_RV2 = pmax_multiharm (c, Data.Time_D(ivSeg.iv2Time(i).PosIso),...
-        Data.Time_D(ivSeg.iv2Time(i).NegIso), dPtimes, pnull1, pnull2);
-    Ret1.Rsq(i)=1-resnorm/norm(Psine_RV2-mean(Psine_RV2))^2;
+    WavePs = [ivSeg.iv2Pres(i).PosIso; ivSeg.iv2Pres(i).NegIso];
+    SSTO = norm(WavePs-mean(WavePs))^2;
+    Ret1.Rsq(i) = 1-SSE/SSTO;
     
     if Ret1.Rsq(i) < 0.90
        Ret1.BadCyc(i) = 1; 
@@ -78,7 +76,8 @@ if ~isempty(indX)
     disp('    fit_kind: The following waves did NOT have a good fit (will not be included)');
     disp(['        Wave(s): ', num2str(indX')]);
 else
-    disp('    fit_kind: All waves seemed to fit well!');
+    disp(['    fit_kind: All waves fit well, ave R^2 = ' ...
+        num2str(mean(Ret1.Rsq(i)),'%5.3f') '.']);
 end
 
 % END OF isovol_fit2

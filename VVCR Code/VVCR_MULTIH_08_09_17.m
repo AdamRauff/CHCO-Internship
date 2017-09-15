@@ -32,77 +32,90 @@ end
 [Extr] = data_maxmin (Data_O);
 Data_O.time_per = Extr.time_per;
 
-%% (4) GUI for Manual Deletion of Mins and Maxs
+%% (4) GUI for Manual Deletion of Mins and Maxs, plus check index finding.
+for i = 1:2
+    % The GUI allows the user to manually delete inappropriate minima and
+    % maxima. In order to do that, The following information must be passed
+    % onto the GUI:
 
-% The GUI allows the user to manually delete inappropriate minima and
-% maxima. In order to do that, The following information must be passed
-% onto the GUI:
+    % Pressure and derivative, their extrema
+    PeakStr.Data = Data_O;
+    PeakStr.Extr = Extr;
 
-% Pressure and derivative, their extrema
-PeakStr.Data = Data_O;
-PeakStr.Extr = Extr;
+    % Images
+    Green_Check = imread('check.png');
+    PeakStr.Green_Check = Green_Check;
 
-% Images
-Green_Check = imread('check.png');
-PeakStr.Green_Check = Green_Check;
+    Red_X = imread('ex.png');
+    PeakStr.Red_X = Red_X;
 
-Red_X = imread('ex.png');
-PeakStr.Red_X = Red_X;
+    % call on GUI. Notice the structure we just made is passed to the GUI, and
+    % the GUI passes back a refined structure
+    NoPeaksRet = GUI_No_Peaks_10_10(PeakStr);
 
-% call on GUI. Notice the structure we just made is passed to the GUI, and
-% the GUI passes back a refined structure
-NoPeaksRet = GUI_No_Peaks_10_10(PeakStr);
+    clear PeakStr Green_Check Red_X
 
-clear PeakStr Green_Check Red_X
+    if ~isstruct(NoPeaksRet)
 
-if ~isstruct(NoPeaksRet)
+        Res = false;
+        Pat = false;
+        disp('VVCR_MULTIH: GUI_No_Peaks closed.');
+        return
 
-    Res = false;
-    Pat = false;
-    disp('VVCR_MULTIH: GUI_No_Peaks closed.');
-    return
+    end
 
-end
+    % if the exit button has been pressed
+    if NoPeaksRet.TotNumWaves == false
 
-% if the exit button has been pressed
-if NoPeaksRet.TotNumWaves == false
+        Res = false;
+        Pat = false;
+        disp('VVCR_MULTIH: You chose to exit the analysis');
+        disp(['    The Pat.FileNam ', FileName, ' was not evaluated!']);
+        return
 
-    Res = false;
-    Pat = false;
-    disp('VVCR_MULTIH: You chose to exit the analysis');
-    disp(['    The Pat.FileNam ', FileName, ' was not evaluated!']);
-    return
+    % if the discard patient button has been pressed
+    elseif NoPeaksRet.TotNumWaves == true
 
-% if the discard patient button has been pressed
-elseif NoPeaksRet.TotNumWaves == true
+        Res = true;
+        Pat = true;
+        disp('VVCR_MULTIH: patient discarded pre-analysis.');
+        return
 
-    Res = true;
-    Pat = true;
-    disp('VVCR_MULTIH: patient discarded pre-analysis.');
-    return
+    % otherwise
+    else
 
-% otherwise
-else
-    
-    % update minima and maxima per user filter GUI
-    Extr.dPmaxIdx = NoPeaksRet.Extr.dPmaxIdx;
-    Extr.dPmaxVal = NoPeaksRet.Extr.dPmaxVal;
+        % update minima and maxima per user filter GUI
+        Extr.dPmaxIdx = NoPeaksRet.Extr.dPmaxIdx;
+        Extr.dPmaxVal = NoPeaksRet.Extr.dPmaxVal;
+        Extr.dPminIdx = NoPeaksRet.Extr.dPminIdx;
+        Extr.dPminVal = NoPeaksRet.Extr.dPminVal;
 
-    Extr.dPminIdx = NoPeaksRet.Extr.dPminIdx;
-    Extr.dPminVal = NoPeaksRet.Extr.dPminVal;
+        % obtain number of total waveforms
+        Res.TotNumWaves = NoPeaksRet.TotNumWaves;
 
-    % obtain number of total waveforms
-    Res.TotNumWaves = NoPeaksRet.TotNumWaves;
-
-end
-
-clear NoPeaksRet
+    end
+    clear NoPeaksRet
 
 %% (5) Find isovolumic timings for Takaguichi & Kind method.
-[ivIdx, ivVal, badcyc] = data_isoidx (Data_O, Extr);
+    [ivIdx, ivVal, badcyc] = data_isoidx (Data_O, Extr);
+
+    Found = length(ivIdx.Ps1)/length(Res.TotNumWaves);
+    if (i == 1 && Found < 0.5)
+        disp(['VVCR_MULTIH: succesfully gated ' num2str(Found,'%4.1f%%') ...
+            ' of max/min cycles. Retrying with raw data.']);
+        Data_O.FiltPres = Data_O.Pres;
+        Data_O.FiltdPdt = Data_O.dPdt;
+        Data_O.Pres = Data_O.OrigPres; 
+        Data_O.dPdt = Data_O.OrigdPdt; 
+        Data_O = rmfield(Data_O, 'OrigPres');
+        Data_O = rmfield(Data_O, 'OrigdPdt');
+    else
+        break;
+    end
+        
+end
 
 % if there were no good pressure waveforms left, then skip patient
-% DO SOMETHING ELSE HERE: FILTER AT DIFFERENT FREQUENCY, TRY NO FILTER, ETC.
 if isempty(ivIdx.Ps1)
 
      % set all output variables to true, return to runAll
@@ -124,7 +137,7 @@ clear Data_O
 % frequnecy is the conversion to angular frequency 2*pi/T
 % multiplied by the number of waves found over the time period
 % ICs structure for first pass - enables individual computation of ICs
-%ICS.Freq = double(((2*pi)*Res.TotNumWaves)/(Data.time_end)); % OLD METHOD
+ICS.Freq_o = double(((2*pi)*Res.TotNumWaves)/(Data.time_end)); % OLD METHOD
 ICS.Freq = 2*pi/Data.time_per;
 ICS.Pres = Data.Pres;
 ICS.dPmaxIdx = ivIdx.dPmax;
@@ -132,6 +145,7 @@ ICS.dPminIdx = ivIdx.dPmin;
 
 
 [FitT, ivSeg, Plot] = fit_takeuchi (ivSeg, Data, ICS);
+[FitO] = fit_takeuchi_o (ivSeg, Data, ICS);
 [FitK] = fit_kind (ivSeg, ivIdx, Data, FitT);
 
 % What was average frequency ratio between Takeuchi and Data?

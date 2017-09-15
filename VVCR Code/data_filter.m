@@ -3,14 +3,14 @@ function [Ret] = data_filter (dat_typ, Pres, dPdt, Rvals)
 % Digital filter of Pres & dP/dt. May be necessary for multiharmoic fit,
 % not yet sure. Below, n = filter order (higher gives more rapid
 % attenuation after the passband); TimeStep is sampling rate of clinical
-% data; Wp is the normalized cutoff (30Hz in this case). A Butterworth
+% data; Wp is the normalized cutoff (35Hz in this case). A Butterworth
 % filter has zero ripple before the passband then slowly attenuates; this
 % seems to do a fine job for what we need.
 
 % Copy Rvals into stucture for later use.
 Ret.Rvals = Rvals;
 
-n = 40;
+n = 35;
 if dat_typ
     Ret.time_step = 1/250;
 else
