@@ -3,7 +3,7 @@ function [ivIdx, ivVal, badcyc] = data_isoidx (Dat, Ext)
 % Pre allocate variables. Variable name codes are:
 %   ivVal - values;
 %   ivIdx - indices;
-%   m1 - 1st method (Takaguchi);
+%   m1 - 1st method (Takeuchi);
 %   m2 - 2nd method (Kind);
 %   Ps - positive iso start;
 %   Pe - positive iso end;
@@ -23,8 +23,8 @@ ivVal.dPmin = Ext.dPminVal;
 
 badcyc = [];
 
-%% Find isovolumic timings for Takaguichi method points.
-disp('    data_isoidx: finding Takaguichi indices');
+%% Find isovolumic timings for Takeuchi method points.
+disp('    data_isoidx: finding Takeuchi indices');
 
 % scroll through all maxima
 for i = 1:mysz
@@ -40,6 +40,9 @@ for i = 1:mysz
             % wave does not contain enough information to include. So we remove
             % the first maximum & min. Escape the loop by setting EDi to be 
             % index of a minimum.
+
+            disp(['        curve # 01, start of isovolumic contraction ' ...
+	        'not captured at start of sample, skipping.']);
 
             EDi = ivIdx.dPmin(1); 
             badcyc = [badcyc, i]; % add to list of bad curves
@@ -74,6 +77,10 @@ for i = 1:mysz
                 Dat.dPdt(EDi - 3) < 0.20*ivVal.dPmax(i) && ...
                 abs(EDi-ivIdx.dPmax(i)) <= 3
 
+                disp(['        curve # ' num2str(i, '%02i') ...
+                    ', too few points in isovolumic contration, ' ...
+		    'skipping.']);
+
                 badcyc = [badcyc, i]; % add to list of bad curves
                 break
             end
@@ -98,6 +105,8 @@ for i = 1:mysz
             % that is not fully contained in the sample; to correct for this,
             % set ESi to be 10 data points (40 ms) prior to the ivVal.Ps1 to
             % force exit of the while loop.
+            disp(['        curve # ' num2str(i, '%02i') ...
+	        ', (dP/dt)min not captured at end of sample, skipping.']);
 
             ESi = ivIdx.Ps1(i)-10;
             badcyc = [badcyc, i]; % add to list of bad curves
@@ -118,6 +127,10 @@ for i = 1:mysz
                % to force exit while loop
 
                ESi = ivIdx.Ps1(i)-5;
+               disp(['        curve # ' num2str(i, '%02i') ...
+	           ', can''t find end isovolumic relaxation pressure, ' ...
+		   'skipping.']);
+
                badcyc = [badcyc, i]; % add to list of bad curves
            end
         end
@@ -154,7 +167,7 @@ for i = 1:mysz
         (ivIdx.Ne1(i) > ivIdx.dPmin(i) && ...
         abs(ivIdx.Ne1(i)-ivIdx.dPmin(i)) <= 3)
 
-        disp(['VVCR_MULTIH: for curve # ',num2str(i), ...
+        disp(['        curve # ' num2str(i, '%02i') ...
             ', end diastole leads (dP/dt)min, skipping.']);
 
         % get rid of curve if it is not already marked
@@ -172,7 +185,7 @@ end
 % names are: iv2 - IsoVol points for Kind fit; Pn - positive iso end; Ns -
 % negative iso start; Ne - negative iso end; Val - value; Idx - index.
 %
-% Note that Kind method pos iso starts at the same time as Takaguchi, so we
+% Note that Kind method pos iso starts at the same time as Takeuchi, so we
 % just use those values (in iv1Ps___ vectors, found above) when needed.
 
 ivVal.Pe2 = zeros(mysz,1);
@@ -202,7 +215,7 @@ for i = 1:mysz
     ivVal.Pe2(i) = Dat.Pres(Pend);
     ivIdx.Pe2(i) = Pend;
 
-    % Find pres at (dP/dt)min, then find ±20% change, these are start and end
+    % Find pres at (dP/dt)min, then find Â±20% change, these are start and end
     % of Kind neg iso segment.
     Pcut = 1.20*Dat.Pres(ivIdx.dPmin(i));
     Pstr = ivIdx.dPmin(i);
@@ -229,7 +242,7 @@ for i = 1:mysz
         Pend = Pend + 1;
 
         % Don't let this go too far: add this cycle to "bad list" if we exceed
-        % the Takaguchi end (i.e. go beyond the isovolumic portion), we go
+        % the Takeuchi end (i.e. go beyond the isovolumic portion), we go
         % farther than 5 points away (this may need revision), or, if we're on
         % the last cycle, don't go off the end of the data.
         if i == mysz

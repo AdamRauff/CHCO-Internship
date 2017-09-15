@@ -1,112 +1,132 @@
-function [ AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, STD_Pes, STD_PMX, TotNumWaves] = VVCR_MULTIH_08_09_17( PathName, FileName)
+function [ Res, Pat ] = VVCR_MULTIH_08_09_17( PathName, FileName)
 
-%% (1) Read in data from the given file
-% determine if file is from calf or humans to apply apprpriate loadp
+%% (1) Read in data from the given Pat.FileNam
+% determine if Pat.FileNam is from calf or humans to apply apprpriate loadp
 % function
 
-% if thrid digit/entry of filename is numeric == human file
-% otherwise, calf file --> use calf loadp function
+% if thrid digit/entry of Pat.FileNamname is numeric == human Pat.FileNam
+% otherwise, calf Pat.FileNam --> use calf loadp function
 if FileName(1) == 'H' && ischar(FileName(2)) && ~isnan(str2double(FileName(3)));
-    [Pres, dPdt, ~, Pnam, Pmrn, file, ~, ~]=loadp_10_10_16(PathName,FileName,100);
+    [Pres, dPdt, Rvals, Pat.Nam, Pat.MRN, Pat.FileNam, ~, ~] = ...
+        loadp_10_10_16(PathName, FileName, 1);
     dat_typ = 1;
 else
-    [Pres, dPdt, Rvals, file, ~]=load_calf_p_5_17_17(PathName,FileName,100);
+    [Pres, dPdt, Rvals, Pat.FileNam, ~] = ...
+        load_calf_p_5_17_17(PathName, FileName, 100);
     dat_typ = 0;
 end
 
 % check to see if RV array was NOT found by loaddp
 if length(Pres) == 1 && Pres == 0
 
-    % set all outputs to true --> skip file, return to runAll
-    [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
-        STD_Pes, STD_PMX, TotNumWaves] = deal (false);
+    % set output vars to true --> skip Pat.FileNam, return to runAll
+    Res = false;
+    Pat = false;
     disp('VVCR_MULTIH: Loadp did not detect an RV column');
     return
 
 end
 
-%% (2,3) Filter pressure data & create time vector; find dP/dt Extrema.
-[Data_O] = data_filter (dat_typ, Pres, dPdt);
+%% (2) Filter pressure data & create time vector.
+[Data_O] = data_filter (dat_typ, Pres, dPdt, Rvals);
 
-[Extrema] = data_maxmin (Data_O);
+%% (3) Determine all indexing for analysis.
+for i = 1:2
+    % Capture Extrema and record number found.
+    [Extr] = data_maxmin (Data_O);
+    Data_O.time_per = Extr.time_per;
+    OrigTot = (length(Extr.dPminIdx)+length(Extr.dPmaxIdx))/2;
 
-%% (4) GUI for Manual Deletion of Mins and Maxs
+    % Call GUI for assessment of extrema. Build input structure.
+    % Pressure and derivative, their extrema
+    PeakStr.Data = Data_O;
+    PeakStr.Extr = Extr;
 
-% The GUI allows the user to manually delete inappropriate minima and
-% maxima. In order to do that, The following information must be passed
-% onto the GUI:
+    % Images
+    Green_Check = imread('check.png');
+    PeakStr.Green_Check = Green_Check;
 
-% Pressure and derivative, their extrema
-PeakStr.Data = Data_O;
-PeakStr.Ext = Extrema;
+    Red_X = imread('ex.png');
+    PeakStr.Red_X = Red_X;
 
-% Images
-Green_Check = imread('check.png');
-PeakStr.Green_Check = Green_Check;
+    % call on GUI.
+    NoPeaksRet = GUI_No_Peaks_10_10(PeakStr);
+    clear PeakStr Green_Check Red_X
 
-Red_X = imread('ex.png');
-PeakStr.Red_X = Red_X;
+    % Interpret return structure.
+    if ~isstruct(NoPeaksRet)
 
-% call on GUI. Notice the structure we just made is passed to the GUI, and
-% the GUI passes back a refined structure
-NoPeaksRet = GUI_No_Peaks_10_10(PeakStr);
+        Res = false;
+        Pat = false;
+        disp('VVCR_MULTIH: GUI_No_Peaks closed.');
+        return
 
-clear PeakStr Green_Check Red_X
+    end
 
-if ~isstruct(NoPeaksRet)
+    % if the exit button has been pressed
+    if NoPeaksRet.TotNumWaves == false
 
-    [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
-        STD_Pes, STD_PMX, TotNumWaves] = deal (false);
-    disp('VVCR_MULTIH: GUI_No_Peaks closed.');
-    return
+        Res = false;
+        Pat = false;
+        disp('VVCR_MULTIH: You chose to exit the analysis');
+        disp(['    The Pat.FileNam ', FileName, ' was not evaluated!']);
+        return
 
+    % if the discard patient button has been pressed
+    elseif NoPeaksRet.TotNumWaves == true
+
+        Res = true;
+        Pat = true;
+        disp('VVCR_MULTIH: patient discarded pre-analysis.');
+        return
+
+    % otherwise
+    else
+
+        % update minima and maxima per user filter GUI
+        Extr.dPmaxIdx = NoPeaksRet.Extr.dPmaxIdx;
+        Extr.dPmaxVal = NoPeaksRet.Extr.dPmaxVal;
+        Extr.dPminIdx = NoPeaksRet.Extr.dPminIdx;
+        Extr.dPminVal = NoPeaksRet.Extr.dPminVal;
+
+        % obtain number of total waveforms
+        Res.TotNumWaves = NoPeaksRet.TotNumWaves;
+
+    end
+    clear NoPeaksRet
+
+    % Find isovolumic timings for Takaguichi & Kind method.
+    [ivIdx, ivVal, badcyc] = data_isoidx (Data_O, Extr);
+
+    % If very few timings were found, filtering may be a problem.
+    Found  = length(ivIdx.Ps1)/Res.TotNumWaves;
+    Reject = Res.TotNumWaves/OrigTot;
+    if (i == 1 && Found < 0.5) || (i == 1 && Reject < 0.5)
+        if Found < 0.5
+            disp(['VVCR_MULTIH: succesfully gated only ' num2str(Found, ...
+                '%4.1f%%') ' of max/min cycles. Retrying with raw data.']);
+        else
+            disp(['VVCR_MULTIH: user rejected  ' num2str(1-Reject, ...
+                '%4.1f%%') ' of max/min cycles. Retrying with raw data.']);
+        end
+        Data_O.FiltPres = Data_O.Pres;
+        Data_O.FiltdPdt = Data_O.dPdt;
+        Data_O.Pres = Data_O.OrigPres; 
+        Data_O.dPdt = Data_O.OrigdPdt; 
+        Data_O = rmfield(Data_O, 'OrigPres');
+        Data_O = rmfield(Data_O, 'OrigdPdt');
+    else
+        break;
+    end
+        
 end
-
-% if the exit button has been pressed
-if NoPeaksRet.Ext.dPmaxIdx == false
-
-    % set all output variables to false, return to runAll
-    [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
-        STD_Pes, STD_PMX, TotNumWaves] = deal (false);
-    disp('VVCR_MULTIH: You chose to exit the analysis');
-    disp(['    The file ', FileName, ' was not evaluated!']);
-    return
-
-% if the discard patient button has been pressed
-elseif NoPeaksRet.TotNumWaves == true
-
-     % set all output variables to true, return to runAll
-    [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
-        STD_Pes, STD_PMX, TotNumWaves] = deal (true);
-    return
-
-% otherwise
-else
-    
-    % update minima and maxima per user filter GUI
-    Extrema.dPmaxIdx = NoPeaksRet.Ext.dPmaxIdx;
-    Extrema.dPmaxVal = NoPeaksRet.Ext.dPmaxVal;
-
-    Extrema.dPminIdx = NoPeaksRet.Ext.dPminIdx;
-    Extrema.dPminVal = NoPeaksRet.Ext.dPminVal;
-
-    % obtain number of total waveforms
-    TotNumWaves = NoPeaksRet.TotNumWaves;
-
-end
-
-clear NoPeaksRet
-
-%% (5) Find isovolumic timings for Takaguichi & Kind method.
-[ivIdx, ivVal, badcyc] = data_isoidx (Data_O, Extrema);
 
 % if there were no good pressure waveforms left, then skip patient
-% DO SOMETHING ELSE HERE: FILTER AT DIFFERENT FREQUENCY, TRY NO FILTER, ETC.
 if isempty(ivIdx.Ps1)
 
      % set all output variables to true, return to runAll
-    [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
-        STD_Pes, STD_PMX, TotNumWaves] = deal (true);
+    Res = true;
+    Pat = true;
     return
 
 end
@@ -123,15 +143,27 @@ clear Data_O
 % frequnecy is the conversion to angular frequency 2*pi/T
 % multiplied by the number of waves found over the time period
 % ICs structure for first pass - enables individual computation of ICs
-ICS.Freq = double(((2*pi)*TotNumWaves)/(Data.time_end));
+ICS.Freq_o = double(((2*pi)*Res.TotNumWaves)/(Data.time_end)); % OLD METHOD
+ICS.Freq = 2*pi/Data.time_per;
 ICS.Pres = Data.Pres;
 ICS.dPmaxIdx = ivIdx.dPmax;
 ICS.dPminIdx = ivIdx.dPmin;
 
-[Fit, ivSeg, Plot] = isovol_fit (ivSeg, Data, ICS);
+
+[FitT, ivSeg, Plot] = fit_takeuchi (ivSeg, Data, ICS);
+[FitO] = fit_takeuchi_o (ivSeg, Data, ICS);
+[FitK] = fit_kind (ivSeg, ivIdx, Data, FitT);
+
+% What was average frequency ratio between Takeuchi and Data?
+%temp = mean(FitT.RCoef(FitT.BadCyc~=1,:));
+%AveFreq = temp(3)/(2*pi);
+%[double(((2*pi)*Res.TotNumWaves)/(Data.time_end)) 2*pi/Data.time_per]
+%[AveFreq 1/Data.time_per AveFreq*Data.time_per]
 
 % Package all structures for passing to GUI_SINU_FIT
-SinuStr.Fit  = Fit;
+SinuStr.FitT = FitT;
+SinuStr.FitO = FitO;
+SinuStr.FitK = FitK;
 SinuStr.Data = Data;
 SinuStr.Plot = Plot;
 
@@ -152,18 +184,19 @@ if ~isstruct(RetStr)
     if RetStr == false
     
         % set all output variables to false, return to runAll
-        [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
-            STD_Pes, STD_PMX, TotNumWaves] = deal (false);
-        disp('VVCR_MULTIH: GUI_SINU_FIT closed/exit pressed.');
+        Res = false;
+        Pat = false;
+        disp('VVCR_MULTIH: You chose to exit the analysis');
+        disp(['    The Pat.FileNam ', FileName, ' was not evaluated!']);
         return
 
     % if the discard patient button has been pressed
     elseif RetStr == true
     
-         % set all output variables to true, return to runAll
-        [AVG_Pes, AVG_Pmax, VVCR_UT, VVCR_KH, Pnam, Pmrn, file, numPeaks, ...
-            STD_Pes, STD_PMX, TotNumWaves] = deal (true);
-        disp('VVCR_MULTIH: patient discarded.');
+        % set all output variables to true, return to runAll
+        Res = true;
+        Pat = true;
+        disp('VVCR_MULTIH: patient discarded post-analysis.');
         return
 
     end
@@ -171,35 +204,81 @@ if ~isstruct(RetStr)
 else
     % extract Pmax and the list of well fitted curves from the structure
     % that is returned from GUI
-    BadCyc  = RetStr.BadCyc;
-    PIsoMax = RetStr.PIsoMax;
+    BadCyc  = RetStr.FitT.BadCyc;
+
+    % Initialize return structure to contain ALL fitting data.
+    Res.FitT = RetStr.FitT;
+    Res.FitO = RetStr.FitO;
+    Res.FitK = RetStr.FitK;
+    Res.P_es = Data.P_es;
     
     % calculate the number of peaks that were evaluated
-    numPeaks = 0;
+    Res.numPeaks = 0;
     for i = 1:length(BadCyc)
         if BadCyc(i) ~= 1
-            numPeaks = numPeaks + 1;
+            Res.numPeaks = Res.numPeaks + 1;
         end
     end
+
     %OKAY! here are the final values and we can FINALLY calculate VVCR.
+    GOOD_P_es = Data.P_es(BadCyc~=1);
+    GOOD_PmxT = RetStr.FitT.PIsoMax(BadCyc~=1);
+    GOOD_PmxO = RetStr.FitO.PIsoMax(BadCyc~=1);
+    GOOD_PmxK = RetStr.FitK.RCoef(BadCyc~=1,1);
 
-    % average Pes for the waves that fit well
-    AVG_Pes = mean(Data.P_es(BadCyc~=1)); 
-    
-    % standard deviation of Pes
-    STD_Pes = std(Data.P_es(BadCyc~=1));
-
-    % average P_max for the waves that fit well
-    AVG_Pmax = mean(PIsoMax(BadCyc~=1)); 
-    
-    % standard deviation of Pmax
-    STD_PMX = std(PIsoMax(BadCyc~=1));
+    % mean, std Pes and P_max for the waves that fit well
+    Res = compute_MeanStd (Res, GOOD_P_es, 'P_es');
+    Res = compute_MeanStd (Res, GOOD_PmxT, 'PmaxT');
+    Res = compute_MeanStd (Res, GOOD_PmxO, 'PmaxO');
+    Res = compute_MeanStd (Res, GOOD_PmxK, 'PmaxK');
 
     %from Uyen Truongs VVCR paper
-    VVCR_UT = AVG_Pes/(AVG_Pmax-AVG_Pes); 
+    Res = compute_VVCRi (Res, GOOD_P_es, GOOD_PmxT, 'T');
+    Res = compute_VVCRi (Res, GOOD_P_es, GOOD_PmxO, 'O');
+    Res = compute_VVCRi (Res, GOOD_P_es, GOOD_PmxK, 'K');
 
     % Hunter's 
-    VVCR_KH = (AVG_Pmax/AVG_Pes)-1;
+    Res = compute_VVCRn (Res, GOOD_P_es, GOOD_PmxT, 'T');
+    Res = compute_VVCRn (Res, GOOD_P_es, GOOD_PmxO, 'O');
+    Res = compute_VVCRn (Res, GOOD_P_es, GOOD_PmxK, 'K');
+
 end
+
+end
+
+%% Auxilliary Functions to simplify computation of final values.
+
+function [Out] = compute_MeanStd (In, Var, nam)
+
+Out = In;
+fieldmean = [nam '_Mean'];
+fieldstd  = [nam '_StD'];
+
+Out.(fieldmean) = mean(Var);
+Out.(fieldstd)  = std(Var);
+
+end
+
+function [Out] = compute_VVCRi (In, Pes, Pmx, nam)
+
+Out = In;
+fieldmean = ['VVCRi' nam '_Mean'];
+fieldstd  = ['VVCRi' nam '_StD'];
+
+Out.(fieldmean) = Pes./(Pmx-Pes);
+Out.(fieldstd)  = std(Out.(fieldmean));
+Out.(fieldmean) = mean(Out.(fieldmean));
+
+end
+
+function [Out] = compute_VVCRn (In, Pes, Pmx, nam)
+
+Out = In;
+fieldmean = ['VVCRn' nam '_Mean'];
+fieldstd  = ['VVCRn' nam '_StD'];
+
+Out.(fieldmean) = (Pmx./Pes)-1;
+Out.(fieldstd)  = std(Out.(fieldmean));
+Out.(fieldmean) = mean(Out.(fieldmean));
 
 end

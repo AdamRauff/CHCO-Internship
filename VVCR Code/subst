@@ -16,82 +16,142 @@ foreach $name (@ARGV) {
     while(<IN>) {
       $orig = $_;
 
+      if (~/^%/) {
 ### FIRST SUBST
-      s/pksT/dPmaxIdx/g;
-      s/pks/dPmaxVal/g;
-      s/MinIdx/dPminIdx/g;
-      s/Minima/dPminVal/g;
+#       s/pksT/dPmaxIdx/g;
+#       s/pks/dPmaxVal/g;
+#       s/MinIdx/dPminIdx/g;
+#       s/Minima/dPminVal/g;
 
-      s/isovoltime/isovolTime/g;
-      s/isovol/isovolPres/g;
-      s/isovolPresTime/isovolTime/g;
+#       s/isovoltime/isovolTime/g;
+#       s/isovol/isovolPres/g;
+#       s/isovolPresTime/isovolTime/g;
 
-      s/EDP_NT/Iso2StIdx/g;
-      s/EDP_NT_Doub/Iso2StIdx_Doub/g;
-      s/EDP_T/Iso1StIdx/g;
-      s/EDP_N/Iso2StVal/g;
-      s/EDP/Iso1StVal/g;
+#       s/EDP_NT/Iso2StIdx/g;
+#       s/EDP_NT_Doub/Iso2StIdx_Doub/g;
+#       s/EDP_T/Iso1StIdx/g;
+#       s/EDP_N/Iso2StVal/g;
+#       s/EDP/Iso1StVal/g;
 
 ### SECOND SUBST
-#     s/\(1\)\.ivt/\.ivTime_D/g;
-#     s/\(1\)\.iv/\.ivPres_D/g;
-#     s/\(1\)\.isoPts/\.ivPlotTime/g;
-#     s/\(2\)\.isoPts/\.ivPlotPres/g;
+#       s/\(1\)\.ivt/\.ivTime_D/g;
+#       s/\(1\)\.iv/\.ivPres_D/g;
+#       s/\(1\)\.isoPts/\.ivPlotTime/g;
+#       s/\(2\)\.isoPts/\.ivPlotPres/g;
 
-#     s/\(1\)\.Cs/\.fit.InitIC/g;
-#     s/\(2\)\.Cs/\.fit.RCoef/g;
-#     s/\(2\)\.Misc/\.fit.PIsoMax/g;
+#       s/\(1\)\.Cs/\.fit.InitIC/g;
+#       s/\(2\)\.Cs/\.fit.RCoef/g;
+#       s/\(2\)\.Misc/\.fit.PIsoMax/g;
 
-#     s/\(1\)\.Data/\.Time_D/g;
-#     s/\(2\)\.Data/\.Pres_D/g;
-#     s/\(3\)\.Data/\.dPdt_D/g;
+#       s/\(1\)\.Data/\.Time_D/g;
+#       s/\(2\)\.Data/\.Pres_D/g;
+#       s/\(3\)\.Data/\.dPdt_D/g;
 
-#     s/\(2\)\.ivt/\.Time/g; 
-#     s/\(2\)\.iv/\.fit.BadCyc/g;
-#     s/\(1\)\.Misc/\.Iso1StVal/g;
+#       s/\(2\)\.ivt/\.Time/g; 
+#       s/\(2\)\.iv/\.fit.BadCyc/g;
+#       s/\(1\)\.Misc/\.Iso1StVal/g;
 
-#     s/\(1\)\.EDPs/\.Iso1StIdx_D/g;
-#     s/\(2\)\.EDPs/\.Iso2StIdx_D/g;
-#     s/\(1\)\.Crit/\.dPmaxIdx/g;
-#     s/\(2\)\.Crit/\.dPminIdx/g;
+#       s/\(1\)\.EDPs/\.Iso1StIdx_D/g;
+#       s/\(2\)\.EDPs/\.Iso2StIdx_D/g;
+#       s/\(1\)\.Crit/\.dPmaxIdx/g;
+#       s/\(2\)\.Crit/\.dPminIdx/g;
 
 ### SECOND SUBST CONTINUED...
-#     s/\.OldIsoT/\.UNDOivPlotTime/g;
-#     s/\.OldIsoT/.UNDOivPlotTime/g;
-#     s/\.OldIsoP/.UNDOivPlotPres/g;
-#     s/\.OldIsoVolT/.UNDOivTime_D/g;
-#     s/\.OldEDPT/.UNDOIso1StIdx_D/g;
-#     s/\.OldEDPNT/.UNDOIso2StIdx_D/g;
-#     s/\.OldIsoVol/.UNDOivPres_D/g;
-#     s/\.OldEDP/.UNDOIso1StVal/g;
-#     s/\.OldPksT/.UNDOdPmaxIdx/g;
-#     s/\.OldMinIdx/.UNDOdPminIdx/g;
-#     s/\.OldMinima/.UNDOdPminVal/g;
+#       s/\.OldIsoT/\.UNDOivPlotTime/g;
+#       s/\.OldIsoT/.UNDOivPlotTime/g;
+#       s/\.OldIsoP/.UNDOivPlotPres/g;
+#       s/\.OldIsoVolT/.UNDOivTime_D/g;
+#       s/\.OldEDPT/.UNDOIso1StIdx_D/g;
+#       s/\.OldEDPNT/.UNDOIso2StIdx_D/g;
+#       s/\.OldIsoVol/.UNDOivPres_D/g;
+#       s/\.OldEDP/.UNDOIso1StVal/g;
+#       s/\.OldPksT/.UNDOdPmaxIdx/g;
+#       s/\.OldMinIdx/.UNDOdPminIdx/g;
+#       s/\.OldMinima/.UNDOdPminVal/g;
 
 ### SECOND SUBST CONTINUED AGAIN...
-#     s/\(3\)\.Data/.dPdt/g;
-#     s/\(1\)\.Min/.dPminIdx/g;
-#     s/\(2\)\.Min/.dPminVal/g;
-#     s/\(1\)\.Max/.dPmaxIdx/g;
-#     s/\(2\)\.Max/.dPmaxVal/g;
-#     s/\(3\)\.Max/.TotNumWaves/g;
-#     s/\(1\)\.IM/.Green_Check/g;
-#     s/\(2\)\.IM/.Red_X/g;
-
-
+#       s/\(3\)\.Data/.dPdt/g;
+#       s/\(1\)\.Min/.dPminIdx/g;
+#       s/\(2\)\.Min/.dPminVal/g;
+#       s/\(1\)\.Max/.dPmaxIdx/g;
+#       s/\(2\)\.Max/.dPmaxVal/g;
+#        s/\(3\)\.Max/.TotNumWaves/g;
+#       s/\(1\)\.IM/.Green_Check/g;
+#       s/\(2\)\.IM/.Red_X/g;
+ 
 ### FIX ERROR :)
-#     s/\.fit\.BadCyct/\.Time/g;
+#       s/\.fit\.BadCyct/\.Time/g;
 
 ### CLEANUP SUBST
-#     s/\.OldpksT/\.dPmaxIdx/;
-#     s/\.Oldpks/\.dPmaxVal/;
+#       s/\.OldpksT/\.dPmaxIdx/;
+#       s/\.Oldpks/\.dPmaxVal/;
 
-      print OUT $_;
+### REVISIONS FOR KIND METHOD
+#       s/isovolPres/iv1Pres/g;
+#       s/isovolTime/iv1Time/g;
+#       s/ivTime_D/iv1Time_D/g;
+#       s/ivPres_D/iv1Pres_D/g;
 
-      if ( $orig ne $_ ) {
+#       s/Iso1StVal/iv1PsVal/g;
+#       s/Iso1StIdx/iv1PsIdx/g;
+#       s/Iso2StVal/iv1NeVal/g;
+#       s/Iso2StIdx/iv1NeIdx/g;
+
+#       s/bad_curve/badpts1/g;
+
+### REVISIONS FOR data_isotim
+#       s/iv1PsIdx/ivIdx.Ps1/g;
+#       s/iv1PsVal/ivVal.Ps1/g;
+#       s/iv1NeIdx/ivIdx.Ne1/g;
+#       s/iv1NeVal/ivVal.Ne1/g;
+#       s/iv2PeIdx/ivIdx.Pe2/g;
+#       s/iv2PeVal/ivVal.Pe2/g;
+#       s/iv2NsIdx/ivIdx.Ns2/g;
+#       s/iv2NsVal/ivVal.Ns2/g;
+#       s/iv2NeIdx/ivIdx.Ne2/g;
+#       s/iv2NeVal/ivVal.Ne2/g;
+
+#       s/dPmaxIdx/ivIdx.dPmax/g;
+#       s/dPmaxVal/ivVal.dPmax/g;
+#       s/dPminIdx/ivIdx.dPmin/g;
+#       s/dPminVal/ivVal.dPmin/g;
+
+#       s/dPdt/Dat.dPdt/g;
+#       s/Pres/Dat.Pres/g;
+
+### REVISIONS FOR GUI_NoPeaks
+#       s/\bdPmaxIdx\b/Extr.dPmaxIdx/g;
+#       s/\bdPmaxVal\b/Extr.dPmaxVal/g;
+#       s/\bdPminIdx\b/Extr.dPminIdx/g;
+#       s/\bdPminVal\b/Extr.dPminVal/g;
+
+#       s/\btime\b/Data.Time/g;
+#       s/\bPres\b/Data.Pres/g;
+#       s/\bdPdt\b/Data.dPdt/g;
+
+### REVISIONS FOR runAll
+#       s/\bAVG_Pes\b/Res.Pes_Mean/g;
+#       s/\bAVG_Pmax\b/Res.Pmax_Mean/g;
+#       s/\bVVCR_UT\b/Res.VVCRinv_Mean/g;
+#       s/\bVVCR_KH\b/Res.VVCRnorm_Mean/g;
+#       s/\bPnam\b/Pat.Nam/g;
+#       s/\bPmrn\b/Pat.MRN/g;
+#       s/\bfile\b/Pat.FileNam/g;
+#       s/\bnumPeaks\b/Res.numPeaks/g;
+#       s/\bSTD_Pes\b/Res.Pes_StD/g;
+#       s/\bSTD_PMX\b/Res.Pmax_StD/g;
+#       s/\bTotNumWaves\b/Res.TotNumWaves/g;
+
+### 2nd REVISIONS FOR runAll
+        s/\bRes.VVCRinv_Mean\b/Res.VVCRiT_Mean/g;
+        s/\bRes.VVCRnorm_Mean\b/Res.VVCRnT_Mean/g;
+        print OUT $_;
+
+        if ( $orig ne $_ ) {
           ++$change;
-      }
+        }
 
+      }
     }
   }
   close(IN);
