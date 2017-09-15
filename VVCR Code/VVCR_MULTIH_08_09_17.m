@@ -221,55 +221,64 @@ else
     end
 
     %OKAY! here are the final values and we can FINALLY calculate VVCR.
-    PIsoMaxT = RetStr.FitT.PIsoMax;
-    PIsoMaxO = RetStr.FitO.PIsoMax;
-    PIsoMaxK = RetStr.FitK.RCoef(:,1);
+    GOOD_P_es = Data.P_es(BadCyc~=1);
+    GOOD_PmxT = RetStr.FitT.PIsoMax(BadCyc~=1);
+    GOOD_PmxO = RetStr.FitO.PIsoMax(BadCyc~=1);
+    GOOD_PmxK = RetStr.FitK.RCoef(BadCyc~=1,1);
 
-    GOOD_P_es  = Data.P_es(BadCyc~=1);
-    GOOD_PmxT = PIsoMaxT(BadCyc~=1);
-    GOOD_PmxO = PIsoMaxT(BadCyc~=1);
-    GOOD_PmxK = PIsoMaxK(BadCyc~=1);
-
-    % mean, std Pes for the waves that fit well
-    Res.P_es_Mean = mean(GOOD_P_es);
-    Res.P_es_StD  = std(GOOD_P_es);
-
-    % mean, std P_max for the waves that fit well
-    Res.PmaxT_Mean = mean(GOOD_PmxT);
-    Res.PmaxT_StD  = std(GOOD_PmxT);
-    Res.PmaxO_Mean = mean(GOOD_PmxO);
-    Res.PmaxO_StD  = std(GOOD_PmxO);
-    Res.PmaxK_Mean = mean(GOOD_PmxK);
-    Res.PmaxK_StD  = std(GOOD_PmxK);
+    % mean, std Pes and P_max for the waves that fit well
+    Res = compute_MeanStd (Res, GOOD_P_es, 'P_es');
+    Res = compute_MeanStd (Res, GOOD_PmxT, 'PmaxT');
+    Res = compute_MeanStd (Res, GOOD_PmxO, 'PmaxO');
+    Res = compute_MeanStd (Res, GOOD_PmxK, 'PmaxK');
 
     %from Uyen Truongs VVCR paper
-    Res.VVCRiT_Mean = GOOD_P_es./(GOOD_PmxT-GOOD_P_es); 
-    Res.VVCRiT_StD  = std(Res.VVCRiT_Mean);
-    Res.VVCRiT_Mean = mean(Res.VVCRiT_Mean);
-
-    Res.VVCRiO_Mean = GOOD_P_es./(GOOD_PmxO-GOOD_P_es); 
-    Res.VVCRiO_StD  = std(Res.VVCRiO_Mean);
-    Res.VVCRiO_Mean = mean(Res.VVCRiO_Mean);
-    Res.VVCRiO_MeanO = Res.P_es_Mean/(Res.PmaxO_Mean-Res.P_es_Mean);
-
-    Res.VVCRiK_Mean = GOOD_P_es./(GOOD_PmxK-GOOD_P_es); 
-    Res.VVCRiK_StD  = std(Res.VVCRiK_Mean);
-    Res.VVCRiK_Mean = mean(Res.VVCRiK_Mean);
+    Res = compute_VVCRi (Res, GOOD_P_es, GOOD_PmxT, 'T');
+    Res = compute_VVCRi (Res, GOOD_P_es, GOOD_PmxO, 'O');
+    Res = compute_VVCRi (Res, GOOD_P_es, GOOD_PmxK, 'K');
 
     % Hunter's 
-    Res.VVCRnT_Mean = (GOOD_PmxT./GOOD_P_es)-1;
-    Res.VVCRnT_StD  = std(Res.VVCRnT_Mean);
-    Res.VVCRnT_Mean = mean(Res.VVCRnT_Mean);
-
-    Res.VVCRnO_Mean = (GOOD_PmxO./GOOD_P_es)-1;
-    Res.VVCRnO_StD  = std(Res.VVCRnO_Mean);
-    Res.VVCRnO_Mean = mean(Res.VVCRnO_Mean);
-    Res.VVCRnO_MeanO = (Res.PmaxO_Mean/Res.P_es_Mean)-1;
-
-    Res.VVCRnK_Mean = (GOOD_PmxK./GOOD_P_es)-1;
-    Res.VVCRnK_StD  = std(Res.VVCRnK_Mean);
-    Res.VVCRnK_Mean = mean(Res.VVCRnK_Mean);
+    Res = compute_VVCRn (Res, GOOD_P_es, GOOD_PmxT, 'T');
+    Res = compute_VVCRn (Res, GOOD_P_es, GOOD_PmxO, 'O');
+    Res = compute_VVCRn (Res, GOOD_P_es, GOOD_PmxK, 'K');
 
 end
+
+end
+
+%% Auxilliary Functions to simplify computation of final values.
+
+function [Out] = compute_MeanStd (In, Var, nam)
+
+Out = In;
+fieldmean = [nam '_Mean'];
+fieldstd  = [nam '_StD'];
+
+Out.(fieldmean) = mean(Var);
+Out.(fieldstd)  = std(Var);
+
+end
+
+function [Out] = compute_VVCRi (In, Pes, Pmx, nam)
+
+Out = In;
+fieldmean = ['VVCRi' nam '_Mean'];
+fieldstd  = ['VVCRi' nam '_StD'];
+
+Out.(fieldmean) = Pes./(Pmx-Pes);
+Out.(fieldstd)  = std(Out.(fieldmean));
+Out.(fieldmean) = mean(Out.(fieldmean));
+
+end
+
+function [Out] = compute_VVCRn (In, Pes, Pmx, nam)
+
+Out = In;
+fieldmean = ['VVCRn' nam '_Mean'];
+fieldstd  = ['VVCRn' nam '_StD'];
+
+Out.(fieldmean) = (Pmx./Pes)-1;
+Out.(fieldstd)  = std(Out.(fieldmean));
+Out.(fieldmean) = mean(Out.(fieldmean));
 
 end

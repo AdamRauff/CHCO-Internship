@@ -33,13 +33,13 @@ NewAnalyzedTxt = [];
 % create variable to hold name of csv file
 % In future: should add an input box when script runs so user can
 % interactively assign csv file name every time script runs
-csvName = 'RV_data_03.csv';
+csvName = 'RV_data.csv';
 
 % Here would be a good opportunity to open the csv file if it
 % exists, and check if top_name already exists in the csv file.
 % If it already exists in the csv file, the analysis was
 % already run on it, and it should be skipped
-% check to if RV_data.csv file exists
+% check to if csvName file exists
 filechk = which(csvName);
 
 if ~isempty(filechk)
@@ -196,7 +196,7 @@ for i = 1:length(top)
         end
 
         if TXT_FLAG == true
-            % check to if RV_data.csv Pat.FileNam exists
+            % check to if csvName file exists
             filechk = which(csvName);
 
             % if file does not exist, create one & write header line.
@@ -248,17 +248,17 @@ for i = 1:length(top)
             % print to command window how many files were analyzed
             disp(['FileCount: ', num2str(fileCount)]);
 %         else
-%             % check to if RV_data.csv file exists
-%             filechk = which('RV_data.csv');
+%             % check to if csvName file exists
+%             filechk = which(csvName);
 %             
 %             % if file does not exist, creat one, and write all the headers to it
 %             if isempty(filechk)
-%                 fd0 = fopen('RV_data.csv', 'w');
+%                 fd0 = fopen(csvName, 'w');
 %                 fprintf(fd0,'%s did not load\n', top_name);
 %                 fclose(fd0);
 %             else
 %                 % if file exists, append to it
-%                 fd0 = fopen('RV_data.csv', 'a');
+%                 fd0 = fopen(csvName, 'a');
 %                 fprintf(fd0,'%s did not load\n', top_name);
 %                 fclose(fd0);
 %             end
