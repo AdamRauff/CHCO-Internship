@@ -56,6 +56,9 @@ for i = 1:nfits
     if ~isstruct (ICS)
         % ICs passed in from GUI
         c2 = ICS;
+
+        lb = [  0.0   0.0  0.5*ICS(3) -2*pi/3];
+        ub = [500.0 500.0    2*ICS(3)   -pi/3];
     else
         % Deriving the initial values from the data. Freq is an average
         % found of the function. Mean is the specific average pressure
@@ -73,10 +76,11 @@ for i = 1:nfits
         % same for all waves.
         c2 = [Mea, Amp, 1.5*ICS.Freq, -pi/2];
         Ret1.CycICs(i,:)= c2; % Saved cycle specific ICs
+
+        lb = [  0.0   0.0    ICS.Freq -2*pi/3];
+        ub = [500.0 500.0  2*ICS.Freq   -pi/3];
     end
 
-    lb = [  0.0   0.0    ICS.Freq -2*pi/3];
-    ub = [500.0 500.0  2*ICS.Freq   -pi/3];
     [c,SSE,~] = lsqnonlin (sin_fun2,c2,lb,ub,opts1);
 
     % r^2 value; if the fit was bad, mark that wave.

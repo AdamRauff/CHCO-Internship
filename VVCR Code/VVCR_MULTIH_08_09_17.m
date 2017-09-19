@@ -50,7 +50,7 @@ for i = 1:2
     PeakStr.Red_X = Red_X;
 
     % call on GUI.
-    NoPeaksRet = GUI_No_Peaks_10_10(PeakStr);
+    NoPeaksRet = GUI_No_Peaks_10_10 (PeakStr);
     clear PeakStr Green_Check Red_X
 
     % Interpret return structure.
@@ -100,8 +100,6 @@ for i = 1:2
 
     % If very few timings were found, filtering may be a problem.
     Found  = double(length(ivIdx.Ps1))/double(Res.TotNumWaves);
-    disp(['FOUND : ' num2str(Found) ' ' num2str(length(ivIdx.Ps1)) ' ' ...
-        num2str(Res.TotNumWaves)]);
     if i == 1 && Found < 0.5
 	quest = ['Very few cycles gated compared to total number of cycles. '...
             ' Keep current (filtered) data, load unfiltered data, or ' ...

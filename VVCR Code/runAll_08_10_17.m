@@ -240,7 +240,7 @@ for i = 1:length(top)
             fprintf(fd0, '%9.5f, %9.5f,', Res.VVCRnO_Mean, Res.VVCRnO_StD);
 
             % the number of analyzed peaks and the total number of waves
-            fprintf(fd0, '%i, %i', Res.numPeaks, Res.TotNumWaves);
+            fprintf(fd0, '%i, %i,', Res.numPeaks, Res.TotNumWaves);
             % How many waves had Vanderpool points added (if any).
             fprintf(fd0, '%i, %i\n', Res.VandT, Res.VandO);
 
