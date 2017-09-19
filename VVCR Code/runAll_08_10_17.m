@@ -121,7 +121,7 @@ for i = 1:length(top)
             'VVCRiT_Mean, VVCRiT_StD, VVCRnT_Mean, VVCRnT_StD, ' ...
             'VVCRiK_Mean, VVCRiK_StD, VVCRnK_Mean, VVCRnK_StD, ' ...  
             'VVCRiO_Mean, VVCRiO_StD, VVCRnO_Mean, VVCRnO_StD, ' ...
-            'Num_Peaks, TotNumWaves\n'];
+            'Num_Peaks, TotNumWaves, VanderT, VanderO\n'];
 
         if ~isstruct(Res)
             % check to see if outputs are false or true
@@ -240,7 +240,9 @@ for i = 1:length(top)
             fprintf(fd0, '%9.5f, %9.5f,', Res.VVCRnO_Mean, Res.VVCRnO_StD);
 
             % the number of analyzed peaks and the total number of waves
-            fprintf(fd0, '%i, %i\n', Res.numPeaks, Res.TotNumWaves);
+            fprintf(fd0, '%i, %i,', Res.numPeaks, Res.TotNumWaves);
+            % How many waves had Vanderpool points added (if any).
+            fprintf(fd0, '%i, %i\n', Res.VandT, Res.VandO);
 
             % close Pat.FileNam
             fclose(fd0);

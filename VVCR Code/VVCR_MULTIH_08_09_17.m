@@ -50,7 +50,7 @@ for i = 1:2
     PeakStr.Red_X = Red_X;
 
     % call on GUI.
-    NoPeaksRet = GUI_No_Peaks_10_10(PeakStr);
+    NoPeaksRet = GUI_No_Peaks_10_10 (PeakStr);
     clear PeakStr Green_Check Red_X
 
     % Interpret return structure.
@@ -99,22 +99,32 @@ for i = 1:2
     [ivIdx, ivVal, badcyc] = data_isoidx (Data_O, Extr);
 
     % If very few timings were found, filtering may be a problem.
-    Found  = length(ivIdx.Ps1)/Res.TotNumWaves;
-    Reject = Res.TotNumWaves/OrigTot;
-    if (i == 1 && Found < 0.5) || (i == 1 && Reject < 0.5)
-        if Found < 0.5
-            disp(['VVCR_MULTIH: succesfully gated only ' num2str(Found, ...
-                '%4.1f%%') ' of max/min cycles. Retrying with raw data.']);
-        else
-            disp(['VVCR_MULTIH: user rejected  ' num2str(1-Reject, ...
-                '%4.1f%%') ' of max/min cycles. Retrying with raw data.']);
+    Found  = double(length(ivIdx.Ps1))/double(Res.TotNumWaves);
+    if i == 1 && Found < 0.5
+	quest = ['Very few cycles gated compared to total number of cycles. '...
+            ' Keep current (filtered) data, load unfiltered data, or ' ...
+            'discard patient?'];
+        button = questdlg(quest,'Poor Gating','Keep Current', ...
+            'Load Unfiltered', 'Discard Patient', 'Load Unfiltered');
+        switch button
+            case 'Keep Current'
+                break;
+            case 'Load Unfiltered'
+                disp(['VVCR_MULTIH: succesfully gated only ' num2str(100* ...
+		    Found,'%5.2f%%') ' of max/min cycles. Retrying ' ...
+                    'with raw data.']);
+                Data_O.FiltPres = Data_O.Pres;
+                Data_O.FiltdPdt = Data_O.dPdt;
+                Data_O.Pres = Data_O.OrigPres; 
+                Data_O.dPdt = Data_O.OrigdPdt; 
+                Data_O = rmfield(Data_O, 'OrigPres');
+                Data_O = rmfield(Data_O, 'OrigdPdt');
+            case 'Discard Patient'
+                Res = true;
+                Pat = true;
+                disp('VVCR_MULTIH: patient discarded pre-analysis.');
+                return
         end
-        Data_O.FiltPres = Data_O.Pres;
-        Data_O.FiltdPdt = Data_O.dPdt;
-        Data_O.Pres = Data_O.OrigPres; 
-        Data_O.dPdt = Data_O.OrigdPdt; 
-        Data_O = rmfield(Data_O, 'OrigPres');
-        Data_O = rmfield(Data_O, 'OrigdPdt');
     else
         break;
     end
@@ -242,8 +252,12 @@ else
     Res = compute_VVCRn (Res, GOOD_P_es, GOOD_PmxO, 'O');
     Res = compute_VVCRn (Res, GOOD_P_es, GOOD_PmxK, 'K');
 
+    % Were "Vanderpool Points" added?
+    Res.VandT = sum(RetStr.FitT.VCyc);
+    Res.VandO = sum(RetStr.FitO.VCyc);
 end
 
+% END OF VVCR_MULTIH
 end
 
 %% Auxilliary Functions to simplify computation of final values.

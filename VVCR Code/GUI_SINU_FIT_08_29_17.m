@@ -143,11 +143,21 @@ if ~isempty(WaveNumPosRm) && ~isempty(WaveNumNegRm)
         ivIdx.Ne1(WaveRm)   = [];
         ivIdx.Ps1_D(WaveRm) = [];
         ivIdx.Ne1_D(WaveRm) = [];
-        ivIdx.dPmax(WaveRm) = [];
-        ivIdx.dPmin(WaveRm) = [];
-
         ivVal.Ps1(WaveRm)   = [];
         ivVal.Ne1(WaveRm)   = [];
+
+        ivIdx.Pe2(WaveRm)   = [];
+        ivIdx.Ns2(WaveRm)   = [];
+        ivIdx.Ne2(WaveRm)   = [];
+        ivIdx.Pe2_D(WaveRm) = [];
+        ivIdx.Ns2_D(WaveRm) = [];
+        ivIdx.Ne2_D(WaveRm) = [];
+	ivVal.Pe2(WaveRm)   = [];
+        ivVal.Ns2(WaveRm)   = [];
+        ivVal.Ne2(WaveRm)   = [];
+
+        ivIdx.dPmax(WaveRm) = [];
+        ivIdx.dPmin(WaveRm) = [];
         ivVal.dPmax(WaveRm) = [];
         ivVal.dPmin(WaveRm) = [];
 
@@ -427,7 +437,7 @@ if ~isempty(handles.UNDO.Res)
     handles.InVar.ivSeg = handles.UNDO.ivSeg; 
     
     % Extract Data, Values, Fit Segments, Plots, & Segments from handles.
-    FitT = handles.OutVar;
+    FitT = handles.OutVar.FitT;
     Data = handles.InVar.Data;
     Plot = handles.InVar.Plot;
     ivVal = handles.InVar.ivVal;
