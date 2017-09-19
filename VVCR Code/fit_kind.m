@@ -73,8 +73,9 @@ end
 % good fit, are not utilized in the VVCR calculation.
 indX = find(Ret1.BadCyc==1); % find indices of the bad waves
 if ~isempty(indX)
-    disp('    fit_kind: The following waves did NOT have a good fit (will not be included)');
-    disp(['        Wave(s): ', num2str(indX')]);
+    disp(['    fit_kind: Some waves fit well, ave R^2 = ' ...
+        num2str(mean(Ret1.Rsq(i)),'%5.3f') '.']);
+    disp(['        These waves are excluded: ', num2str(indX','%02i ')]);
 else
     disp(['    fit_kind: All waves fit well, ave R^2 = ' ...
         num2str(mean(Ret1.Rsq(i)),'%5.3f') '.']);
