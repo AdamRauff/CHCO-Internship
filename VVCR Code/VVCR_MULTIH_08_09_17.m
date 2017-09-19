@@ -50,7 +50,7 @@ for i = 1:2
     PeakStr.Red_X = Red_X;
 
     % call on GUI.
-    NoPeaksRet = GUI_No_Peaks_10_10 (PeakStr);
+    NoPeaksRet = GUI_GateCheck (PeakStr);
     clear PeakStr Green_Check Red_X
 
     % Interpret return structure.
@@ -58,7 +58,7 @@ for i = 1:2
 
         Res = false;
         Pat = false;
-        disp('VVCR_MULTIH: GUI_No_Peaks closed.');
+        disp('VVCR_MULTIH: GUI_GateCheck closed.');
         return
 
     end
@@ -170,7 +170,7 @@ ICS.dPminIdx = ivIdx.dPmin;
 %[double(((2*pi)*Res.TotNumWaves)/(Data.time_end)) 2*pi/Data.time_per]
 %[AveFreq 1/Data.time_per AveFreq*Data.time_per]
 
-% Package all structures for passing to GUI_SINU_FIT
+% Package all structures for passing to GUI_FitTakeuchi
 SinuStr.FitT = FitT;
 SinuStr.FitO = FitO;
 SinuStr.FitK = FitK;
@@ -184,7 +184,7 @@ SinuStr.ivSeg = ivSeg;
 %% (9) Visualize / check the fit
 % call on GUI. Notice the structure we just made is passed to the GUI, and
 % the GUI passes back a refined structure
-RetStr = GUI_SINU_FIT_08_29_17 (SinuStr);
+RetStr = GUI_FitTakeuchi (SinuStr);
 
 clear SinuStr
 
