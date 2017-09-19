@@ -81,7 +81,7 @@ else
         num2str(mean(Ret1.Rsq(i)),'%5.3f') '.']);
 end
 
-% END OF isovol_fit2
+% END OF fit_kind
 end
 
 function [ zero ] = pmax_multiharm( P, t1, t2, tM, Pd, dPd )
