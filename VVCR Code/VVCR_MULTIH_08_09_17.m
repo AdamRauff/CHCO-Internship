@@ -272,6 +272,8 @@ end
 function [Out] = compute_VVCR (In, Pes, Pmx, nam)
 % Compute VVCR Mean & StD of pressures, given a name, put into Out structure.
 
+Out = In;
+
 % Normal Ees/Ea or (Pmx-Pes)/Pes
 fieldmean = ['VVCRn' nam '_Mean'];
 fieldstd  = ['VVCRn' nam '_StD'];
@@ -281,7 +283,6 @@ Out.(fieldstd)  = std(Out.(fieldmean));
 Out.(fieldmean) = mean(Out.(fieldmean));
 
 % Inverse Ea/Ees or Pes/(Pmx-Pes)
-Out = In;
 fieldmean = ['VVCRi' nam '_Mean'];
 fieldstd  = ['VVCRi' nam '_StD'];
 
