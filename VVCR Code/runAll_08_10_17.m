@@ -6,7 +6,7 @@ clear all;
 close all;
 clc;
 
-diary('VVCR_stdout.txt');
+diary('RV_stdout.txt');
 %mydate = datestr(now,'yyyymmdd-HHMMSS');
 mydate = datestr(now,'ddd mmm dd HH:MM:SS YYYY');
 disp(['VVCR Analysis ' mydate]); 
