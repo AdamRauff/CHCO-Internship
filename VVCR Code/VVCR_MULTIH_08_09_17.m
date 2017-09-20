@@ -214,7 +214,9 @@ if ~isstruct(RetStr)
 else
     % extract Pmax and the list of well fitted curves from the structure
     % that is returned from GUI
-    BadCyc  = RetStr.FitT.BadCyc;
+    BadCycT  = RetStr.FitT.BadCyc;
+    BadCycO  = RetStr.FitO.BadCyc;
+    BadCycK  = RetStr.FitK.BadCyc;
 
     % Initialize return structure to contain ALL fitting data.
     Res.FitT = RetStr.FitT;
@@ -223,34 +225,25 @@ else
     Res.P_es = Data.P_es;
     
     % calculate the number of peaks that were evaluated
-    Res.numPeaks = 0;
-    for i = 1:length(BadCyc)
-        if BadCyc(i) ~= 1
-            Res.numPeaks = Res.numPeaks + 1;
-        end
-    end
+    Res.numPeaksT = sum(~BadCycT);
+    Res.numPeaksO = sum(~BadCycO);
+    Res.numPeaksK = sum(~BadCycK);
 
     %OKAY! here are the final values and we can FINALLY calculate VVCR.
-    GOOD_P_es = Data.P_es(BadCyc~=1);
-    GOOD_PmxT = RetStr.FitT.PIsoMax(BadCyc~=1);
-    GOOD_PmxO = RetStr.FitO.PIsoMax(BadCyc~=1);
-    GOOD_PmxK = RetStr.FitK.RCoef(BadCyc~=1,1);
+    GOOD_PmxT = RetStr.FitT.PIsoMax(BadCycT~=1);
+    GOOD_PmxO = RetStr.FitO.PIsoMax(BadCycO~=1);
+    GOOD_PmxK = RetStr.FitK.RCoef(BadCycK~=1,1);
 
     % mean, std Pes and P_max for the waves that fit well
-    Res = compute_MeanStd (Res, GOOD_P_es, 'P_es');
+    Res = compute_MeanStd (Res, Data.P_es, 'P_es'); 
     Res = compute_MeanStd (Res, GOOD_PmxT, 'PmaxT');
     Res = compute_MeanStd (Res, GOOD_PmxO, 'PmaxO');
     Res = compute_MeanStd (Res, GOOD_PmxK, 'PmaxK');
 
-    %from Uyen Truongs VVCR paper
-    Res = compute_VVCRi (Res, GOOD_P_es, GOOD_PmxT, 'T');
-    Res = compute_VVCRi (Res, GOOD_P_es, GOOD_PmxO, 'O');
-    Res = compute_VVCRi (Res, GOOD_P_es, GOOD_PmxK, 'K');
-
-    % Hunter's 
-    Res = compute_VVCRn (Res, GOOD_P_es, GOOD_PmxT, 'T');
-    Res = compute_VVCRn (Res, GOOD_P_es, GOOD_PmxO, 'O');
-    Res = compute_VVCRn (Res, GOOD_P_es, GOOD_PmxK, 'K');
+    % Compute UT, KSH VVCR (inverse and normal)
+    Res = compute_VVCR (Res, Data.P_es(BadCycT~=1), GOOD_PmxT, 'T');
+    Res = compute_VVCR (Res, Data.P_es(BadCycO~=1), GOOD_PmxO, 'O');
+    Res = compute_VVCR (Res, Data.P_es(BadCycK~=1), GOOD_PmxK, 'K');
 
     % Were "Vanderpool Points" added?
     Res.VandT = sum(RetStr.FitT.VCyc);
@@ -273,7 +266,7 @@ Out.(fieldstd)  = std(Var);
 
 end
 
-function [Out] = compute_VVCRi (In, Pes, Pmx, nam)
+function [Out] = compute_VVCR (In, Pes, Pmx, nam)
 
 Out = In;
 fieldmean = ['VVCRi' nam '_Mean'];
@@ -283,11 +276,6 @@ Out.(fieldmean) = Pes./(Pmx-Pes);
 Out.(fieldstd)  = std(Out.(fieldmean));
 Out.(fieldmean) = mean(Out.(fieldmean));
 
-end
-
-function [Out] = compute_VVCRn (In, Pes, Pmx, nam)
-
-Out = In;
 fieldmean = ['VVCRn' nam '_Mean'];
 fieldstd  = ['VVCRn' nam '_StD'];
 

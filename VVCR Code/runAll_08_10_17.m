@@ -123,10 +123,13 @@ for i = 1:length(top)
         
         header = ['Pnam, Pmrn, file, Pes_Mean, Pes_StD, PmaxT_Mean, ' ...
             'PmaxT_StD, PmaxK_Mean, PmaxK_StD, PmaxO_Mean, PmaxO_Std, ' ...
+            'NumPeaks_T, Vander_T, ', ...
             'VVCRiT_Mean, VVCRiT_StD, VVCRnT_Mean, VVCRnT_StD, ' ...
+            'NumPeaks_K, ', ...
             'VVCRiK_Mean, VVCRiK_StD, VVCRnK_Mean, VVCRnK_StD, ' ...  
+            'NumPeaks_O, Vander_O, ', ...
             'VVCRiO_Mean, VVCRiO_StD, VVCRnO_Mean, VVCRnO_StD, ' ...
-            'Num_Peaks, TotNumWaves, VanderT, VanderO\n'];
+            'TotNumWaves\n'];
 
         if ~isstruct(Res)
             % check to see if outputs are false or true
@@ -237,17 +240,18 @@ for i = 1:length(top)
             % UT - Dr. Uyen Troung
             % KH - Dr. Kendall Hunter
             % Res.VVCRnT_Mean = 1/Res.VVCRiT_Mean, they are reciprocals
+            fprintf(fd0, '%i, %i, ', Res.numPeaksT, Res.VandT);
             fprintf(fd0, '%8.6f, %8.6f,', Res.VVCRiT_Mean, Res.VVCRiT_StD);
             fprintf(fd0, '%9.5f, %9.5f,', Res.VVCRnT_Mean, Res.VVCRnT_StD);
+            fprintf(fd0, '%i, ', Res.numPeaksK);
             fprintf(fd0, '%8.6f, %8.6f,', Res.VVCRiK_Mean, Res.VVCRiK_StD);
             fprintf(fd0, '%9.5f, %9.5f,', Res.VVCRnK_Mean, Res.VVCRnK_StD);
+            fprintf(fd0, '%i, %i, ', Res.numPeaksO, Res.VandO);
             fprintf(fd0, '%8.6f, %8.6f,', Res.VVCRiO_Mean, Res.VVCRiO_StD);
             fprintf(fd0, '%9.5f, %9.5f,', Res.VVCRnO_Mean, Res.VVCRnO_StD);
 
             % the number of analyzed peaks and the total number of waves
-            fprintf(fd0, '%i, %i,', Res.numPeaks, Res.TotNumWaves);
-            % How many waves had Vanderpool points added (if any).
-            fprintf(fd0, '%i, %i\n', Res.VandT, Res.VandO);
+            fprintf(fd0, '%i\n', Res.TotNumWaves);
 
             % close Pat.FileNam
             fclose(fd0);
