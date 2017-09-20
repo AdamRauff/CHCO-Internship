@@ -214,9 +214,11 @@ if ~isstruct(RetStr)
 else
     % extract Pmax and the list of well fitted curves from the structure
     % that is returned from GUI
-    BadCycT  = RetStr.FitT.BadCyc;
-    BadCycO  = RetStr.FitO.BadCyc;
-    BadCycK  = RetStr.FitK.BadCyc;
+    BadCycT = RetStr.FitT.BadCyc;
+    BadCycO = RetStr.FitO.BadCyc;
+    BadCycK = RetStr.FitK.BadCyc;
+
+    AnyGood = BadCycT | BadCycO | BadCycK; 
 
     % Initialize return structure to contain ALL fitting data.
     Res.FitT = RetStr.FitT;
@@ -235,7 +237,7 @@ else
     GOOD_PmxK = RetStr.FitK.RCoef(BadCycK~=1,1);
 
     % mean, std Pes and P_max for the waves that fit well
-    Res = compute_MeanStd (Res, Data.P_es, 'P_es'); 
+    Res = compute_MeanStd (Res, Data.P_es(AnyGood), 'P_es'); 
     Res = compute_MeanStd (Res, GOOD_PmxT, 'PmaxT');
     Res = compute_MeanStd (Res, GOOD_PmxO, 'PmaxO');
     Res = compute_MeanStd (Res, GOOD_PmxK, 'PmaxK');
@@ -256,6 +258,7 @@ end
 %% Auxilliary Functions to simplify computation of final values.
 
 function [Out] = compute_MeanStd (In, Var, nam)
+% Compute Mean & StD of input value, given a name, put into Out structure.
 
 Out = In;
 fieldmean = [nam '_Mean'];
@@ -267,19 +270,22 @@ Out.(fieldstd)  = std(Var);
 end
 
 function [Out] = compute_VVCR (In, Pes, Pmx, nam)
+% Compute VVCR Mean & StD of pressures, given a name, put into Out structure.
 
+% Normal Ees/Ea or (Pmx-Pes)/Pes
+fieldmean = ['VVCRn' nam '_Mean'];
+fieldstd  = ['VVCRn' nam '_StD'];
+
+Out.(fieldmean) = (Pmx./Pes)-1;
+Out.(fieldstd)  = std(Out.(fieldmean));
+Out.(fieldmean) = mean(Out.(fieldmean));
+
+% Inverse Ea/Ees or Pes/(Pmx-Pes)
 Out = In;
 fieldmean = ['VVCRi' nam '_Mean'];
 fieldstd  = ['VVCRi' nam '_StD'];
 
 Out.(fieldmean) = Pes./(Pmx-Pes);
-Out.(fieldstd)  = std(Out.(fieldmean));
-Out.(fieldmean) = mean(Out.(fieldmean));
-
-fieldmean = ['VVCRn' nam '_Mean'];
-fieldstd  = ['VVCRn' nam '_StD'];
-
-Out.(fieldmean) = (Pmx./Pes)-1;
 Out.(fieldstd)  = std(Out.(fieldmean));
 Out.(fieldmean) = mean(Out.(fieldmean));
 
