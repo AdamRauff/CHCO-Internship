@@ -7,7 +7,8 @@ close all;
 clc;
 
 diary('VVCR_stdout.txt');
-mydate = datestr(now,'yyyymmdd-HHMMSS');
+%mydate = datestr(now,'yyyymmdd-HHMMSS');
+mydate = datestr(now,'ddd mmm dd HH:MM:SS YYYY');
 disp(['VVCR Analysis ' mydate]); 
 
 % bring up UI that allows user to select a folder (directory)
