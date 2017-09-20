@@ -74,11 +74,11 @@ end
 indX = find(Ret1.BadCyc==1); % find indices of the bad waves
 if ~isempty(indX)
     disp(['    fit_kind: Some waves fit well, ave R^2 = ' ...
-        num2str(mean(Ret1.Rsq(i)),'%5.3f') '.']);
+        num2str(mean(Ret1.Rsq(Ret1.BadCyc~=1)),'%5.3f') '.']);
     disp(['        These waves are excluded: ', num2str(indX','%02i ')]);
 else
     disp(['    fit_kind: All waves fit well, ave R^2 = ' ...
-        num2str(mean(Ret1.Rsq(i)),'%5.3f') '.']);
+        num2str(mean(Ret1.Rsq),'%5.3f') '.']);
 end
 
 % END OF fit_kind

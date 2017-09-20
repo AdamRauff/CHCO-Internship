@@ -352,6 +352,11 @@ ylabel('Pressue [mmHg]','FontSize',18);
 legend('Pressure', 'dP/dt Max', 'dP/dt Min', 'Location', 'northoutside', ...
     'Orientation', 'horizontal');
 
+% Check max pres, rescale if it's crazy (noise in data)
+if max(Data.Pres) > 200
+    ylim([0, 200]);
+end
+
 box on
 grid on
 
@@ -375,6 +380,35 @@ set(handles.dpdt_axes,'fontsize',11);
 ylabel('dP/dt [mmHg/s]','FontSize',18);
 legend('dP/dt', 'Maxima', 'Minima', 'Location', 'northoutside', ...
     'Orientation', 'horizontal');
+
+% Check max dP/dt, rescale if it's crazy (noise in data)
+if isfield(Data, 'OrigdPdt')
+    dpmx1 = max(Data.OrigdPdt);
+    dpmx2 = max(Data.dPdt);
+    dpmx = max([dpmx1, dpmx2]);
+    dpmn1 = min(Data.OrigdPdt);
+    dpmn2 = min(Data.dPdt);
+    dpmn = min([dpmn1, dpmn2]);
+else
+    dpmx = max(Data.dPdt);
+    dpmn = min(Data.dPdt);
+end
+dpabs = max([dpmx -dpmn]);
+
+if dpabs > 2500
+    if dpmn < -2500
+        dpmn = -2500;
+    else
+        dpmn = -Inf;
+    end
+    if dpmx > 2500
+        dpmx = 2500;
+    else
+        dpmx = Inf;
+    end
+
+    ylim([dpmn dpmx]);
+end
 
 box on
 grid on

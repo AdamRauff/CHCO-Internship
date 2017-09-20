@@ -6,6 +6,10 @@ clear all;
 close all;
 clc;
 
+diary('VVCR_stdout.txt');
+mydate = datestr(now,'yyyymmdd-HHMMSS');
+disp(['VVCR Analysis ' mydate]); 
+
 % bring up UI that allows user to select a folder (directory)
 Fold_name = uigetdir('','Select folder containing txt files with pressure data');
 if ~Fold_name
@@ -268,3 +272,5 @@ for i = 1:length(top)
         end   
     end
 end
+
+diary off

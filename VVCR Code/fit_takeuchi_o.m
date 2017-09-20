@@ -155,11 +155,10 @@ for i = 1:nfits
             % Do not let program add more than 10 points
             if count >= 10 && (Ret1.PIsoMax(i) < PresMax || Ret1.BadCyc(i) == 1)
 
-
-                disp(['    fit_takeuchi_o: Added nine points on ' ...
+                disp(['    fit_takeuchi: Added nine points on ' ...
                     'systolic side of curve, and Pmax']);
-                disp('        remains short of actual pressure');
-                disp(['        Wave ',num2str(i, '%02i'), ' is excluded']);
+                disp(['        remains short of actual pressure. Wave ' ...
+                    num2str(i, '%02i') ' is excluded.']);
 
                 Ret1.BadCyc(i) = 1;
                 Ret1.VCyc(i) = 0;
@@ -209,9 +208,9 @@ end
 indX = find(Ret1.BadCyc==1); % find indices of the bad waves
 if ~isempty(indX)
     disp(['    fit_takeuchi_o: Some waves fit well, ave R^2 = ' ...
-        num2str(mean(Ret1.Rsq(i)),'%5.3f') '.']);
+        num2str(mean(Ret1.Rsq(Ret1.BadCyc~=1)),'%5.3f') '.']);
     disp(['        These waves are excluded: ', num2str(indX','%02i ')]);
 else
     disp(['    fit_takeuchi_o: All waves fit well, ave R^2 = ' ...
-        num2str(mean(Ret1.Rsq(i)),'%5.3f') '.']);
+        num2str(mean(Ret1.Rsq),'%5.3f') '.']);
 end
