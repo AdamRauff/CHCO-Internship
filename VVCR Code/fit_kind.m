@@ -1,4 +1,4 @@
-function [Ret1] = fit_kind (ivSeg, ivIdx, Data, FitT)
+function [Ret1, Ret2] = fit_kind (ivSeg, ivIdx, Data, FitT)
 %
 % ivSeg  - Struct of all pres and time fitting values:
 %            iv1Pres/iv1Time/iv2Pres/iv2Time 1st level structs; Time labels
@@ -23,6 +23,10 @@ Ret1.RCoef = zeros(nfits,4);  % Fit regression constants
 Ret1.CycICs = zeros(nfits,4); % Which waveforms had a bad fit
 Ret1.BadCyc = zeros(nfits,1); % Saved cycle-specific ICS
 
+% Ploting vectors of the fitting data for GUI_FitKind  
+Ret2.iv2PlotTime = [];
+Ret2.iv2PlotPres = [];
+
 % scroll through the number of rows (pressure waves) in the
 % structures: ivSeg.iv2Time and ivSeg.iv2Pres
 for i = 1:nfits
@@ -31,9 +35,12 @@ for i = 1:nfits
     dPtimes = [Data.Time(ivIdx.dPmax(i)) Data.Time(ivIdx.dPmin(i)) ...
         Data.time_per];
 
-    sin_fun2 = @(P) pmax_multiharm (P, Data.Time_D(ivSeg.iv2Time(i).PosIso),...
-        Data.Time_D(ivSeg.iv2Time(i).NegIso), dPtimes, ...
-	ivSeg.iv2Pres(i).PosIso, ivSeg.iv2Pres(i).NegIso);	
+    posidx = ivSeg.iv2Time(i).PosIso;
+    negidx = ivSeg.iv2Time(i).NegIso;
+
+    sin_fun2 = @(P) imbedded_kind (P, Data.Time_D(posidx),
+        Data.Time_D(negidx), dPtimes, ivSeg.iv2Pres(i).PosIso, ...
+        ivSeg.iv2dPdt(i).NegIso);	
     
     % Deriving the initial values from the data
     % P1 Pmax from Takeuchi(?)
@@ -48,7 +55,7 @@ for i = 1:nfits
     [c,SSE,~] = lsqnonlin (sin_fun2,c2,lb,ub,opts1);
     
     % r^2 value; if the fit was bad, mark that wave.
-    WavePs = [ivSeg.iv2Pres(i).PosIso; ivSeg.iv2Pres(i).NegIso];
+    WavePs = [ivSeg.iv2Pres(i).PosIso; ivSeg.iv2dPdt(i).NegIso];
     SSTO = norm(WavePs-mean(WavePs))^2;
     Ret1.Rsq(i) = 1-SSE/SSTO;
     
@@ -61,11 +68,22 @@ for i = 1:nfits
            num2str(i, '%02i')]);
        Ret1.BadCyc(i) = 1;
     end
-
     
     %getting all the c values in a matrix
     Ret1.RCoef(i,:) = c; 
-    
+
+    % store the time points and pressure points in one array for easy
+    % plotting - first pass (call from VVCR_); otherwise, reconsitute these
+    % arrays if needed just outside this loop.
+
+    [~, tsh, padd] = data_kind (c, Data.Time_D(posidx(1)), dPtimes);
+    psh = padd-median(ivSeg.iv2dPdt(i).NegIso);
+
+    Ret2.iv2PlotTime = [Ret2.iv2PlotTime Data.Time_D(posidx) ...
+        tch+Data.Time_D(negidx)];
+    Ret2.iv2PlotPres = [Ret2.iv2PlotPres Data.Pres_D(posidx) ...
+        psh+Data.Pres_D(negidx)];
+
 end
 
 % print to command line the waves that were not fit correctly. This is used
@@ -84,7 +102,7 @@ end
 % END OF fit_kind
 end
 
-function [ zero ] = pmax_multiharm( P, t1, t2, tM, Pd, dPd )
+function [ zero ] = imbedded_kind ( P, t1, t2, tM, Pd, dPd )
 %PMAX_MULTIHARM Summary of this function goes here
 %   This is a placeholder function with multiple arguments that will be
 %   passed using an anoymous handle to lsqnonlin fit within VVCR_FINAL_*

@@ -71,7 +71,8 @@ for i = 1: mysz
     end
 
     Ret1.iv2Time(i).NegIso(:,1) = (Ret2.Ns2_D(i):1:Ret2.Ne2_D(i))';
-    Ret1.iv2Pres(i).NegIso(:,1) = Data.dPdt_D(Ret1.iv2Time(i).NegIso(:,1));
+    Ret1.iv2Pres(i).NegIso(:,1) = Data.Pres_D(Ret1.iv2Time(i).NegIso(:,1));
+    Ret1.iv2dPdt(i).NegIso(:,1) = Data.dPdt_D(Ret1.iv2Time(i).NegIso(:,1));
 
 end
 

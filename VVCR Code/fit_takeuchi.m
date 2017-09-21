@@ -29,12 +29,12 @@ if isstruct(ICS)
     Ret1.CycICs = zeros(nfits,4); % Saved cycle-specific ICS
 end
 
-% Variables for adding points to SINU_GUI plots (within Vanderpool method)
+% Variables for adding points to GUI_FitTakeuchi plots (w/Vanderpool method)
 Ret1.VCyc = zeros(nfits,1);
 ADD_TPoints = []; 
 ADD_PPoints = []; 
 
-% Ploting vectors of the fitting data for GUI_SINU_FIT  
+% Ploting vectors of the fitting data for GUI_FitTakeuchi
 Ret3.iv1PlotTime = [];
 Ret3.iv1PlotPres = [];
 
@@ -216,7 +216,7 @@ if any(Ret1.VCyc)
 
 end
 
-% Give GUI_SINU_FIT initial ICs to work with, the average of the specific ones?
+% Give GUI_FitTakeuchi first ICs to work with, average of the specific ones?
 if isstruct(ICS)
     if length(Ret1.CycICs(:)) > 4
         Ret1.InitIC = mean(Ret1.CycICs);
