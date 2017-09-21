@@ -34,8 +34,8 @@ ADD_TPoints = [];
 ADD_PPoints = []; 
 
 % Ploting vectors of the fitting data for GUI_SINU_FIT  
-Ret3.ivPlotTime = [];
-Ret3.ivPlotPres = [];
+Ret3.iv1PlotTime = [];
+Ret3.iv1PlotPres = [];
 
 % scroll through the number of rows (pressure waves) in the
 % structures: ivSeg.iv1Time and ivSeg.iv1Pres
@@ -88,8 +88,8 @@ for i = 1:nfits
     % plotting - first pass (call from VVCR_); otherwise, reconsitute these
     % arrays if needed just outside this loop.
 
-    Ret3.ivPlotTime = [Ret3.ivPlotTime; WaveTs];
-    Ret3.ivPlotPres = [Ret3.ivPlotPres; WavePs];
+    Ret3.iv1PlotTime = [Ret3.ivPlotTime; WaveTs];
+    Ret3.iv1PlotPres = [Ret3.ivPlotPres; WavePs];
    
     % AR 6/5/17 -----------------------------------------------
     % adding points succesively to beginning of systole to make better fit
@@ -185,8 +185,8 @@ end
 %% if iso points have been added, re-compose the totIsoPnts variables
 if any(Ret1.VCyc)
 
-    Ret3.ivPlotTime = [Ret3.ivPlotTime; ADD_TPoints];
-    Ret3.ivPlotPres = [Ret3.ivPlotPres; ADD_PPoints];
+    Ret3.iv1PlotTime = [Ret3.ivPlotTime; ADD_TPoints];
+    Ret3.iv1PlotPres = [Ret3.ivPlotPres; ADD_PPoints];
 
     temp = 1:1:nfits;
     disp(['    fit_takeuchi_o: Vanderpool Points added on cycles ' ...

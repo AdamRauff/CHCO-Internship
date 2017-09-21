@@ -143,8 +143,12 @@ foreach $name (@ARGV) {
 #       s/\bTotNumWaves\b/Res.TotNumWaves/g;
 
 ### 2nd REVISIONS FOR runAll
-        s/\bRes.VVCRinv_Mean\b/Res.VVCRiT_Mean/g;
-        s/\bRes.VVCRnorm_Mean\b/Res.VVCRnT_Mean/g;
+#       s/\bRes.VVCRinv_Mean\b/Res.VVCRiT_Mean/g;
+#       s/\bRes.VVCRnorm_Mean\b/Res.VVCRnT_Mean/g;
+
+### REVISIONS FOR PLOTTING
+        s/ivPlot/iv1Plot/;
+
         print OUT $_;
 
         if ( $orig ne $_ ) {
