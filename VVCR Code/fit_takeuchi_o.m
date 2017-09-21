@@ -10,7 +10,7 @@ function [Ret1] = fit_takeuchi_o (ivSeg, Data, ICS)
 %          contstant initial conditions for fit.
 
 % Set existing ivSeg to minimally insure continuity if nothing changes. 
-Ret2 = ivSeg;
+%Ret2 = ivSeg;
 
 opts1 = optimoptions (@lsqnonlin);
 opts1.Display = 'off';
@@ -30,12 +30,12 @@ end
 
 % Variables for adding points to SINU_GUI plots (within Vanderpool method)
 Ret1.VCyc = zeros(nfits,1);
-ADD_TPoints = []; 
-ADD_PPoints = []; 
+%ADD_TPoints = []; 
+%ADD_PPoints = []; 
 
 % Ploting vectors of the fitting data for GUI_SINU_FIT  
-Ret3.iv1PlotTime = [];
-Ret3.iv1PlotPres = [];
+%Ret3.iv1PlotTime = [];
+%Ret3.iv1PlotPres = [];
 
 % scroll through the number of rows (pressure waves) in the
 % structures: ivSeg.iv1Time and ivSeg.iv1Pres
@@ -88,8 +88,8 @@ for i = 1:nfits
     % plotting - first pass (call from VVCR_); otherwise, reconsitute these
     % arrays if needed just outside this loop.
 
-    Ret3.iv1PlotTime = [Ret3.ivPlotTime; WaveTs];
-    Ret3.iv1PlotPres = [Ret3.ivPlotPres; WavePs];
+%   Ret3.iv1PlotTime = [Ret3.ivPlotTime; WaveTs];
+%   Ret3.iv1PlotPres = [Ret3.ivPlotPres; WavePs];
    
     % AR 6/5/17 -----------------------------------------------
     % adding points succesively to beginning of systole to make better fit
@@ -103,8 +103,8 @@ for i = 1:nfits
         % keep count of how many points added to systole side
         count = 0;
 
-        temp_ADD_TPoints = [];
-        temp_ADD_PPoints = [];
+%       temp_ADD_TPoints = [];
+%       temp_ADD_PPoints = [];
 
         while Ret1.PIsoMax(i) < PresMax
             
@@ -115,10 +115,10 @@ for i = 1:nfits
                 [Data.Pres_D(ivSeg.iv1Time(i).PosIso(1,1)); ...
                 ivSeg.iv1Pres(i).PosIso];
 
-            temp_ADD_TPoints = ...
-                [ADD_TPoints; Data.Time_D(ivSeg.iv1Time(i).PosIso(1,1))];
-            temp_ADD_PPoints = ...
-                [ADD_PPoints; Data.Pres_D(ivSeg.iv1Time(i).PosIso(1,1))];
+%           temp_ADD_TPoints = ...
+%               [ADD_TPoints; Data.Time_D(ivSeg.iv1Time(i).PosIso(1,1))];
+%           temp_ADD_PPoints = ...
+%               [ADD_PPoints; Data.Pres_D(ivSeg.iv1Time(i).PosIso(1,1))];
 
             % update Wave(x)s variables
             WaveTs = [Data.Time_D(ivSeg.iv1Time(i).PosIso)'; ...
@@ -167,10 +167,10 @@ for i = 1:nfits
             end
         end
 
-        if Ret1.VCyc(i) == true
-            ADD_TPoints = [ADD_TPoints; temp_ADD_TPoints];
-            ADD_PPoints = [ADD_PPoints; temp_ADD_PPoints];
-        end
+%       if Ret1.VCyc(i) == true
+%           ADD_TPoints = [ADD_TPoints; temp_ADD_TPoints];
+%           ADD_PPoints = [ADD_PPoints; temp_ADD_PPoints];
+%       end
     end
     
     % ---------------------------------------------------------------
@@ -185,15 +185,15 @@ end
 %% if iso points have been added, re-compose the totIsoPnts variables
 if any(Ret1.VCyc)
 
-    Ret3.iv1PlotTime = [Ret3.ivPlotTime; ADD_TPoints];
-    Ret3.iv1PlotPres = [Ret3.ivPlotPres; ADD_PPoints];
+%   Ret3.iv1PlotTime = [Ret3.ivPlotTime; ADD_TPoints];
+%   Ret3.iv1PlotPres = [Ret3.ivPlotPres; ADD_PPoints];
 
     temp = 1:1:nfits;
     disp(['    fit_takeuchi_o: Vanderpool Points added on cycles ' ...
         num2str(temp(logical(Ret1.VCyc)),'%02i ')]);
 
     % Update ivSeg; iv1Time & iv1Pres may be updated in Vanderpool section.
-    Ret2 = ivSeg;
+%   Ret2 = ivSeg;
 
 end
 
