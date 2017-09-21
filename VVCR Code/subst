@@ -147,7 +147,7 @@ foreach $name (@ARGV) {
 #       s/\bRes.VVCRnorm_Mean\b/Res.VVCRnT_Mean/g;
 
 ### REVISIONS FOR PLOTTING
-        s/ivPlot/iv1Plot/;
+        s/ivPlot/iv1Plot/g;
 
         print OUT $_;
 

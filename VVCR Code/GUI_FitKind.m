@@ -464,7 +464,7 @@ function [handles] = gui_sinu_plot (Data, ivVal, ivSeg, Fit, Plot, handles);
 axes(handles.pressure_axes);
 
 h = plot(Data.Time_D,Data.Pres_D,'b', ...
-         Plot.iv1PlotTime,Plot.ivPlotPres,'ro');
+         Plot.iv1PlotTime,Plot.iv1PlotPres,'ro');
 set(h, 'HitTest', 'off');
 
 set(handles.pressure_axes,'ButtonDownFcn', ...
