@@ -40,7 +40,7 @@ for i = 1:nfits
 
     sin_fun2 = @(P) imbedded_kind (P, Data.Time_D(posidx), ...
         Data.Time_D(negidx), dPtimes, ivSeg.iv2Pres(i).PosIso, ...
-        ivSeg.iv2dPdt(i).NegIso);	
+        ivSeg.iv2dPdt(i).NegIso, 0);	
 
     % Start of isovolumic contraction, isovolumic contration duration. Used
     % in ICs and fitting limits.
@@ -96,13 +96,27 @@ for i = 1:nfits
     % plotting - first pass (call from VVCR_); otherwise, reconsitute these
     % arrays if needed just outside this loop.
 
-    [~, tsh, padd] = data_kind (c, Data.Time_D(posidx(1)), dPtimes);
-    psh = padd-median(ivSeg.iv2dPdt(i).NegIso);
+    [~, ICshift] = imbedded_kind (c2, Data.Time_D(posidx), ...
+        Data.Time_D(negidx), dPtimes, 0, 0, 1);
+    [~, FTshift] = imbedded_kind (c, Data.Time_D(posidx), ...
+        Data.Time_D(negidx), dPtimes, 0, 0, 1);
+    disp(['Fit # ' num2str(i, '%02i')]);
+    disp(['    ICs Shift ', num2str(ICshift, '%6.4f ') ' diff ' ...
+        num2str(ICshift(1)-ICshift(2), ' %+6.4f') ])
+    disp(['    Fit Shift ', num2str(FTshift, '%6.4f ') ' diff ' ...
+        num2str(FTshift(1)-FTshift(2), ' %+6.4f') ])
+    disp(['    Max Pressure ', num2str(c(1), '%8.3f') ' Ps1 = ' ...
+        num2str(Data.Time_D(ivIdx.Ps1_D(i)), '%6.4f') ' C(3,4) = ' ...
+        num2str(c(3:4), '%6.4f ') ' ' num2str(Data.Time_D(ivIdx.Ps1_D(i))- ...
+        c(3),'(%+6.4f)') ]);
 
-    Ret2.iv2PlotTime = [Ret2.iv2PlotTime Data.Time_D(posidx) ...
-        tch+Data.Time_D(negidx)];
-    Ret2.iv2PlotPres = [Ret2.iv2PlotPres Data.Pres_D(posidx) ...
-        psh+Data.Pres_D(negidx)];
+%   [~, tsh, padd] = data_kind (c, Data.Time_D(posidx(1)), dPtimes);
+%   psh = padd-Data.Pres_D(median(negidx));
+
+%   Ret2.iv2PlotTime = [Ret2.iv2PlotTime Data.Time_D(posidx) ...
+%       tsh+Data.Time_D(negidx)];
+%   Ret2.iv2PlotPres = [Ret2.iv2PlotPres Data.Pres_D(posidx) ...
+%       psh+Data.Pres_D(negidx)];
 
 end
 
@@ -122,23 +136,25 @@ end
 % END OF fit_kind
 end
 
-function [ zero ] = imbedded_kind ( P, t1, t2, tM, Pd, dPd )
+function [ varargout ] = imbedded_kind ( P, t1, t2, tM, Pd, dPd, flag )
 %PMAX_MULTIHARM Summary of this function goes here
 %   This is a placeholder function with multiple arguments that will be
 %   passed using an anoymous handle to lsqnonlin fit within VVCR_FINAL_*
 %   (more explanation to come in that script). lsqnonlin requires an
 %   function with a single argument (namely, the fit coefficients P)
-%       Input Arguments:
-%           P   - fit coefficients Pmax, Pmin, t0, tpmax
-%           t1  - time vector for isovolumic contraction (fit to P)
-%           t2  - time vector for isovolumic relaxation (fit to dP/dt)
-%           tM  - times of (dP/dt)max, (dP/dt)min in actual data, and actual
-%                 period length
-%           Pd  - pressure data during isovolumic contraction
-%           dPd - dP/dt data during isovolumic relaxation
-%       Output Arguments:
-%           zero - difference between fit and data (combined vector of 
-%                  p0m-Pd and p1m-dPd)
+%     Input Arguments:
+%       P    - fit coefficients Pmax, Pmin, t0, tpmax
+%       t1   - time vector for isovolumic contraction (fit to P)
+%       t2   - time vector for isovolumic relaxation (fit to dP/dt)
+%       tM   - times of (dP/dt)max, (dP/dt)min in actual data, and actual
+%              period length
+%       Pd   - pressure data during isovolumic contraction
+%       dPd  - dP/dt data during isovolumic relaxation
+%       flag - return offsets
+%     Output Arguments:
+%       zero  - difference between fit and data (combined vector of 
+%               p0m-Pd and p1m-dPd)
+%       (var) - offsets (testing)
 %
 
 % Coefficients for the multiharmonic fit
@@ -175,7 +191,7 @@ p1m = @(P,t) tp_P2T*(P(1)-P(2))*( ...
 % Code to compute (dP/dt)min offset: Given the fit coefficients in P, find
 % the fitted time of (dP/dt)min, then compute difference. Voila!
 %
-% In more detail: P coefficients determine point of maximum for multiharmonic
+% In more detail: P coefficients determine point of minimum for multiharmonic
 % fit. So we just compute that. Then, we also already know the time at which
 % the actual (dP/dt)min occurs. These are independent events, given a specific
 % set of P coefficients. Then, knowing both of these times, we can choose the
@@ -186,9 +202,16 @@ Tspan = t13(1) : 0.005: (t13(1)+tM(3)*1.1);
 dPt0 = p1m (P, Tspan);
 [~,idx] = min(dPt0);
 tshift = Tspan(idx)-(tM(2)-P(3));
+if flag
+    varargout{2} = [Tspan(idx) tM(2)-P(3)];
+    varargout(3:nargout) = {[]};
+else
+    varargout(2:nargout) = {[]};
+end
 
 % Second "half" of the fit residuals
 t23 = t2'-P(3)+tshift;
 zero = [zero; (p1m(P,t23)-dPd)];
 
+varargout{1} = zero;
 end

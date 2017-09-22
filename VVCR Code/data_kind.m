@@ -59,7 +59,7 @@ dPt0 = p1m (P, Tspan);
 
 % These are offsets that will be used to map the isovolumic relaxation data
 % points onto the Kind curve (hopefully?!?).
-tshift = Tspan(idx)-(tM(2)-P(3));
-pshift = p0m (Tspan(idx));
+tshift = Tspan(idx)-(tM(2)-P(3))
+pshift = p0m (P, Tspan(idx));
 
 end

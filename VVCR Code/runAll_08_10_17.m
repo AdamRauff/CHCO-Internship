@@ -15,6 +15,7 @@ disp(['VVCR Analysis ' mydate]);
 Fold_name = uigetdir('','Select folder containing txt files with pressure data');
 if ~Fold_name
     disp('runAll: uigetdir closed.');
+    diary off;
     return;
 end
 
