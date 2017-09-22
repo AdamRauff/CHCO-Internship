@@ -147,7 +147,7 @@ end
 
 clear Data_O
 
-%% (8) Fit the data
+%% (8) Get initial fits for display/check in GUIs
 
 % frequency is the conversion to angular frequency 2*pi/T
 % multiplied by the number of waves found over the time period
@@ -158,33 +158,26 @@ ICS.Pres = Data.Pres;
 ICS.dPmaxIdx = ivIdx.dPmax1;
 ICS.dPminIdx = ivIdx.dPmin1;
 
-[FitT, ivSeg, Plot] = fit_takeuchi (ivSeg, Data, ICS);
+[FitT, ivSeg, PlotT] = fit_takeuchi (ivSeg, Data, ICS);
 [FitO] = fit_takeuchi_o (ivSeg, Data, ICS);
-[FitK] = fit_kind (ivSeg, ivIdx, Data, mean(FitT.PIsoMax));
+[FitK, PlotK] = fit_kind (ivSeg, ivIdx, Data, mean(FitT.PIsoMax));
 
-% What was average frequency ratio between Takeuchi and Data?
-%temp = mean(FitT.RCoef(FitT.BadCyc~=1,:));
-%AveFreq = temp(3)/(2*pi);
-%[double(((2*pi)*Res.TotNumWaves)/(Data.time_end)) 2*pi/Data.time_per]
-%[AveFreq 1/Data.time_per AveFreq*Data.time_per]
+%% (9) Visualize / check the fits
+% GUIDat is all data (works for both); TStr is for GUI_FitTakeuchi; KStr is
+% for GUI_FitKind
+GUIDat.ivIdx = ivIdx; GUIDat.ivVal = ivVal; GUIDat.ivSeg = ivSeg;
+GUIDat.Data = Data;
 
-% Package all structures for passing to GUI_FitTakeuchi
-SinuStr.FitT = FitT;
-SinuStr.FitO = FitO;
-SinuStr.FitK = FitK;
-SinuStr.Data = Data;
-SinuStr.Plot = Plot;
+TStr.Plot = PlotT; TStr.FitT = FitT; TStr.FitO = FitO;
+RetT = GUI_FitTakeuchi (TStr, GUIDat);
 
-SinuStr.ivIdx = ivIdx;
-SinuStr.ivVal = ivVal;
-SinuStr.ivSeg = ivSeg;
+FitK.MeanTP = mean(RetT.FitT.PIsoMax);
+KStr.Plot = PlotK; KStr.FitK = FitK;
+RetK = GUI_FitKind (KStr, GUIDat);
 
-%% (9) Visualize / check the fit
-% call on GUI. Notice the structure we just made is passed to the GUI, and
-% the GUI passes back a refined structure
-RetStr = GUI_FitTakeuchi (SinuStr);
-
-clear SinuStr
+RetStr = RetT;
+RetStr.FitK = RetK.FitK;
+clear TStr KStr GUIDat
 
 %% (10) cleanup, arrange data to return to runAll
 if ~isstruct(RetStr)

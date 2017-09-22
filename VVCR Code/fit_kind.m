@@ -26,6 +26,7 @@ Ret1.BadCyc = zeros(nfits,1); % Saved cycle-specific ICS
 % Ploting vectors of the fitting data for GUI_FitKind  
 Ret2.iv2PlotTime = [];
 Ret2.iv2PlotPres = [];
+Ret2.iv2TShift = zeros(nfits,1);
 
 % scroll through the number of rows (pressure waves) in the
 % structures: ivSeg.iv2Time and ivSeg.iv2Pres
@@ -97,7 +98,12 @@ for i = 1:nfits
     % arrays if needed just outside this loop.
 
     [~, tsh, padd] = data_kind (c, Data.Time_D(posidx(1)), dPtimes);
-    psh = padd-median(ivSeg.iv2dPdt(i).NegIso);
+    psh = padd-Data.Pres_D(ivIdx.dPmin2_D(i));
+
+%   disp(['padd, psh, Pres_D@dPmin :' num2str(padd) ' ' num2str(psh) ' ' ...
+%       num2str(Data.Pres_D(ivIdx.dPmin2_D(i)))])
+
+    Ret2.iv2TShift(i) = tsh;
 
     Ret2.iv2PlotTime = [Ret2.iv2PlotTime Data.Time_D(posidx) ...
         tsh+Data.Time_D(negidx)];

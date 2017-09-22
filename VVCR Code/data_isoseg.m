@@ -25,9 +25,11 @@ Ret1.iv2Pres = struct('PosIso', cell(mysz2,1), 'NegIso', cell(mysz2,1));
 if ~GUI
     Ret2.Ps1_D = zeros(mysz1,1);
     Ret2.Ne1_D = zeros(mysz1,1);
+    Ret2.Ps2_D = zeros(mysz2,1);
     Ret2.Pe2_D = zeros(mysz2,1);
     Ret2.Ns2_D = zeros(mysz2,1);
     Ret2.Ne2_D = zeros(mysz2,1);
+    Ret2.dPmin2_D = zeros(mysz2,1);
 end
 
 % Takaguchi Indices
@@ -71,6 +73,8 @@ for i = 1: mysz2
 
     % Negative (2nd Isovolumic Section) ***NOTE THIS IS dP/dt***
     if ~GUI
+        Ret2.dPmin2_D(i) = find(round(Data.Time_D,3) == ...
+            round(Data.Time(ivIdx.dPmin2(i)),3));
         Ret2.Ns2_D(i) = find(round(Data.Time_D,3) == ... 
             round(Data.Time(ivIdx.Ns2(i)),3));
         Ret2.Ne2_D(i) = find(round(Data.Time_D,3) == ... 

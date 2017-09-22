@@ -59,14 +59,19 @@ handles.output = hObject;
 
 % set the input variable in the global handles environment
 % passed as PeakStruct from VVCR_* script
-handles.InVar = cell2mat(varargin);
+handles.InVar = cell2mat(varargin(1));
+GUIDat = cell2mat(varargin(2));
+handles.InVar.Data  = GUIDat.Data;
+handles.InVar.ivIdx = GUIDat.ivIdx;
+handles.InVar.ivVal = GUIDat.ivVal;
+handles.InVar.ivSeg = GUIDat.ivSeg;
 
 % Extract Data, Indices/Values, and Fit Segments from passed structures.
 Data = handles.InVar.Data;
 Plot = handles.InVar.Plot;
 ivVal = handles.InVar.ivVal;
 ivSeg = handles.InVar.ivSeg;
-FitT = handles.InVar.FitT;  
+FitT = handles.InVar.FitT;
 
 % Initialize UNDO structure.
 handles.UNDO.FitT = [];
@@ -74,7 +79,6 @@ handles.UNDO.FitT = [];
 % store first fit output into output structure.
 Res.FitT = handles.InVar.FitT;
 Res.FitO = handles.InVar.FitO;
-Res.FitK = handles.InVar.FitK;
 handles.OutVar = Res;
 
 % set editable text boxes with ICs
@@ -85,7 +89,7 @@ set(handles.Freq_txt, 'String',num2str(IC(3)));
 set(handles.Phase_txt, 'String',num2str(IC(4)));
 
 % plot pressure, sinusoid fits
-[handles] = gui_sinu_plot (Data, ivVal, ivSeg, FitT, Plot, handles);
+[handles] = gui_takeuchi_plot (Data, ivSeg, FitT, Plot, handles);
 
 % Update handles.
 guidata(hObject, handles);
@@ -165,21 +169,19 @@ if ~isempty(WaveNumPosRm) && ~isempty(WaveNumNegRm)
         ICS = [Mea Amp Fre Pha];
         [FitT, ivSeg, Plot] = fit_takeuchi (ivSeg, Data, ICS);
         [FitO] = fit_takeuchi_o (ivSeg, Data, ICS);
-        [FitK] = fit_kind (ivSeg, ivIdx, Data, FitT);
         
         % update global handles from isovol_returned values. If the Vanderpool
         % method isn't tripped, then ivSeg and Plot haven't changed, so this
         % is a just-in-case...
         Res.FitT = FitT;
         Res.FitO = FitO;
-        Res.FitK = FitK;
         handles.OutVar = Res;
 
         handles.InVar.ivSeg = ivSeg;
         handles.IvVar.Plot  = Plot;
 
         % Plot the results
-        [handles] = gui_sinu_plot (Data, ivVal, ivSeg, FitT, Plot, handles);
+        [handles] = gui_takeuchi_plot (Data, ivSeg, FitT, Plot, handles);
 
     end
 end
@@ -347,21 +349,19 @@ ivSeg = handles.InVar.ivSeg;
 
 [FitT, ivSeg, Plot] = fit_takeuchi (ivSeg, Data, ICS);
 [FitO] = fit_takeuchi_o (ivSeg, Data, ICS);
-[FitK] = fit_kind (ivSeg, ivIdx, Data, FitT);
 
 % update global handles from isovol_returned values. If the Vanderpool
 % method isn't tripped, then ivSeg and Plot haven't changed, so this
 % is a just-in-case...
 Res.FitT = FitT;
 Res.FitO = FitO;
-Res.FitK = FitK;
 handles.OutVar = Res;
 
 handles.InVar.ivSeg = ivSeg;
 handles.IvVar.Plot  = Plot;
 
 ivVal = handles.InVar.ivVal;
-[handles] = gui_sinu_plot (Data, ivVal, ivSeg, FitT, Plot, handles);
+[handles] = gui_takeuchi_plot (Data, ivSeg, FitT, Plot, handles);
 
 % update global handles & set cursor back to normal
 guidata(hObject,handles);
@@ -432,7 +432,7 @@ if ~isempty(handles.UNDO.Res)
     ivVal = handles.InVar.ivVal;
     ivSeg = handles.InVar.ivSeg;
 
-    [handles] = gui_sinu_plot (Data, ivVal, ivSeg, FitT, Plot, handles);
+    [handles] = gui_takeuchi_plot (Data, ivSeg, FitT, Plot, handles);
 
 else
 
@@ -447,7 +447,7 @@ set(handles.figure1, 'pointer', 'arrow');
 end
 
 % --- Function that updates the main plot
-function [handles] = gui_sinu_plot (Data, ivVal, ivSeg, Fit, Plot, handles);
+function [handles] = gui_takeuchi_plot (Data, ivSeg, Fit, Plot, handles);
 
 axes(handles.pressure_axes);
 
@@ -466,7 +466,7 @@ ylabel('Data.Pres_Dsue [mmHg]','FontSize',18);
 hold on;
 
 mystp = Data.time_step/2;
-mysz = length(ivVal.Ps1);
+mysz = length(ivSeg.iv1Time);
 PmaxT = zeros(mysz,1);
 
 % Attain the sinusoid fit for all points (so Pmax can be visualized
@@ -492,6 +492,7 @@ end
 
 % check the range of pressure values of Pmax. if the max p_max value is
 % over 450, rescale y axis to (0, 300), so individual waveforms can be seen
+ylim([0, Inf]);
 if max(Fit.PIsoMax) > 450
     ylim([0, 300]);
 end
