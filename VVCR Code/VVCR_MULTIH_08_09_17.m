@@ -35,7 +35,6 @@ for i = 1:2
     % Capture Extrema and record number found.
     [Extr] = data_maxmin (Data_O);
     Data_O.time_per = Extr.time_per;
-    OrigTot = (length(Extr.dPminIdx)+length(Extr.dPmaxIdx))/2;
 
     % Call GUI for assessment of extrema. Build input structure.
     % Pressure and derivative, their extrema
@@ -99,7 +98,8 @@ for i = 1:2
     [ivIdx, ivVal, badcyc] = data_isoidx (Data_O, Extr);
 
     % If very few timings were found, filtering may be a problem.
-    Found  = double(length(ivIdx.Ps1))/double(Res.TotNumWaves);
+    mingood = min([length(ivIdx.Ps1) length(ivIdx.Ps2)]);
+    Found  = double(mingood)/double(Res.TotNumWaves);
     if i == 1 && Found < 0.5
 	quest = ['Very few cycles gated compared to total number of cycles. '...
             ' Keep current (filtered) data, load unfiltered data, or ' ...
@@ -110,9 +110,8 @@ for i = 1:2
             case 'Keep Current'
                 break;
             case 'Load Unfiltered'
-                disp(['VVCR_MULTIH: succesfully gated only ' num2str(100* ...
-		    Found,'%5.2f%%') ' of max/min cycles. Retrying ' ...
-                    'with raw data.']);
+                disp(['VVCR_MULTIH: poor fit gating of max/min cycles. ' ...
+                    'Retrying with raw data.']);
                 Data_O.FiltPres = Data_O.Pres;
                 Data_O.FiltdPdt = Data_O.dPdt;
                 Data_O.Pres = Data_O.OrigPres; 
@@ -150,19 +149,18 @@ clear Data_O
 
 %% (8) Fit the data
 
-% frequnecy is the conversion to angular frequency 2*pi/T
+% frequency is the conversion to angular frequency 2*pi/T
 % multiplied by the number of waves found over the time period
 % ICs structure for first pass - enables individual computation of ICs
 ICS.Freq_o = double(((2*pi)*Res.TotNumWaves)/(Data.time_end)); % OLD METHOD
 ICS.Freq = 2*pi/Data.time_per;
 ICS.Pres = Data.Pres;
-ICS.dPmaxIdx = ivIdx.dPmax;
-ICS.dPminIdx = ivIdx.dPmin;
-
+ICS.dPmaxIdx = ivIdx.dPmax1;
+ICS.dPminIdx = ivIdx.dPmin1;
 
 [FitT, ivSeg, Plot] = fit_takeuchi (ivSeg, Data, ICS);
 [FitO] = fit_takeuchi_o (ivSeg, Data, ICS);
-[FitK] = fit_kind (ivSeg, ivIdx, Data, FitT);
+[FitK] = fit_kind (ivSeg, ivIdx, Data, mean(FitT.PIsoMax));
 
 % What was average frequency ratio between Takeuchi and Data?
 %temp = mean(FitT.RCoef(FitT.BadCyc~=1,:));
@@ -218,13 +216,11 @@ else
     BadCycO = RetStr.FitO.BadCyc;
     BadCycK = RetStr.FitK.BadCyc;
 
-    AnyGood = BadCycT | BadCycO | BadCycK; 
-
     % Initialize return structure to contain ALL fitting data.
     Res.FitT = RetStr.FitT;
     Res.FitO = RetStr.FitO;
     Res.FitK = RetStr.FitK;
-    Res.P_es = Data.P_es;
+    Res.Pes  = unique([Data.Pes1' Data.Pes2']);
     
     % calculate the number of peaks that were evaluated
     Res.numPeaksT = sum(~BadCycT);
@@ -237,15 +233,15 @@ else
     GOOD_PmxK = RetStr.FitK.RCoef(BadCycK~=1,1);
 
     % mean, std Pes and P_max for the waves that fit well
-    Res = compute_MeanStd (Res, Data.P_es(AnyGood), 'P_es'); 
+    Res = compute_MeanStd (Res, Res.Pes, 'Pes'); 
     Res = compute_MeanStd (Res, GOOD_PmxT, 'PmaxT');
     Res = compute_MeanStd (Res, GOOD_PmxO, 'PmaxO');
     Res = compute_MeanStd (Res, GOOD_PmxK, 'PmaxK');
 
     % Compute UT, KSH VVCR (inverse and normal)
-    Res = compute_VVCR (Res, Data.P_es(BadCycT~=1), GOOD_PmxT, 'T');
-    Res = compute_VVCR (Res, Data.P_es(BadCycO~=1), GOOD_PmxO, 'O');
-    Res = compute_VVCR (Res, Data.P_es(BadCycK~=1), GOOD_PmxK, 'K');
+    Res = compute_VVCR (Res, Data.Pes1(BadCycT~=1), GOOD_PmxT, 'T');
+    Res = compute_VVCR (Res, Data.Pes1(BadCycO~=1), GOOD_PmxO, 'O');
+    Res = compute_VVCR (Res, Data.Pes2(BadCycK~=1), GOOD_PmxK, 'K');
 
     % Were "Vanderpool Points" added?
     Res.VandT = sum(RetStr.FitT.VCyc);

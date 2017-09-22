@@ -1,4 +1,4 @@
-function [Ret1, Ret2] = fit_kind (ivSeg, ivIdx, Data, FitT)
+function [Ret1, Ret2] = fit_kind (ivSeg, ivIdx, Data, MeanTPmax)
 %
 % ivSeg  - Struct of all pres and time fitting values:
 %            iv1Pres/iv1Time/iv2Pres/iv2Time 1st level structs; Time labels
@@ -32,7 +32,7 @@ Ret2.iv2PlotPres = [];
 for i = 1:nfits
 
     % Times for (dP/dt)max, (dP/dt)min, and the average period length
-    dPtimes = [Data.Time(ivIdx.dPmax(i)) Data.Time(ivIdx.dPmin(i)) ...
+    dPtimes = [Data.Time(ivIdx.dPmax2(i)) Data.Time(ivIdx.dPmin2(i)) ...
         Data.time_per];
 
     posidx = ivSeg.iv2Time(i).PosIso;
@@ -44,20 +44,20 @@ for i = 1:nfits
 
     % Start of isovolumic contraction, isovolumic contration duration. Used
     % in ICs and fitting limits.
-    tstivc = Data.Time_D(ivIdx.Ps1_D(i));
+    tstivc = Data.Time_D(ivIdx.Ps2_D(i));
     ivcdur = Data.Time_D(ivIdx.Pe2_D(i))-tstivc;
     
     % Deriving the initial values from the data
-    % P1 Pmax from Takeuchi(?)
+    % P1 Mean Pmax from Takeuchi fits.
     % P2 Pmin, guess small, like 2-5.
     % P3 use Time(ivIdx.Ps1) - that will be close
-    % P4 use 60% (that's what's in their figure!)
+    % P4 use 58% (that's what's in their figure!)
 
-    c2 = [FitT.PIsoMax(i), 2, tstivc, 0.6];
+    c2 = [MeanTPmax, 2, tstivc, 0.58];
     Ret1.CycICs(i,:) = c2; 
 
     % First Set of Limits - very weak bounds on t_Pmax.
-    % lb = [Data.P_es(i)  0.0            -0.1   0.2];
+    % lb = [Data.Pes2(i)  0.0            -0.1   0.2];
     % ub = [        1000 30.0  Data.Time(end)   0.8];
     %
     % New Limits:
@@ -69,7 +69,7 @@ for i = 1:nfits
     %   the start time beyond the start of the isovolumic phase? I think no.
     % - Beta: 0.6 is the "best value" for rats, so we give it some leeway.
 
-    lb = [Data.P_es(i)  0.0 tstivc-ivcdur 0.35];
+    lb = [Data.Pes2(i)  0.0 tstivc-ivcdur 0.35];
     ub = [         500 30.0 tstivc        0.70];
 
     [c,SSE,~] = lsqnonlin (sin_fun2,c2,lb,ub,opts1);

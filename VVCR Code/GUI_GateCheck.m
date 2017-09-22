@@ -244,7 +244,8 @@ if length(Extr.dPminIdx) == length(Extr.dPmaxIdx)
     uiresume(handles.figure1);
 else
     
-    warndlg(sprintf(' Program cannot proceed unless \n number of minima and maxima match!'));
+    warndlg(sprintf(['Program cannot proceed unless \n number of minima ' ...
+        'and maxima match!']));
 end
 
 end

@@ -136,30 +136,24 @@ if ~isempty(WaveNumPosRm) && ~isempty(WaveNumNegRm)
     if ~isempty(WaveRm)
         disp(['    Wave: ', num2str(WaveRm), ' is being removed']);
         
-        % erase wave from iv1Time structure. make new structure with one
-        % less row. THIS KILLS EVERYTHING IN ivIdx & ivVal, NOT JUST THE
-        % ORIGINAL FIVE. UPDATE FOR KIND METHOD LATER.
-        ivIdx.Ps1(WaveRm)   = [];
-        ivIdx.Ne1(WaveRm)   = [];
-        ivIdx.Ps1_D(WaveRm) = [];
-        ivIdx.Ne1_D(WaveRm) = [];
-        ivVal.Ps1(WaveRm)   = [];
-        ivVal.Ne1(WaveRm)   = [];
-
+        % Erase wave from (2 - Kind) ivIdx, ivVal structures.
+        ivIdx.Ps2(WaveRm)   = [];
         ivIdx.Pe2(WaveRm)   = [];
         ivIdx.Ns2(WaveRm)   = [];
         ivIdx.Ne2(WaveRm)   = [];
+        ivIdx.Ps2_D(WaveRm) = [];
         ivIdx.Pe2_D(WaveRm) = [];
         ivIdx.Ns2_D(WaveRm) = [];
         ivIdx.Ne2_D(WaveRm) = [];
+        ivVal.Ps2(WaveRm)   = [];
 	ivVal.Pe2(WaveRm)   = [];
         ivVal.Ns2(WaveRm)   = [];
         ivVal.Ne2(WaveRm)   = [];
 
-        ivIdx.dPmax(WaveRm) = [];
-        ivIdx.dPmin(WaveRm) = [];
-        ivVal.dPmax(WaveRm) = [];
-        ivVal.dPmin(WaveRm) = [];
+        ivIdx.dPmax2(WaveRm) = [];
+        ivIdx.dPmin2(WaveRm) = [];
+        ivVal.dPmax2(WaveRm) = [];
+        ivVal.dPmin2(WaveRm) = [];
 
         % Store changes
         handles.InVar.ivIdx = ivIdx;

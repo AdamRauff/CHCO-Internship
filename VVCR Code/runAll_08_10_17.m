@@ -232,7 +232,7 @@ for i = 1:length(top)
             % Pes and both Pmax - end systolic pressure (Pes), and maximum
             % isovolumic pressure (Pmax) obtained from Takeuchi (Mean + 2*amp)
             % and Kind (Pmax) methods
-            fprintf(fd0, '%10.6f, %10.6f,' , Res.P_es_Mean, Res.P_es_StD);
+            fprintf(fd0, '%10.6f, %10.6f,' , Res.Pes_Mean, Res.Pes_StD);
             fprintf(fd0, '%10.6f, %10.6f,' , Res.PmaxT_Mean, Res.PmaxT_StD);
             fprintf(fd0, '%10.6f, %10.6f,' , Res.PmaxK_Mean, Res.PmaxK_StD);
             fprintf(fd0, '%10.6f, %10.6f,' , Res.PmaxO_Mean, Res.PmaxO_StD);
