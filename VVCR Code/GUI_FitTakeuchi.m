@@ -202,11 +202,13 @@ drawnow;
 ivIdx = handles.InVar.ivIdx;
 ivVal = handles.InVar.ivVal;
 ivSeg = handles.InVar.ivSeg;
+Plot  = handles.InVar.Plot;
 
 FitT = handles.OutVar.FitT;
 
 % store the current structures in UNDO structure for the undo button.
-handles.UNDO.Res  = handles.OutVar;
+handles.UNDO.Res   = handles.OutVar;
+handles.UNDO.Plot  = Plot;
 handles.UNDO.ivIdx = ivIdx;
 handles.UNDO.ivVal = ivVal;
 handles.UNDO.ivSeg = ivSeg;
@@ -216,6 +218,8 @@ disp(['GUI_FitTakeuchi>Remove: wave ' num2str(WaveRm, '%02i') ...
     ' is being removed']);
 
 % Erase wave from (1 - Takeuchi) ivIdx, ivVal structures. 
+[Plot] = rm_iv_points (Plot, handles.InVar.Data, ivIdx, WaveRm);
+
 ivIdx.Ps1(WaveRm)   = [];
 ivIdx.Ne1(WaveRm)   = [];
 ivIdx.Ps1_D(WaveRm) = [];
@@ -242,6 +246,7 @@ FitT.VCyc(WaveRm)     = [];
 handles.InVar.ivIdx = ivIdx;
 handles.InVar.ivVal = ivVal;
 handles.InVar.ivSeg = ivSeg;
+handles.InVar.Plot  = Plot;
 
 handles.OutVar.FitT = FitT;
 
@@ -366,6 +371,7 @@ if ~isempty(handles.UNDO.Res)
     handles.InVar.ivIdx = handles.UNDO.ivIdx;
     handles.InVar.ivVal = handles.UNDO.ivVal;
     handles.InVar.ivSeg = handles.UNDO.ivSeg; 
+    handles.InVar.Plot  = handles.UNDO.Plot; 
 
     % Reset Res indicator (undo only goes one deep)
     handles.UNDO.Res = [];
@@ -609,5 +615,16 @@ end
 box on;
 grid on;
 hold off;
+
+end
+
+function [Plot] = rm_iv_points (PlotIn, Data, ivIdx, rmIdx);
+
+llim = Data.Time_D(ivIdx.Ps1_D(rmIdx));
+ulim = Data.Time_D(ivIdx.Ne1_D(rmIdx));
+
+KeepIdx = find(PlotIn.iv1PlotTime<llim | ulim<PlotIn.iv1PlotTime); 
+Plot.iv1PlotTime = PlotIn.iv1PlotTime(KeepIdx);
+Plot.iv1PlotPres = PlotIn.iv1PlotPres(KeepIdx);
 
 end

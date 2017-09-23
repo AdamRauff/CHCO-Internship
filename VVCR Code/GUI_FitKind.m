@@ -211,7 +211,7 @@ Plot  = handles.InVar.Plot;
 FitK = handles.OutVar.FitK;
 
 % store the current structures in UNDO structure for the undo button.
-handles.UNDO.Res  = handles.OutVar;
+handles.UNDO.Res   = handles.OutVar;
 handles.UNDO.Plot  = Plot;
 handles.UNDO.ivIdx = ivIdx;
 handles.UNDO.ivVal = ivVal;
@@ -222,6 +222,8 @@ disp(['GUI_FitKind>Remove: wave ' num2str(WaveRm, '%02i') ...
     ' is being removed']);
 
 % Erase wave from (2 - Kind) ivIdx, ivVal structures. 
+[Plot] = rm_iv_points (Plot, handles.InVar.Data, ivIdx, WaveRm);
+
 ivIdx.Ps2(WaveRm)   = [];
 ivIdx.Pe2(WaveRm)   = [];
 ivIdx.Ns2(WaveRm)   = [];
@@ -255,6 +257,7 @@ Plot.iv2TShift(WaveRm) = [];
 handles.InVar.ivIdx = ivIdx;
 handles.InVar.ivVal = ivVal;
 handles.InVar.ivSeg = ivSeg;
+handles.InVar.Plot  = Plot;
 
 handles.OutVar.FitK = FitK;
 
@@ -575,8 +578,8 @@ set(handles.figure2.CurrentAxes,'ButtonDownFcn', ...
     @(hObject, eventdata)SubGraphCallback(hObject, eventdata, handles));
 set(handles.figure2.CurrentAxes,'fontsize',12);
 
-xlabel('Time [s]','FontSize',14);
-ylabel('Pressure [mmHg]','FontSize',14);
+xlabel('Time [s]','FontSize',12);
+ylabel('Pressure [mmHg]','FontSize',12);
 
 hold on;
 
@@ -609,8 +612,8 @@ ymx = max(Fit.RCoef(:,1))+5;
 
 % Bound the current cycle.
 cycid = handles.Cycle;
-xmn = Data.Time_D(ivSeg.iv1Time(cycid).PosIso(1,1))-0.05;
-xmx = Data.Time_D(ivSeg.iv1Time(cycid).NegIso(end,1))+0.05;
+xmn = Data.Time_D(ivSeg.iv2Time(cycid).PosIso(1,1))-0.05;
+xmx = Data.Time_D(ivSeg.iv2Time(cycid).NegIso(end,1))+0.05;
 plot([xmn xmn], [0, ymx], 'r--');
 plot([xmx xmx], [0, ymx], 'r--');
 
@@ -626,3 +629,18 @@ grid on;
 hold off;
 
 end
+
+function [Plot] = rm_iv_points (PlotIn, Data, ivIdx, rmIdx);
+
+Plot.iv2TShift = PlotIn.iv2TShift;
+
+llim = Data.Time_D(ivIdx.Ps2_D(rmIdx));
+ulim = Data.Time_D(ivIdx.Ne2_D(rmIdx))+PlotIn.iv2TShift(rmIdx);
+
+KeepIdx = find(PlotIn.iv2PlotTime<llim | ulim<PlotIn.iv2PlotTime);
+Plot.iv2PlotTime = PlotIn.iv2PlotTime(KeepIdx);
+Plot.iv2PlotPres = PlotIn.iv2PlotPres(KeepIdx);
+
+end
+
+
