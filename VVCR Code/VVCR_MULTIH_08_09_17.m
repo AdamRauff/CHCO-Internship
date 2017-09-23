@@ -51,7 +51,7 @@ for i = 1:2
     % call on GUI.
     GateStr = GUI_GateCheck (PeakStr);
 
-    [Res, Pat, Ret] = interpret_str (GateStr, 'GUI_GateCheck', FileName, Res);
+    [Res, Ret] = interpret_str (GateStr, 'GUI_GateCheck', FileName, Res);
     if Ret
         return;
     end
@@ -144,7 +144,7 @@ GUIDat.Data = Data;
 % Call the Takeuchi Fit Check GUI
 TStr.Plot = PlotT; TStr.FitT = FitT; TStr.FitO = FitO;
 RetT = GUI_FitTakeuchi (TStr, GUIDat);
-[Res, Pat, Ret] = interpret_str (RetT, 'GUI_FitTakeuchi', FileName, Res);
+[Res, Ret] = interpret_str (RetT, 'GUI_FitTakeuchi', FileName, Res);
 if Ret
     return;
 end
@@ -153,7 +153,7 @@ end
 FitK.MeanTP = mean(RetT.FitT.PIsoMax);
 KStr.Plot = PlotK; KStr.FitK = FitK;
 RetK = GUI_FitKind (KStr, GUIDat);
-[Res, Pat, Ret] = interpret_str (RetK, 'GUI_FitKind', FileName, Res);
+[Res, Ret] = interpret_str (RetK, 'GUI_FitKind', FileName, Res);
 if Ret
     return;
 end
@@ -204,28 +204,27 @@ end
 
 %% Auxilliary Functions to simplify computation of final values.
 
-function [Res, Pat, Ret] = interpret_str (str, guinam, patfile, ResIn)
+function [Res, Ret] = interpret_str (str, guinam, patfile, ResIn)
 
 Res = ResIn;
-[Pat, Ret] = deal(1);
+Ret = 1;
 
 % GUI was closed using OS
 if ~isstruct(str)
-    [Res, Pat] = deal (false);
+    Res = false;
     disp(['VVCR_MULTIH: ' guinam ' closed.']);
     return
 end
 
 % The exit button has been pressed
 if str.Exit == false
-
-    [Res, Pat] = deal (false);
+    Res = false;
     disp('VVCR_MULTIH: You chose to exit the analysis');
     disp(['    The Pat.FileNam ', patfile, ' was not evaluated.']);
 
 % The discard patient button has been pressed
 elseif str.Exit == true
-    [Res, Pat] = deal (true);
+    Res = true;
     disp('VVCR_MULTIH: patient discarded pre-analysis.');
 
 % Everything went well

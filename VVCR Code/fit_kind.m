@@ -42,6 +42,8 @@ for i = 1:nfits
     sin_fun2 = @(P) imbedded_kind (P, Data.Time_D(posidx), ...
         Data.Time_D(negidx), dPtimes, ivSeg.iv2Pres(i).PosIso, ...
         ivSeg.iv2dPdt(i).NegIso);	
+%-[Examining time shift @IC and at finish
+%       ivSeg.iv2dPdt(i).NegIso, 0);
 
     % Start of isovolumic contraction, isovolumic contration duration. Used
     % in ICs and fitting limits.
@@ -100,15 +102,27 @@ for i = 1:nfits
     [~, tsh, padd] = data_kind (c, Data.Time_D(posidx(1)), dPtimes);
     psh = padd-Data.Pres_D(ivIdx.dPmin2_D(i));
 
-%   disp(['padd, psh, Pres_D@dPmin :' num2str(padd) ' ' num2str(psh) ' ' ...
-%       num2str(Data.Pres_D(ivIdx.dPmin2_D(i)))])
-
     Ret2.iv2TShift(i) = tsh;
 
     Ret2.iv2PlotTime = [Ret2.iv2PlotTime Data.Time_D(posidx) ...
         tsh+Data.Time_D(negidx)];
     Ret2.iv2PlotPres = [Ret2.iv2PlotPres Data.Pres_D(posidx)' ...
         psh+Data.Pres_D(negidx)'];
+
+%-[Examining time shift @IC and at finish
+% [~, ICshift] = imbedded_kind (c2, Data.Time_D(posidx), ...
+%     Data.Time_D(negidx), dPtimes, 0, 0, 1);
+% [~, FTshift] = imbedded_kind (c, Data.Time_D(posidx), ...
+%     Data.Time_D(negidx), dPtimes, 0, 0, 1);
+% disp(['Fit # ' num2str(i, '%02i')]);
+% disp(['    ICs Shift ', num2str(ICshift, '%6.4f ') ' diff ' ...
+%     num2str(ICshift(1)-ICshift(2), ' %+6.4f') ])
+% disp(['    Fit Shift ', num2str(FTshift, '%6.4f ') ' diff ' ...
+%     num2str(FTshift(1)-FTshift(2), ' %+6.4f') ])
+% disp(['    Max Pressure ', num2str(c(1), '%8.3f') ' Ps1 = ' ...
+%     num2str(Data.Time_D(ivIdx.Ps1_D(i)), '%6.4f') ' C(3,4) = ' ...
+%     num2str(c(3:4), '%6.4f ') ' ' num2str(Data.Time_D(ivIdx.Ps1_D(i))- ...
+%     c(3),'(%+6.4f)') ]);
 
 end
 
@@ -146,6 +160,8 @@ function [ zero ] = imbedded_kind ( P, t1, t2, tM, Pd, dPd )
 %           zero - difference between fit and data (combined vector of 
 %                  p0m-Pd and p1m-dPd)
 %
+%-[Examining time shift @IC and at finish
+%%function [ varargout ] = imbedded_kind ( P, t1, t2, tM, Pd, dPd, flag )
 
 % Coefficients for the multiharmonic fit
 a = [1.0481 -0.4361 -0.0804 -0.0148  0.0020  0.0023  0.0012];
@@ -193,12 +209,22 @@ dPt0 = p1m (P, Tspan);
 [~,idx] = min(dPt0);
 tshift = Tspan(idx)-(tM(2)-P(3));
 
+%-[Examining time shift @IC and at finish
+%if flag
+%    varargout{2} = [Tspan(idx) tM(2)-P(3)];
+%    varargout(3:nargout) = {[]};
+%else
+%    varargout(2:nargout) = {[]};
+%end
+
 % Second "half" of the fit residuals
 t23 = t2'-P(3)+tshift;
 
-%maxr1 = max(abs(zero));
-%maxr2 = max(abs(p1m(P,t23)-dPd));
-%disp(['Residuals ' num2str(maxr1) ' ' num2str(maxr2)]);
+%-[Residuals in each section]
+% maxr1 = max(abs(zero));
+% maxr2 = max(abs(p1m(P,t23)-dPd));
+% disp(['Residuals ' num2str(maxr1) ' ' num2str(maxr2)]);
+
 zero = [zero; (p1m(P,t23)-dPd)];
 
 end

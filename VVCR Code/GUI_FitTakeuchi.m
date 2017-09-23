@@ -24,7 +24,7 @@ function varargout = GUI_FitTakeuchi (varargin)
 
 % Edit the above text to modify the response to help GUI_FitTakeuchi
 
-% Last Modified by GUIDE v2.5 22-Sep-2017 15:27:19
+% Last Modified by GUIDE v2.5 23-Sep-2017 09:40:45
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -86,7 +86,8 @@ handles.OutVar.Exit = 'Good';
 handles.UNDO.Res = [];
 
 % plot pressure, sinusoid fits
-[handles] = gui_takeuchi_plot (Data, ivSeg, FitT, Plot, handles);
+[handles] = takeuchi_plot_single (Data, ivSeg, FitT, Plot, handles);
+[handles] = open_all_plots (Data, ivSeg, FitT, Plot, handles);
 
 % Update handles.
 guidata(hObject, handles);
@@ -96,11 +97,11 @@ uiwait(handles.figure1);
 end
 
 % function that executes when user clicks on graph
-function GraphCallBack(hObject, eventdata, handles)
+function MainGraphCallback(hObject, eventdata, handles)
 
 % get the current point
 cp(1,:) = [eventdata.IntersectionPoint(1), eventdata.IntersectionPoint(2)];
-disp('GUI_FitTakeuchi>GraphCallBack:');
+disp('GUI_FitTakeuchi>MainGraphCallback:');
 disp(['    Time:     ',num2str(cp(1))]);
 disp(['    Pressure: ',num2str(cp(2))]);
 
@@ -143,7 +144,7 @@ ivSeg = handles.InVar.ivSeg;
 FitT = handles.InVar.FitT;
 
 % plot pressure, sinusoid fits, update indicator
-[handles] = gui_takeuchi_plot (Data, ivSeg, FitT, Plot, handles);
+[handles] = takeuchi_plot_single (Data, ivSeg, FitT, Plot, handles);
 set(handles.CycleInd, 'String', ['Cycle #' num2str(handles.Cycle,'%02i')]);
 
 % Update handles.
@@ -173,7 +174,7 @@ ivSeg = handles.InVar.ivSeg;
 FitT = handles.InVar.FitT;
 
 % plot pressure, sinusoid fits, update indicator
-[handles] = gui_takeuchi_plot (Data, ivSeg, FitT, Plot, handles);
+[handles] = takeuchi_plot_single (Data, ivSeg, FitT, Plot, handles);
 set(handles.CycleInd, 'String', ['Cycle #' num2str(handles.Cycle,'%02i')]);
 
 % Update handles.
@@ -247,7 +248,7 @@ end
 % Plot the results
 Data = handles.InVar.Data;
 Plot = handles.InVar.Plot;
-[handles] = gui_takeuchi_plot (Data, ivSeg, FitT, Plot, handles);
+[handles] = takeuchi_plot_single (Data, ivSeg, FitT, Plot, handles);
 
 % update global handles & set cursor back to normal
 guidata(hObject,handles);
@@ -262,6 +263,8 @@ function Done_Callback(~, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+close(handles.figure2);
+
 % call on uiresume so output function executes
 uiresume(handles.figure1);
 end
@@ -271,6 +274,8 @@ function figure1_CloseRequestFcn(hObject, ~, handles)
 % hObject    handle to figure1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+close(handles.figure2);
 
 if isequal(get(hObject, 'waitstatus'), 'waiting')
     % The GUI is still in UIWAIT, call UIRESUME
@@ -295,6 +300,8 @@ function Exit_Callback(hObject, ~, handles)
 % keep in mind when the exit button is pressed, the current
 % patient, i, will not be evaluated
                 
+close(handles.figure2);
+
 % set output to false
 handles.OutVar.Exit = false;
 
@@ -310,6 +317,8 @@ function Discard_Callback(hObject, ~, handles)
 % hObject    handle to Discard (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+close(handles.figure2);
 
 % set outputs to true, indicating Discard button
 handles.OutVar.Exit = true;
@@ -355,7 +364,7 @@ if ~isempty(handles.UNDO.Res)
     Plot = handles.InVar.Plot;
     ivSeg = handles.InVar.ivSeg;
 
-    [handles] = gui_takeuchi_plot (Data, ivSeg, FitT, Plot, handles);
+    [handles] = takeuchi_plot_single (Data, ivSeg, FitT, Plot, handles);
 
     % update global handles
     guidata(hObject,handles);
@@ -372,7 +381,7 @@ set(handles.figure1, 'pointer', 'arrow');
 end
 
 % --- Function that updates the main plot
-function [handles] = gui_takeuchi_plot (Data, ivSeg, Fit, Plot, handles);
+function [handles] = takeuchi_plot_single (Data, ivSeg, Fit, Plot, handles);
 
 cycid = handles.Cycle;
 
@@ -383,7 +392,7 @@ h = plot(Data.Time_D,Data.Pres_D,'b', ...
 set(h, 'HitTest', 'off');
 
 set(handles.pressure_axes,'ButtonDownFcn', ...
-    @(hObject, eventdata)GraphCallBack(hObject, eventdata, handles));
+    @(hObject, eventdata)MainGraphCallback(hObject, eventdata, handles));
 set(handles.pressure_axes,'fontsize',12);
 
 title('Takeuchi Sinusoidal Fitting','FontSize',16);
@@ -427,6 +436,145 @@ end
 
 legend('Pressure', 'Isovolumic Points', 'Sinusoid Fit', 'Pmax', ...
     'Location', 'southoutside', 'Orientation', 'horizontal');
+
+box on;
+grid on;
+hold off;
+
+end
+
+% --- Executes on button press in AllPlotsGraph.
+function AllPlotsGraph_Callback(hObject, ~, handles)
+% hObject    handle to AllPlotsGraph (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Extract Data, Indices/Values, and Fit Segments from passed structures.
+Data = handles.InVar.Data;
+Plot = handles.InVar.Plot;
+ivSeg = handles.InVar.ivSeg;
+FitT = handles.InVar.FitT;
+
+% Create all pressures figure
+handles = open_all_plots (Data, ivSeg, FitT, Plot, handles);
+
+% Update handles.
+guidata(hObject, handles);
+
+end
+
+function SubGraphCallback(hObject, eventdata, handles)
+
+cp(1,:) = [eventdata.IntersectionPoint(1), eventdata.IntersectionPoint(2)];
+
+Data = handles.InVar.Data;
+ivIdx = handles.InVar.ivIdx;
+
+WaveNumPosRm = find(Data.Time_D(ivIdx.Ps1_D)<cp(1));
+WaveNumNegRm = find(Data.Time_D(ivIdx.Ne1_D)>cp(1));
+
+if ~isempty(WaveNumPosRm) && ~isempty(WaveNumNegRm)
+
+    % find the common number. the last EDP that is smaller then
+    WavePk = find(WaveNumPosRm==WaveNumNegRm(1));
+
+    if ~isempty(WavePk)
+
+        handles.Cycle = WavePk;
+
+        if WavePk == 1
+            set(handles.CyclePlus,  'Enable', 'on');
+            set(handles.CycleMinus, 'Enable', 'off');
+        elseif WavePk == handles.CycMx
+            set(handles.CyclePlus,  'Enable', 'off');
+            set(handles.CycleMinus, 'Enable', 'on');
+        else
+            set(handles.CyclePlus,  'Enable', 'on');
+            set(handles.CycleMinus, 'Enable', 'on');
+        end
+
+        set(handles.CycleInd, 'String', ['Cycle #' num2str(handles.Cycle, ...
+            '%02i')]);
+
+        Data = handles.InVar.Data;
+        Plot = handles.InVar.Plot;
+        ivSeg = handles.InVar.ivSeg;
+        FitT = handles.InVar.FitT;
+
+        [handles] = takeuchi_plot_single (Data, ivSeg, FitT, Plot, handles);
+
+        % update global handles
+        guidata(hObject,handles);
+
+    end
+end
+
+end
+
+function [handles] = open_all_plots (Data, ivSeg, Fit, Plot, handles);
+
+handles.figure2 = figure ('Name', 'Takeuchi All Pressure Waveforms',...
+    'Units', 'characters',...
+    'Position', [30 35 140 30],...
+    'NumberTitle', 'off', ...
+    'MenuBar', 'none',...
+    'Color', [0.94 0.94 0.94],...
+    'Tag', 'FAllPlots');
+
+h = axes ('Position', [0.1 0.12 0.85 0.80]);
+
+handles = takeuchi_plot_all (Data, ivSeg, Fit, Plot, handles);
+
+end
+
+function [handles] = takeuchi_plot_all (Data, ivSeg, Fit, Plot, handles);
+
+axes(handles.figure2.CurrentAxes);
+
+h = plot(Data.Time_D,Data.Pres_D,'b', ...
+         Plot.iv1PlotTime,Plot.iv1PlotPres,'ro');
+set(h, 'HitTest', 'off');
+
+set(handles.figure2.CurrentAxes,'ButtonDownFcn', ...
+    @(hObject, eventdata)SubGraphCallback(hObject, eventdata, handles));
+set(handles.figure2.CurrentAxes,'fontsize',12);
+
+xlabel('Time [s]','FontSize',12);
+ylabel('Pressure [mmHg]','FontSize',12);
+
+hold on;
+
+mystp = Data.time_step/2;
+mysz = length(ivSeg.iv1Time);
+PmaxT = zeros(mysz,1);
+
+% Attain the sinusoid fit for all points (so Pmax can be visualized
+for i = 1:mysz
+
+    % obtain the range of time of each peak, then normalize to zero
+    FitSineTime = Data.Time_D(ivSeg.iv1Time(i).PosIso(1,1)):mystp: ...
+        Data.Time_D(ivSeg.iv1Time(i).NegIso(end,1));
+
+    % plug into Naeiji equation that was just solved for; normalize range
+    % to start at one (as was done in fitting).
+    FitSinePres = Fit.RCoef(i,1) + Fit.RCoef(i,2)*sin(Fit.RCoef(i,3)* ...
+      (FitSineTime-FitSineTime(1)) + Fit.RCoef(i,4));
+
+    % find time point corresponding to Pmax
+    [~, Idx] = min(abs(FitSinePres-Fit.PIsoMax(i)));
+
+    PmaxT(i) = FitSineTime(Idx);
+
+    plot(FitSineTime, FitSinePres, 'k--', PmaxT(i), Fit.PIsoMax(i), 'go');
+    hold on;
+end
+
+% check the range of pressure values of Pmax. if the max p_max value is
+% over 450, rescale y axis to (0, 300), so individual waveforms can be seen
+ylim([0, Inf]);
+if max(Fit.PIsoMax) > 450
+    ylim([0, 300]);
+end
 
 box on;
 grid on;

@@ -24,7 +24,7 @@ function varargout = GUI_FitKind (varargin)
 
 % Edit the above text to modify the response to help GUI_FitKind
 
-% Last Modified by GUIDE v2.5 22-Sep-2017 20:29:09
+% Last Modified by GUIDE v2.5 23-Sep-2017 11:44:48
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -88,7 +88,8 @@ handles.OutVar.Exit = 'good';
 handles.UNDO.Res = [];
 
 % plot pressure, sinusoid fits
-[handles] = gui_kind_plot (Data, ivIdx, ivSeg, FitK, Plot, handles);
+[handles] = kind_plot_single (Data, ivIdx, ivSeg, FitK, Plot, handles);
+[handles] = open_all_plots (Data, ivIdx, ivSeg, FitK, Plot, handles);
 
 % Update handles.
 guidata(hObject, handles);
@@ -98,11 +99,11 @@ uiwait(handles.figure1);
 end
 
 % function that executes when user clicks on graph
-function GraphCallBack(hObject, eventdata, handles)
+function MainGraphCallback(hObject, eventdata, handles)
 
 % get the current point
 cp(1,:) = [eventdata.IntersectionPoint(1), eventdata.IntersectionPoint(2)];
-disp('GUI_FitKind>GraphCallBack:');
+disp('GUI_FitKind>MainGraphCallback:');
 disp(['    Time:     ',num2str(cp(1))]);
 disp(['    Pressure: ',num2str(cp(2))]);
 
@@ -146,7 +147,7 @@ ivSeg = handles.InVar.ivSeg;
 FitK = handles.InVar.FitK;
 
 % plot pressure, sinusoid fits, update indicator
-[handles] = gui_kind_plot (Data, ivIdx, ivSeg, FitK, Plot, handles);
+[handles] = kind_plot_single (Data, ivIdx, ivSeg, FitK, Plot, handles);
 set(handles.CycleInd, 'String', ['Cycle #' num2str(handles.Cycle,'%02i')]);
 
 % Update handles.
@@ -177,7 +178,7 @@ ivSeg = handles.InVar.ivSeg;
 FitK = handles.InVar.FitK;
 
 % plot pressure, sinusoid fits, update indicator
-[handles] = gui_kind_plot (Data, ivIdx, ivSeg, FitK, Plot, handles);
+[handles] = kind_plot_single (Data, ivIdx, ivSeg, FitK, Plot, handles);
 set(handles.CycleInd, 'String', ['Cycle #' num2str(handles.Cycle,'%02i')]);
 
 % Update handles.
@@ -260,7 +261,7 @@ end
 % Plot the results
 Data = handles.InVar.Data;
 Plot = handles.InVar.Plot;
-[handles] = gui_kind_plot (Data, ivIdx, ivSeg, FitK, Plot, handles);
+[handles] = kind_plot_single (Data, ivIdx, ivSeg, FitK, Plot, handles);
 
 % update global handles & set cursor back to normal
 guidata(hObject,handles);
@@ -275,6 +276,8 @@ function Done_Callback(~, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+close(handles.figure2);
+
 % call on uiresume so output function executes
 uiresume(handles.figure1);
 end
@@ -284,6 +287,8 @@ function figure1_CloseRequestFcn(hObject, ~, handles)
 % hObject    handle to figure1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+close(handles.figure2);
 
 if isequal(get(hObject, 'waitstatus'), 'waiting')
     % The GUI is still in UIWAIT, call UIRESUME
@@ -305,6 +310,8 @@ function Exit_Callback(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+close(handles.figure2);
+
 % keep in mind when the exit button is pressed, the current
 % patient, i, will not be evaluated
                 
@@ -323,6 +330,8 @@ function Discard_Callback(hObject, ~, handles)
 % hObject    handle to Discard (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+close(handles.figure2);
 
 % set outputs to true, indicating Discard button
 handles.OutVar.Exit = true;
@@ -370,7 +379,7 @@ if ~isempty(handles.UNDO.Res)
     ivIdx = handles.InVar.ivIdx;
     ivSeg = handles.InVar.ivSeg;
 
-    [handles] = gui_kind_plot (Data, ivIdx, ivSeg, FitK, Plot, handles);
+    [handles] = kind_plot_single (Data, ivIdx, ivSeg, FitK, Plot, handles);
 
     % update global handles
     guidata(hObject,handles);
@@ -387,7 +396,7 @@ set(handles.figure1, 'pointer', 'arrow');
 end
 
 % --- Function that updates the main plot
-function [handles] = gui_kind_plot (Data, ivIdx, ivSeg, Fit, Plot, handles);
+function [handles] = kind_plot_single (Data, ivIdx, ivSeg, Fit, Plot, handles);
 
 cycid = handles.Cycle;
 
@@ -398,7 +407,7 @@ h = plot(Data.Time_D,Data.Pres_D,'b', ...
 set(h, 'HitTest', 'off');
 
 set(handles.pressure_axes,'ButtonDownFcn', ...
-    @(hObject, eventdata)GraphCallBack(hObject, eventdata, handles));
+    @(hObject, eventdata)MainGraphCallback(hObject, eventdata, handles));
 set(handles.pressure_axes,'fontsize',12);
 
 title('Kind Sinusoidal Fitting','FontSize',16);
@@ -439,6 +448,148 @@ end
 
 legend('Pressure', 'Isovolumic Points', 'Sinusoid Fit', 'Pmax', ...
     'Location','southoutside', 'Orientation', 'horizontal');
+
+box on;
+grid on;
+hold off;
+
+end
+
+% --- Executes on button press in AllPlotsGraph.
+function AllPlotsGraph_Callback(hObject, ~, handles)
+% hObject    handle to AllPlotsGraph (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Extract Data, Indices/Values, and Fit Segments from passed structures.
+Data = handles.InVar.Data;
+Plot = handles.InVar.Plot;
+ivIdx = handles.InVar.ivIdx;
+ivSeg = handles.InVar.ivSeg;
+FitK = handles.InVar.FitK;
+
+% Create all pressures figure
+handles = open_all_plots (Data, ivIdx, ivSeg, FitK, Plot, handles);
+
+% Update handles.
+guidata(hObject, handles);
+
+end
+
+function SubGraphCallback(hObject, eventdata, handles)
+
+cp(1,:) = [eventdata.IntersectionPoint(1), eventdata.IntersectionPoint(2)];
+
+Data = handles.InVar.Data;
+ivIdx = handles.InVar.ivIdx;
+
+WaveNumPosRm = find(Data.Time_D(ivIdx.Ps1_D)<cp(1));
+WaveNumNegRm = find(Data.Time_D(ivIdx.Ne1_D)>cp(1));
+
+if ~isempty(WaveNumPosRm) && ~isempty(WaveNumNegRm)
+
+    % find the common number. the last EDP that is smaller then
+    WavePk = find(WaveNumPosRm==WaveNumNegRm(1));
+
+    if ~isempty(WavePk)
+
+        handles.Cycle = WavePk;
+
+        if WavePk == 1
+            set(handles.CyclePlus,  'Enable', 'on');
+            set(handles.CycleMinus, 'Enable', 'off');
+        elseif WavePk == handles.CycMx
+            set(handles.CyclePlus,  'Enable', 'off');
+            set(handles.CycleMinus, 'Enable', 'on');
+        else
+            set(handles.CyclePlus,  'Enable', 'on');
+            set(handles.CycleMinus, 'Enable', 'on');
+        end
+
+        set(handles.CycleInd, 'String', ['Cycle #' num2str(handles.Cycle, ...
+            '%02i')]);
+
+        Data = handles.InVar.Data;
+        Plot = handles.InVar.Plot;
+        ivSeg = handles.InVar.ivSeg;
+        ivIdx = handles.InVar.ivIdx;
+        FitK = handles.InVar.FitK;
+
+        [handles] = kind_plot_single (Data, ivIdx, ivSeg, FitK, Plot, handles);
+
+        % update global handles
+        guidata(hObject,handles);
+
+    end
+end
+
+end
+
+function [handles] = open_all_plots (Data, ivIdx, ivSeg, Fit, Plot, handles);
+
+handles.figure2 = figure ('Name', 'Kind All Pressure Waveforms',...
+    'Units', 'characters',...
+    'Position', [30 35 140 30],...
+    'NumberTitle', 'off', ...
+    'MenuBar', 'none',...
+    'Color', [0.94 0.94 0.94],...
+    'Tag', 'FAllPlots');
+
+h = axes ('Position', [0.1 0.12 0.85 0.80]);
+
+handles = kind_plot_all (Data, ivIdx, ivSeg, Fit, Plot, handles);
+
+end
+
+
+function [handles] = kind_plot_all (Data, ivIdx, ivSeg, Fit, Plot, handles);
+
+axes(handles.figure2.CurrentAxes);
+
+h = plot(Data.Time_D,Data.Pres_D,'b', ...
+         Plot.iv2PlotTime,Plot.iv2PlotPres,'ro');
+set(h, 'HitTest', 'off');
+
+set(handles.figure2.CurrentAxes,'ButtonDownFcn', ...
+    @(hObject, eventdata)SubGraphCallback(hObject, eventdata, handles));
+set(handles.figure2.CurrentAxes,'fontsize',12);
+
+xlabel('Time [s]','FontSize',14);
+ylabel('Pressure [mmHg]','FontSize',14);
+
+hold on;
+
+mystp = Data.time_step/2;
+mysz = length(ivSeg.iv2Time);
+PmaxT = zeros(mysz,1);
+
+% Attain the sinusoid fit for all points (so Pmax can be visualized
+for i = 1:mysz
+
+    % obtain the range of time of each peak, then normalize to zero
+    FitSineTime = Data.Time_D(ivSeg.iv2Time(i).PosIso(1,1)):mystp: ...
+        Data.Time_D(ivSeg.iv2Time(i).NegIso(end,1))+Plot.iv2TShift(i);
+
+    % plug into Kind equation
+    dPtimes = [Data.Time(ivIdx.dPmax2(i)) Data.Time(ivIdx.dPmin2(i)) ...
+        Data.time_per];
+    FitSinePres = data_kind (Fit.RCoef(i,:), FitSineTime, dPtimes);
+
+    % find time point corresponding to Pmax
+    [~, Idx] = min(abs(FitSinePres-Fit.RCoef(i,1)));
+
+    PmaxT(i) = FitSineTime(Idx);
+
+    plot(FitSineTime, FitSinePres, 'k--', PmaxT(i), Fit.RCoef(i,1), 'go');
+    hold on;
+end
+
+% check the range of pressure values of Pmax. if the max p_max value is
+% over 450, rescale y axis to (0, 300), so individual waveforms can be seen
+ylim([0, Inf]);
+if max(Fit.RCoef(:,1)) > 450
+    ylim([0, 300]);
+end
 
 box on;
 grid on;
