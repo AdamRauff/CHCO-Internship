@@ -107,8 +107,11 @@ for i = 1:2
         
 end
 
+RunT = logical(length(ivIdx.Ps1));
+RunK = logical(length(ivIdx.Ps2));
+
 % if there were no good pressure waveforms left, then skip patient
-if isempty(ivIdx.Ps1)
+if ~RunT & ~RunK
 
     % set all output variables to true, return to runAll
     Res, Pat = deal(true);
@@ -121,83 +124,86 @@ end
 
 [ivSeg, ivIdx] = data_isoseg (false, Data, ivIdx);
 
-%% (8) Get initial fits for display/check in GUIs
-
-% frequency is the conversion to angular frequency 2*pi/T
-% multiplied by the number of waves found over the time period
-% ICs structure for first pass - enables individual computation of ICs
-ICS.Freq_o = double(((2*pi)*Res.TotNumWaves)/(Data.time_end)); % OLD METHOD
-ICS.Freq = 2*pi/Data.time_per;
-ICS.Pres = Data.Pres;
-ICS.dPmaxIdx = ivIdx.dPmax1;
-ICS.dPminIdx = ivIdx.dPmin1;
-
-[FitT, ivSeg, PlotT] = fit_takeuchi (ivSeg, Data, ICS);
-[FitO] = fit_takeuchi_o (ivSeg, Data, ICS);
-[FitK, PlotK] = fit_kind (ivSeg, ivIdx, Data, mean(FitT.PIsoMax));
-
-%% (9) Visualize / check the fits
-% Structures for unchaning data and for each fit type
-GUIDat.ivIdx = ivIdx; GUIDat.ivVal = ivVal; GUIDat.ivSeg = ivSeg;
-GUIDat.Data = Data;
-
-% Call the Takeuchi Fit Check GUI
-TStr.Plot = PlotT; TStr.FitT = FitT; TStr.FitO = FitO;
-RetT = GUI_FitTakeuchi (TStr, GUIDat);
-[Res, Ret] = interpret_str (RetT, 'GUI_FitTakeuchi', FileName, Res);
-if Ret
-    return;
-end
-
-% Call the Kind Fit Check GUI
-FitK.MeanTP = mean(RetT.FitT.PIsoMax);
-KStr.Plot = PlotK; KStr.FitK = FitK;
-RetK = GUI_FitKind (KStr, GUIDat);
-[Res, Ret] = interpret_str (RetK, 'GUI_FitKind', FileName, Res);
-if Ret
-    return;
-end
-
-RetStr = RetT;
-RetStr.FitK = RetK.FitK;
-
-%% (10) cleanup, arrange data to return to runAll
-% extract Pmax and the list of well fitted curves from the structure
-% that is returned from GUI
-BadCycT = RetStr.FitT.BadCyc;
-BadCycO = RetStr.FitO.BadCyc;
-BadCycK = RetStr.FitK.BadCyc;
-
-% Initialize return structure to contain ALL fitting data.
-Res.FitT = RetStr.FitT;
-Res.FitO = RetStr.FitO;
-Res.FitK = RetStr.FitK;
+% Get Pes processing done prior to fits based on accepted segmentations
 Res.Pes  = unique([Data.Pes1' Data.Pes2']);
-    
-% calculate the number of peaks that were evaluated
-Res.numPeaksT = sum(~BadCycT);
-Res.numPeaksO = sum(~BadCycO);
-Res.numPeaksK = sum(~BadCycK);
-
-%OKAY! here are the final values and we can FINALLY calculate VVCR.
-GOOD_PmxT = RetStr.FitT.PIsoMax(BadCycT~=1);
-GOOD_PmxO = RetStr.FitO.PIsoMax(BadCycO~=1);
-GOOD_PmxK = RetStr.FitK.RCoef(BadCycK~=1,1);
-
-% mean, std Pes and P_max for the waves that fit well
 Res = compute_MeanStd (Res, Res.Pes, 'Pes'); 
-Res = compute_MeanStd (Res, GOOD_PmxT, 'PmaxT');
-Res = compute_MeanStd (Res, GOOD_PmxO, 'PmaxO');
-Res = compute_MeanStd (Res, GOOD_PmxK, 'PmaxK');
 
-% Compute UT, KSH VVCR (inverse and normal)
-Res = compute_VVCR (Res, Data.Pes1(BadCycT~=1), GOOD_PmxT, 'T');
-Res = compute_VVCR (Res, Data.Pes1(BadCycO~=1), GOOD_PmxO, 'O');
-Res = compute_VVCR (Res, Data.Pes2(BadCycK~=1), GOOD_PmxK, 'K');
+%% (8) Perform Takeuchi fit(s), put up check GUI, and compute return quantities
+if RunT
+    % frequency is the conversion to angular frequency 2*pi/T
+    % multiplied by the number of waves found over the time period
+    % ICs structure for first pass - enables individual computation of ICs
+    ICS.Freq_o = double(((2*pi)*Res.TotNumWaves)/(Data.time_end)); % OLD METHOD
+    ICS.Freq = 2*pi/Data.time_per;
+    ICS.Pres = Data.Pres;
+    ICS.dPmaxIdx = ivIdx.dPmax1;
+    ICS.dPminIdx = ivIdx.dPmin1;
 
-% Were "Vanderpool Points" added?
-Res.VandT = sum(RetStr.FitT.VCyc);
-Res.VandO = sum(RetStr.FitO.VCyc);
+    [FitT, ivSeg, PlotT] = fit_takeuchi (ivSeg, Data, ICS);
+    [FitO] = fit_takeuchi_o (ivSeg, Data, ICS);
+
+    % Call the Takeuchi Fit Check GUI
+    TStr.Plot = PlotT; TStr.FitT = FitT; TStr.FitO = FitO;
+    RetT = GUI_FitTakeuchi (TStr, Data, ivIdx, ivVal, ivSeg);
+    [Res, Ret] = interpret_str (RetT, 'GUI_FitTakeuchi', FileName, Res);
+    if Ret
+        return;
+    end
+
+    BadCycT = RetT.FitT.BadCyc;
+    BadCycO = RetT.FitO.BadCyc;
+
+    Res.FitT = RetT.FitT;
+    Res.FitO = RetT.FitO;
+    Res.numPeaksT = sum(~BadCycT);
+    Res.numPeaksO = sum(~BadCycO);
+
+    GOOD_PmxT = RetT.FitT.PIsoMax(BadCycT~=1);
+    GOOD_PmxO = RetT.FitO.PIsoMax(BadCycO~=1);
+    Res = compute_MeanStd (Res, GOOD_PmxT, 'PmaxT');
+    Res = compute_MeanStd (Res, GOOD_PmxO, 'PmaxO');
+    Res = compute_VVCR (Res, Data.Pes1(BadCycT~=1), GOOD_PmxT, 'T');
+    Res = compute_VVCR (Res, Data.Pes1(BadCycO~=1), GOOD_PmxO, 'O');
+    Res.VandT = sum(RetT.FitT.VCyc);
+    Res.VandO = sum(RetT.FitO.VCyc);
+
+else
+
+    [Res.numPeaksT, Res.numPeaksO, Res.PmaxT_Mean, Res.PmaxT_StD, ...
+    Res.PmaxO_Mean, Res.PmaxO_StD, Res.VVCRiT_Mean, Res.VVCRiT_StD, ...
+    Res.VVCRnT_Mean, Res.VVCRnT_StD, Res.VVCRiO_Mean, Res.VVCRiO_StD, ...
+    Res.VVCRnO_Mean, Res.VVCRnO_St] = deal(0); 
+
+end
+
+%% (9) Perform Kind fit, put up check GUI, and compute return quantities
+if RunK
+    [FitK, PlotK] = fit_kind (ivSeg, ivIdx, Data, mean(FitT.PIsoMax));
+
+    % Call the Kind Fit Check GUI
+    FitK.MeanTP = mean(RetT.FitT.PIsoMax);
+    KStr.Plot = PlotK; KStr.FitK = FitK;
+    RetK = GUI_FitKind (KStr, Data, ivIdx, ivVal, ivSeg);
+    [Res, Ret] = interpret_str (RetK, 'GUI_FitKind', FileName, Res);
+    if Ret
+        return;
+    end
+
+    BadCycK = RetK.FitK.BadCyc;
+
+    Res.FitK = RetK.FitK;
+    Res.numPeaksK = sum(~BadCycK);
+
+    GOOD_PmxK = RetK.FitK.RCoef(BadCycK~=1,1);
+    Res = compute_MeanStd (Res, GOOD_PmxK, 'PmaxK');
+    Res = compute_VVCR (Res, Data.Pes2(BadCycK~=1), GOOD_PmxK, 'K');
+
+else
+
+    [Res.numPeaksK, Res.PmaxK_Mean, Res.PmaxK_StD, Res.VVCRiK_Mean, ...
+    Res.VVCRiK_StD, Res.VVCRnK_Mean, Res.VVCRnK_StD] = deal(0); 
+
+end
 
 % END OF VVCR_MULTIH
 end
@@ -234,7 +240,6 @@ else
 end
 
 end
-
 
 function [Out] = compute_MeanStd (In, Var, nam)
 % Compute Mean & StD of input value, given a name, put into Out structure.

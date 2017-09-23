@@ -60,14 +60,13 @@ handles.output = hObject;
 % set the input variable in the global handles environment
 % passed as PeakStruct from VVCR_* script
 handles.InVar = cell2mat(varargin(1));
-GUIDat = cell2mat(varargin(2));
-handles.InVar.Data  = GUIDat.Data;
-handles.InVar.ivIdx = GUIDat.ivIdx;
-handles.InVar.ivVal = GUIDat.ivVal;
-handles.InVar.ivSeg = GUIDat.ivSeg;
+handles.InVar.Data  = cell2mat(varargin(2));
+handles.InVar.ivIdx = cell2mat(varargin(3));
+handles.InVar.ivVal = cell2mat(varargin(4));
+handles.InVar.ivSeg = cell2mat(varargin(5));
 
 handles.Cycle = 1;
-handles.CycMx = length(GUIDat.ivIdx.Ps1);
+handles.CycMx = length(handles.InVar.ivIdx.Ps1);
 set(handles.CycleMinus, 'Enable', 'off');
 
 % Extract Data, Indices/Values, and Fit Segments from passed structures.
