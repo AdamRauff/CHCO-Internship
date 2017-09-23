@@ -348,8 +348,8 @@ set(handles.pressure_axes,'ButtonDownFcn', ...
     @(hObject, eventdata)GraphCallBack(hObject, eventdata, handles));
 set(handles.pressure_axes,'fontsize',11);
 
-xlabel('Time [s]','FontSize',18);
-ylabel('Pressue [mmHg]','FontSize',18);
+xlabel('Time [s]','FontSize',12);
+ylabel('Pressue [mmHg]','FontSize',14);
 legend('Pressure', 'dP/dt Max', 'dP/dt Min', 'Location', 'northoutside', ...
     'Orientation', 'horizontal');
 
@@ -378,9 +378,14 @@ set(handles.dpdt_axes, 'ButtonDownFcn', ...
     @(hObject, eventdata)GraphCallBack(hObject, eventdata, handles));
 set(handles.dpdt_axes,'fontsize',11);
 
-ylabel('dP/dt [mmHg/s]','FontSize',18);
-legend('dP/dt', 'Maxima', 'Minima', 'Location', 'northoutside', ...
-    'Orientation', 'horizontal');
+ylabel('dP/dt [mmHg/s]','FontSize',14);
+if isfield(Data, 'OrigdPdt')
+    legend('Unfiltered dP/dt', 'Filtered dP/dt', 'Location', 'northoutside', ...
+        'Orientation', 'horizontal');
+else
+    legend('Unfiltered dP/dt', 'Location', 'northoutside', ...
+        'Orientation', 'horizontal');
+end
 
 % Check max dP/dt, rescale if it's crazy (noise in data)
 if isfield(Data, 'OrigdPdt')
