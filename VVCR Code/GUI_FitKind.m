@@ -498,6 +498,7 @@ guidata(hObject, handles);
 
 end
 
+% --- Executes when the plot is pressed in figure2
 function SubGraphCallback(hObject, eventdata, handles)
 
 cp(1,:) = [eventdata.IntersectionPoint(1), eventdata.IntersectionPoint(2)];
@@ -548,23 +549,34 @@ end
 
 end
 
+% --- Creates or brings up figure2
 function [handles] = open_all_plots (Data, ivIdx, ivSeg, Fit, Plot, handles);
 
-handles.figure2 = figure ('Name', 'Kind All Pressure Waveforms',...
-    'Units', 'characters',...
-    'Position', [30 35 140 30],...
-    'NumberTitle', 'off', ...
-    'MenuBar', 'none',...
-    'Color', [0.94 0.94 0.94],...
-    'Tag', 'FAllPlots');
+f2h = findall(0, 'tag', 'FAllPlots');
 
-h = axes ('Position', [0.1 0.12 0.85 0.80]);
+if isempty(f2h)
 
-handles = kind_plot_all (Data, ivIdx, ivSeg, Fit, Plot, handles);
+    handles.figure2 = figure ('Name', 'Kind All Pressure Waveforms',...
+        'Units', 'characters',...
+        'Position', [30 35 140 30],...
+        'NumberTitle', 'off', ...
+        'MenuBar', 'none',...
+        'Color', [0.94 0.94 0.94],...
+        'Tag', 'FAllPlots');
+
+    h = axes ('Position', [0.1 0.12 0.85 0.80]);
+
+    handles = kind_plot_all (Data, ivIdx, ivSeg, Fit, Plot, handles);
+
+else
+ 
+    figure(f2h);
 
 end
 
+end
 
+% --- Pushes data to axes in figure2
 function [handles] = kind_plot_all (Data, ivIdx, ivSeg, Fit, Plot, handles);
 
 axes(handles.figure2.CurrentAxes);
@@ -629,6 +641,7 @@ hold off;
 
 end
 
+% --- Removes points from the Plot stucture
 function [Plot] = rm_iv_points (PlotIn, Data, ivIdx, rmIdx);
 
 Plot.iv2TShift = PlotIn.iv2TShift;
