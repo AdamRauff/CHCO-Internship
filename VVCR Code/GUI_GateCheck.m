@@ -59,7 +59,7 @@ handles.output = hObject;
 
 % set the input variable in the global handles environment
 handles.InVar = cell2mat(varargin);
-handles.OutVar = false;
+handles.InVar.Exit = 'good';
 
 % Extract variables from structure for a more clear workflow
 Data = handles.InVar.Data;
@@ -277,7 +277,7 @@ function Exit_Callback(hObject, ~, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % set 1 output to false
-handles.InVar.TotNumWaves = false;
+handles.InVar.Exit = false;
 
 % update handles globally
 guidata(hObject, handles)
@@ -292,7 +292,7 @@ function Discard_Callback(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-handles.InVar.TotNumWaves = true;
+handles.InVar.Exit = true;
 
 % update handles globally
 guidata(hObject, handles)

@@ -24,7 +24,7 @@ function varargout = GUI_FitTakeuchi (varargin)
 
 % Edit the above text to modify the response to help GUI_FitTakeuchi
 
-% Last Modified by GUIDE v2.5 19-Sep-2017 16:49:47
+% Last Modified by GUIDE v2.5 22-Sep-2017 15:27:19
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -66,6 +66,10 @@ handles.InVar.ivIdx = GUIDat.ivIdx;
 handles.InVar.ivVal = GUIDat.ivVal;
 handles.InVar.ivSeg = GUIDat.ivSeg;
 
+handles.Cycle = 1;
+handles.CycMx = length(GUIDat.ivIdx.Ps1);
+set(handles.CycleMinus, 'Enable', 'off');
+
 % Extract Data, Indices/Values, and Fit Segments from passed structures.
 Data = handles.InVar.Data;
 Plot = handles.InVar.Plot;
@@ -73,20 +77,13 @@ ivVal = handles.InVar.ivVal;
 ivSeg = handles.InVar.ivSeg;
 FitT = handles.InVar.FitT;
 
-% Initialize UNDO structure.
-handles.UNDO.FitT = [];
-
 % store first fit output into output structure.
-Res.FitT = handles.InVar.FitT;
-Res.FitO = handles.InVar.FitO;
-handles.OutVar = Res;
+handles.OutVar.FitT = handles.InVar.FitT;
+handles.OutVar.FitO = handles.InVar.FitO;
+handles.OutVar.Exit = 'Good';
 
-% set editable text boxes with ICs
-IC = FitT.InitIC;
-set(handles.Mean_txt, 'String',num2str(IC(1)));
-set(handles.Amp_txt, 'String',num2str(IC(2)));
-set(handles.Freq_txt, 'String',num2str(IC(3)));
-set(handles.Phase_txt, 'String',num2str(IC(4)));
+% Initialize UNDO structure.
+handles.UNDO.Res = [];
 
 % plot pressure, sinusoid fits
 [handles] = gui_takeuchi_plot (Data, ivSeg, FitT, Plot, handles);
@@ -101,94 +98,11 @@ end
 % function that executes when user clicks on graph
 function GraphCallBack(hObject, eventdata, handles)
 
-%Make the cusor a spinning wheel so user is aware program is busy
-set(handles.figure1, 'pointer', 'watch');
-drawnow;
-
-% obtain variables from InVar Struct for a clear workflow
-Data = handles.InVar.Data;
-Plot = handles.InVar.Plot;
-ivIdx = handles.InVar.ivIdx;
-ivVal = handles.InVar.ivVal;
-ivSeg = handles.InVar.ivSeg;
-
-% store the current structures in UNDO structure for the undo button.
-handles.UNDO.Res  = handles.OutVar;
-handles.UNDO.Plot = Plot;
-handles.UNDO.ivIdx = ivIdx;
-handles.UNDO.ivVal = ivVal;
-handles.UNDO.ivSeg = ivSeg;
-       
 % get the current point
 cp(1,:) = [eventdata.IntersectionPoint(1), eventdata.IntersectionPoint(2)];
 disp('GUI_FitTakeuchi>GraphCallBack:');
 disp(['    Time:     ',num2str(cp(1))]);
 disp(['    Pressure: ',num2str(cp(2))]);
-
-% find which waveform the interval was within. Note the click must be
-% between EDP and Negative EDP. the following two lines find (1) all EDP
-% times that are smaller than the time point of click (2) all negative EDP
-% times that are greater than the time point of click.
-WaveNumPosRm = find(Data.Time_D(ivIdx.Ps1_D)<cp(1));
-WaveNumNegRm = find(Data.Time_D(ivIdx.Ne1_D)>cp(1));
-
-if ~isempty(WaveNumPosRm) && ~isempty(WaveNumNegRm)
-    
-    % find the common number. the last EDP that is smaller then 
-    WaveRm = find(WaveNumPosRm==WaveNumNegRm(1));
-
-    if ~isempty(WaveRm)
-        disp(['    Wave: ', num2str(WaveRm), ' is being removed']);
-        
-        % Erase wave from (1 - Takeuchi) ivIdx, ivVal structures. 
-        ivIdx.Ps1(WaveRm)   = [];
-        ivIdx.Ne1(WaveRm)   = [];
-        ivIdx.Ps1_D(WaveRm) = [];
-        ivIdx.Ne1_D(WaveRm) = [];
-        ivVal.Ps1(WaveRm)   = [];
-        ivVal.Ne1(WaveRm)   = [];
-
-        ivIdx.dPmax1(WaveRm) = [];
-        ivIdx.dPmin1(WaveRm) = [];
-        ivVal.dPmax1(WaveRm) = [];
-        ivVal.dPmin1(WaveRm) = [];
-
-        % Store changes
-        handles.InVar.ivIdx = ivIdx;
-        handles.InVar.ivVal = ivVal;
-
-        % obtain current ICs
-        Mea = str2double(get(handles.Mean_txt,'String'));
-        Amp = str2double(get(handles.Amp_txt,'String'));
-        Fre = str2double(get(handles.Freq_txt,'String'));
-        Pha = str2double(get(handles.Phase_txt,'String'));
-
-        % Recompute the segments for this new set of IV indicies
-        [ivSeg] = data_isoseg (true, Data, ivIdx);
-
-        ICS = [Mea Amp Fre Pha];
-        [FitT, ivSeg, Plot] = fit_takeuchi (ivSeg, Data, ICS);
-        [FitO] = fit_takeuchi_o (ivSeg, Data, ICS);
-        
-        % update global handles from isovol_returned values. If the Vanderpool
-        % method isn't tripped, then ivSeg and Plot haven't changed, so this
-        % is a just-in-case...
-        Res.FitT = FitT;
-        Res.FitO = FitO;
-        handles.OutVar = Res;
-
-        handles.InVar.ivSeg = ivSeg;
-        handles.IvVar.Plot  = Plot;
-
-        % Plot the results
-        [handles] = gui_takeuchi_plot (Data, ivSeg, FitT, Plot, handles);
-
-    end
-end
-
-% update global handles & set cursor back to normal
-guidata(hObject,handles);
-set(handles.figure1, 'pointer', 'arrow');
 
 end
 
@@ -207,9 +121,144 @@ delete(hObject);
 
 end
 
-% --- Executes on button press in Next.
-function Next_Callback(~, ~, handles)
-% hObject    handle to Next (see GCBO)
+% --- Executes on button press in CyclePlus.
+function CyclePlus_Callback(hObject, eventdata, handles)
+% hObject    handle to CyclePlus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+handles.Cycle = handles.Cycle + 1;
+if handles.Cycle > 1
+    set(handles.CycleMinus, 'Enable', 'on');
+end
+if handles.Cycle == handles.CycMx
+    set(handles.CyclePlus, 'Enable', 'off');
+end
+set(handles.CycleInd, 'String', ['Cycle #' num2str(handles.Cycle,'%02i')]);
+
+% Extract Data, Indices/Values, and Fit Segments from passed structures.
+Data = handles.InVar.Data;
+Plot = handles.InVar.Plot;
+ivSeg = handles.InVar.ivSeg;
+FitT = handles.InVar.FitT;
+
+% plot pressure, sinusoid fits, update indicator
+[handles] = gui_takeuchi_plot (Data, ivSeg, FitT, Plot, handles);
+set(handles.CycleInd, 'String', ['Cycle #' num2str(handles.Cycle,'%02i')]);
+
+% Update handles.
+guidata(hObject, handles);
+
+end
+
+
+% --- Executes on button press in CycleMinus.
+function CycleMinus_Callback(hObject, eventdata, handles)
+% hObject    handle to CycleMinus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+handles.Cycle = handles.Cycle - 1;
+if handles.Cycle == 1
+    set(handles.CycleMinus, 'Enable', 'off');
+end
+if handles.Cycle < handles.CycMx
+    set(handles.CyclePlus, 'Enable', 'on');
+end
+
+% Extract Data, Indices/Values, and Fit Segments from passed structures.
+Data = handles.InVar.Data;
+Plot = handles.InVar.Plot;
+ivSeg = handles.InVar.ivSeg;
+FitT = handles.InVar.FitT;
+
+% plot pressure, sinusoid fits, update indicator
+[handles] = gui_takeuchi_plot (Data, ivSeg, FitT, Plot, handles);
+set(handles.CycleInd, 'String', ['Cycle #' num2str(handles.Cycle,'%02i')]);
+
+% Update handles.
+guidata(hObject, handles);
+
+end
+
+% --- Executes on button press in Remove.
+function Remove_Callback(hObject, eventdata, handles)
+% hObject    handle to Remove (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+%Make the cusor a spinning wheel so user is aware program is busy
+set(handles.figure1, 'pointer', 'watch');
+drawnow;
+
+% obtain variables from InVar Struct for a clear workflow
+ivIdx = handles.InVar.ivIdx;
+ivVal = handles.InVar.ivVal;
+ivSeg = handles.InVar.ivSeg;
+
+FitT = handles.OutVar.FitT;
+
+% store the current structures in UNDO structure for the undo button.
+handles.UNDO.Res  = handles.OutVar;
+handles.UNDO.ivIdx = ivIdx;
+handles.UNDO.ivVal = ivVal;
+handles.UNDO.ivSeg = ivSeg;
+
+WaveRm = handles.Cycle;
+disp(['GUI_FitTakeuchi>Remove: wave ' num2str(WaveRm, '%02i') ...
+    ' is being removed']);
+
+% Erase wave from (1 - Takeuchi) ivIdx, ivVal structures. 
+ivIdx.Ps1(WaveRm)   = [];
+ivIdx.Ne1(WaveRm)   = [];
+ivIdx.Ps1_D(WaveRm) = [];
+ivIdx.Ne1_D(WaveRm) = [];
+ivVal.Ps1(WaveRm)   = [];
+ivVal.Ne1(WaveRm)   = [];
+
+ivIdx.dPmax1(WaveRm) = [];
+ivIdx.dPmin1(WaveRm) = [];
+ivVal.dPmax1(WaveRm) = [];
+ivVal.dPmin1(WaveRm) = [];
+
+ivSeg.iv1Time(WaveRm) = [];
+ivSeg.iv1Pres(WaveRm) = [];
+
+FitT.Rsq(WaveRm)      = [];
+FitT.RCoef(WaveRm,:)  = [];
+FitT.BadCyc(WaveRm)   = [];
+FitT.PIsoMax(WaveRm)  = [];
+FitT.CycICs(WaveRm,:) = [];
+FitT.VCyc(WaveRm)     = [];
+
+% Store changes
+handles.InVar.ivIdx = ivIdx;
+handles.InVar.ivVal = ivVal;
+handles.InVar.ivSeg = ivSeg;
+
+handles.OutVar.FitT = FitT;
+
+handles.CycMx = handles.CycMx - 1;
+if handles.Cycle > handles.CycMx
+    handles.Cycle = handles.CycMx;
+    set(handles.CycleInd, 'String', ['Cycle #' num2str(handles.Cycle,'%02i')]);
+end
+        
+% Plot the results
+Data = handles.InVar.Data;
+Plot = handles.InVar.Plot;
+[handles] = gui_takeuchi_plot (Data, ivSeg, FitT, Plot, handles);
+
+% update global handles & set cursor back to normal
+guidata(hObject,handles);
+set(handles.figure1, 'pointer', 'arrow');
+
+end
+
+
+% --- Executes on button press in Done.
+function Done_Callback(~, ~, handles)
+% hObject    handle to Done (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
@@ -237,138 +286,6 @@ end
 
 end
 
-% --- Executes during object creation, after setting all properties.
-function Mean_txt_CreateFcn(hObject, ~, ~)
-% hObject    handle to Mean_txt (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-end
-
-function Mean_txt_Callback(hObject, eventdata, handles)
-
-% when user chnages the phase value and presses enter, evoke calculate
-% function
-calculate_Callback(hObject, eventdata, handles);
-
-end
-
-% --- Executes during object creation, after setting all properties.
-function Amp_txt_CreateFcn(hObject, ~, ~)
-% hObject    handle to Amp_txt (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-end
-
-function Amp_txt_Callback(hObject, eventdata, handles)
-
-% when user chnages the phase value and presses enter, evoke calculate
-% function
-calculate_Callback(hObject, eventdata, handles);
-
-end
-
-% --- Executes during object creation, after setting all properties.
-function Freq_txt_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to Freq_txt (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-end
-
-function Freq_txt_Callback(hObject, eventdata, handles)
-
-% when user chnages the phase value and presses enter, evoke calculate
-% function
-calculate_Callback(hObject, eventdata, handles);
-
-end
-
-function Phase_txt_Callback(hObject, eventdata, handles)
-
-% when user chnages the phase value and presses enter, evoke calculate
-% function
-calculate_Callback(hObject, eventdata, handles);
-
-end
-% --- Executes during object creation, after setting all properties.
-function Phase_txt_CreateFcn(hObject, ~, ~)
-% hObject    handle to Phase_txt (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-end
-
-% --- Executes on button press in calculate.
-function calculate_Callback(hObject, ~, handles)
-% hObject    handle to calculate (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-%Make the cusor a spinning wheel so user is aware program is busy
-set(handles.figure1, 'pointer', 'watch');
-drawnow;
-disp('GUI_FitTakeuchi>calculate_Callback:');
-
-% calculate sinusoids based on new ICs!
-Mea = str2double(get(handles.Mean_txt,'String'));
-Amp = str2double(get(handles.Amp_txt,'String'));
-Fre = str2double(get(handles.Freq_txt,'String'));
-Pha = str2double(get(handles.Phase_txt,'String'));
-ICS = [Mea Amp Fre Pha];
-
-% Extract Data, Values, and Fit Segments from passed structures; get fits.
-Data = handles.InVar.Data;
-ivIdx = handles.InVar.ivIdx;
-ivSeg = handles.InVar.ivSeg;
-
-[FitT, ivSeg, Plot] = fit_takeuchi (ivSeg, Data, ICS);
-[FitO] = fit_takeuchi_o (ivSeg, Data, ICS);
-
-% update global handles from isovol_returned values. If the Vanderpool
-% method isn't tripped, then ivSeg and Plot haven't changed, so this
-% is a just-in-case...
-Res.FitT = FitT;
-Res.FitO = FitO;
-handles.OutVar = Res;
-
-handles.InVar.ivSeg = ivSeg;
-handles.IvVar.Plot  = Plot;
-
-ivVal = handles.InVar.ivVal;
-[handles] = gui_takeuchi_plot (Data, ivSeg, FitT, Plot, handles);
-
-% update global handles & set cursor back to normal
-guidata(hObject,handles);
-set(handles.figure1, 'pointer', 'arrow');
-
-end
-
 % --- Executes on button press in Exit.
 function Exit_Callback(hObject, ~, handles)
 % hObject    handle to Exit (see GCBO)
@@ -379,7 +296,7 @@ function Exit_Callback(hObject, ~, handles)
 % patient, i, will not be evaluated
                 
 % set output to false
-handles.OutVar = false;
+handles.OutVar.Exit = false;
 
 % update handles globally
 guidata(hObject, handles);
@@ -395,7 +312,7 @@ function Discard_Callback(hObject, ~, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % set outputs to true, indicating Discard button
-handles.OutVar = true;
+handles.OutVar.Exit = true;
 
 % update handles globally
 guidata(hObject, handles)
@@ -420,19 +337,28 @@ if ~isempty(handles.UNDO.Res)
     disp('GUI_FitTakeuchi>Undo_Callback: Restoring Previous Fit & Plot');
     handles.OutVar = handles.UNDO.Res;
 
-    handles.InVar.Plot  = handles.UNDO.Plot;
     handles.InVar.ivIdx = handles.UNDO.ivIdx;
     handles.InVar.ivVal = handles.UNDO.ivVal;
     handles.InVar.ivSeg = handles.UNDO.ivSeg; 
-    
+
+    % Reset Res indicator (undo only goes one deep)
+    handles.UNDO.Res = [];
+
+    if handles.Cycle == handles.CycMx
+        set(handles.CyclePlus, 'Enable', 'on');
+    end
+    handles.CycMx = handles.CycMx + 1;
+        
     % Extract Data, Values, Fit Segments, Plots, & Segments from handles.
     FitT = handles.OutVar.FitT;
     Data = handles.InVar.Data;
     Plot = handles.InVar.Plot;
-    ivVal = handles.InVar.ivVal;
     ivSeg = handles.InVar.ivSeg;
 
     [handles] = gui_takeuchi_plot (Data, ivSeg, FitT, Plot, handles);
+
+    % update global handles
+    guidata(hObject,handles);
 
 else
 
@@ -440,14 +366,15 @@ else
 
 end
 
-% update global handles & set cursor back to normal
-guidata(hObject,handles);
+% Set cursor back to normal
 set(handles.figure1, 'pointer', 'arrow');
 
 end
 
 % --- Function that updates the main plot
 function [handles] = gui_takeuchi_plot (Data, ivSeg, Fit, Plot, handles);
+
+cycid = handles.Cycle;
 
 axes(handles.pressure_axes);
 
@@ -459,46 +386,47 @@ set(handles.pressure_axes,'ButtonDownFcn', ...
     @(hObject, eventdata)GraphCallBack(hObject, eventdata, handles));
 set(handles.pressure_axes,'fontsize',12);
 
-title('Sinusoidal Fitting','FontSize',20);
-xlabel('Time [s]','FontSize',18);
-ylabel('Data.Pres_Dsue [mmHg]','FontSize',18);
+title('Takeuchi Sinusoidal Fitting','FontSize',16);
+xlabel('Time [s]','FontSize',14);
+ylabel('Pressure [mmHg]','FontSize',14);
 
 hold on;
 
 mystp = Data.time_step/2;
-mysz = length(ivSeg.iv1Time);
-PmaxT = zeros(mysz,1);
 
-% Attain the sinusoid fit for all points (so Pmax can be visualized
-for i = 1:mysz
+% Attain the sinusoid fit for this cycle (so Pmax can be visualized)
+% obtain the range of time of each peak, then normalize to zero
+FitSineTime = Data.Time_D(ivSeg.iv1Time(cycid).PosIso(1,1)):mystp: ...
+    Data.Time_D(ivSeg.iv1Time(cycid).NegIso(end,1));
 
-    % obtain the range of time of each peak, then normalize to zero
-    FitSineTime = Data.Time_D(ivSeg.iv1Time(i).PosIso(1,1)):mystp: ...
-        Data.Time_D(ivSeg.iv1Time(i).NegIso(end,1));
+% plug into Naeiji equation that was just solved for; normalize range
+% to start at one (as was done in fitting).
+FitSinePres = Fit.RCoef(cycid,1) + Fit.RCoef(cycid,2)* ...
+        sin(Fit.RCoef(cycid,3)*(FitSineTime-FitSineTime(1)) + ...
+        Fit.RCoef(cycid,4));
+      
+% find time point corresponding to Pmax
+[~, Idx] = min(abs(FitSinePres-Fit.PIsoMax(cycid)));
 
-    % plug into Naeiji equation that was just solved for; normalize range
-    % to start at one (as was done in fitting).
-    FitSinePres = Fit.RCoef(i,1) + Fit.RCoef(i,2)*sin(Fit.RCoef(i,3)* ...
-      (FitSineTime-FitSineTime(1)) + Fit.RCoef(i,4));
+PmaxT = FitSineTime(Idx);
 
-    % find time point corresponding to Pmax
-    [~, Idx] = min(abs(FitSinePres-Fit.PIsoMax(i)));
+plot(FitSineTime, FitSinePres, 'k--', PmaxT, Fit.PIsoMax(cycid), 'go');
+hold on;
 
-    PmaxT(i) = FitSineTime(Idx);
+% Set reasonable plot limits.
+xmn = FitSineTime(1)-0.1;
+xmx = FitSineTime(end)+0.1;
+ymx = max(Fit.PIsoMax)+5;
 
-    plot(FitSineTime, FitSinePres, 'k--', PmaxT(i), Fit.PIsoMax(i), 'go');
-    hold on;
-end
-
-% check the range of pressure values of Pmax. if the max p_max value is
-% over 450, rescale y axis to (0, 300), so individual waveforms can be seen
-ylim([0, Inf]);
-if max(Fit.PIsoMax) > 450
+xlim([xmn xmx]);
+if ymx > 300
     ylim([0, 300]);
+else
+    ylim([0, ymx]);
 end
 
-legend('Pressure', 'Isovolumic Points',  'Sinusoid Fit','Pmax', ...
-    'Location','southoutside', 'Orientation', 'horizontal');
+legend('Pressure', 'Isovolumic Points', 'Sinusoid Fit', 'Pmax', ...
+    'Location', 'southoutside', 'Orientation', 'horizontal');
 
 box on;
 grid on;

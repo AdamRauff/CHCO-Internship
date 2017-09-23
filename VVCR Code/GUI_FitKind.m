@@ -6,16 +6,16 @@ function varargout = GUI_FitKind (varargin)
 %      H = GUI_FitKind returns the handle to a new GUI_FitKind or the
 %      handle to the existing singleton*.
 %
-%      GUI_FitKind('CALLBACK',hObject,eventData,handles,...) calls
-%      the local function named CALLBACK in GUI_FitKind.M with the 
-%      given input arguments.
+%      GUI_FitKind('CALLBACK',hObject,eventData,handles,...) calls the
+%      local function named CALLBACK in GUI_FitKind.M with the given input
+%      input arguments.
 %
-%      GUI_FitKind('Property','Value',...) creates a new GUI_FitKind or
-%      raises the existing singleton*.  Starting from the left, property
-%      value pairs are applied to the GUI before GUI_FitKind_OpeningFcn
-%      gets called.  An unrecognized property name or invalid value 
-%      makes property application stop.  All inputs are passed to GUI_-
-%      FitKind_OpeningFcn via varargin.
+%      GUI_FitKind('Property','Value',...) creates a new GUI_FitKind
+%      or raises the existing singleton*.  Starting from the left,
+%      property value pairs are applied to the GUI before GUI_FitKind-
+%      _OpeningFcn gets called.  An unrecognized property name or invalid 
+%      value makes property application stop.  All inputs are passed to 
+%      GUI_FitKind_OpeningFcn via varargin.
 %
 %      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only
 %      one instance to run (singleton)".
@@ -24,7 +24,7 @@ function varargout = GUI_FitKind (varargin)
 
 % Edit the above text to modify the response to help GUI_FitKind
 
-% Last Modified by GUIDE v2.5 20-Sep-2017 13:31:38
+% Last Modified by GUIDE v2.5 22-Sep-2017 20:29:09
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -68,26 +68,24 @@ handles.InVar.ivSeg = GUIDat.ivSeg;
 
 handles.InVar.MeanTP = handles.InVar.FitK.MeanTP;
 
+handles.Cycle = 1;
+handles.CycMx = length(GUIDat.ivIdx.Ps1);
+set(handles.CycleMinus, 'Enable', 'off');
+
 % Extract Data, Indices/Values, and Fit Segments from passed structures.
 Data = handles.InVar.Data;
 Plot = handles.InVar.Plot;
 ivIdx = handles.InVar.ivIdx;
+ivVal = handles.InVar.ivVal;
 ivSeg = handles.InVar.ivSeg;
 FitK = handles.InVar.FitK;
 
-% Initialize UNDO structure.
-handles.UNDO.FitK = [];
-
 % store first fit output into output structure.
-Res.FitK = handles.InVar.FitK;
-handles.OutVar = Res;
+handles.OutVar.FitK = FitK;
+handles.OutVar.Exit = 'good';
 
-% set editable text boxes with ICs
-%IC = FitK.InitIC;
-%set(handles.Mean_txt, 'String',num2str(IC(1)));
-%set(handles.Amp_txt, 'String',num2str(IC(2)));
-%set(handles.Freq_txt, 'String',num2str(IC(3)));
-%set(handles.Phase_txt, 'String',num2str(IC(4)));
+% Initialize UNDO structure.
+handles.UNDO.Res = [];
 
 % plot pressure, sinusoid fits
 [handles] = gui_kind_plot (Data, ivIdx, ivSeg, FitK, Plot, handles);
@@ -102,97 +100,11 @@ end
 % function that executes when user clicks on graph
 function GraphCallBack(hObject, eventdata, handles)
 
-%Make the cusor a spinning wheel so user is aware program is busy
-set(handles.figure1, 'pointer', 'watch');
-drawnow;
-
-% obtain variables from InVar Struct for a clear workflow
-Data = handles.InVar.Data;
-Plot = handles.InVar.Plot;
-ivIdx = handles.InVar.ivIdx;
-ivVal = handles.InVar.ivVal;
-ivSeg = handles.InVar.ivSeg;
-
-MeanTP = handles.InVar.MeanTP;
-
-% store the current structures in UNDO structure for the undo button.
-handles.UNDO.Res  = handles.OutVar;
-handles.UNDO.Plot = Plot;
-handles.UNDO.ivIdx = ivIdx;
-handles.UNDO.ivVal = ivVal;
-handles.UNDO.ivSeg = ivSeg;
-       
 % get the current point
 cp(1,:) = [eventdata.IntersectionPoint(1), eventdata.IntersectionPoint(2)];
 disp('GUI_FitKind>GraphCallBack:');
 disp(['    Time:     ',num2str(cp(1))]);
 disp(['    Pressure: ',num2str(cp(2))]);
-
-% find which waveform the interval was within. Note the click must be
-% between EDP and Negative EDP. the following two lines find (1) all EDP
-% times that are smaller than the time point of click (2) all negative EDP
-% times that are greater than the time point of click.
-WaveNumPosRm = find(Data.Time_D(ivIdx.Ps1_D)<cp(1));
-WaveNumNegRm = find(Data.Time_D(ivIdx.Ne1_D)>cp(1));
-
-if ~isempty(WaveNumPosRm) && ~isempty(WaveNumNegRm)
-    
-    % find the common number. the last EDP that is smaller then 
-    WaveRm = find(WaveNumPosRm==WaveNumNegRm(1));
-
-    if ~isempty(WaveRm)
-        disp(['    Wave: ', num2str(WaveRm), ' is being removed']);
-        
-        % Erase wave from (2 - Kind) ivIdx, ivVal structures.
-        ivIdx.Ps2(WaveRm)   = [];
-        ivIdx.Pe2(WaveRm)   = [];
-        ivIdx.Ns2(WaveRm)   = [];
-        ivIdx.Ne2(WaveRm)   = [];
-        ivIdx.Ps2_D(WaveRm) = [];
-        ivIdx.Pe2_D(WaveRm) = [];
-        ivIdx.Ns2_D(WaveRm) = [];
-        ivIdx.Ne2_D(WaveRm) = [];
-        ivVal.Ps2(WaveRm)   = [];
-        ivVal.Pe2(WaveRm)   = [];
-        ivVal.Ns2(WaveRm)   = [];
-        ivVal.Ne2(WaveRm)   = [];
-
-        ivIdx.dPmax2(WaveRm)   = [];
-        ivIdx.dPmin2(WaveRm)   = [];
-        ivIdx.dPmin2_D(WaveRm) = [];
-        ivVal.dPmax2(WaveRm)   = [];
-        ivVal.dPmin2(WaveRm)   = [];
-
-        % Store changes
-        handles.InVar.ivIdx = ivIdx;
-        handles.InVar.ivVal = ivVal;
-
-        % obtain current ICs
-        %Mea = str2double(get(handles.Mean_txt,'String'));
-        %Amp = str2double(get(handles.Amp_txt,'String'));
-        %Fre = str2double(get(handles.Freq_txt,'String'));
-        %Pha = str2double(get(handles.Phase_txt,'String'));
-
-        % Recompute the segments for this new set of IV indicies
-        [ivSeg] = data_isoseg (true, Data, ivIdx);
-
-        [FitK, PlotK] = fit_kind (ivSeg, ivIdx, Data, MeanTP);
-        
-        Res.FitK = FitK;
-        handles.OutVar = Res;
-
-        handles.IvVar.ivSeg = ivSeg;
-        handles.IvVar.Plot  = PlotK;
-
-        % Plot the results
-        [handles] = gui_kind_plot (Data, ivIdx, ivSeg, FitK, Plot, handles);
-
-    end
-end
-
-% update global handles & set cursor back to normal
-guidata(hObject,handles);
-set(handles.figure1, 'pointer', 'arrow');
 
 end
 
@@ -211,9 +123,155 @@ delete(hObject);
 
 end
 
-% --- Executes on button press in Next.
-function Next_Callback(~, ~, handles)
-% hObject    handle to Next (see GCBO)
+% --- Executes on button press in CyclePlus.
+function CyclePlus_Callback(hObject, eventdata, handles)
+% hObject    handle to CyclePlus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+handles.Cycle = handles.Cycle + 1;
+if handles.Cycle > 1
+    set(handles.CycleMinus, 'Enable', 'on');
+end
+if handles.Cycle == handles.CycMx
+    set(handles.CyclePlus, 'Enable', 'off');
+end
+set(handles.CycleInd, 'String', ['Cycle #' num2str(handles.Cycle,'%02i')]);
+
+% Extract Data, Indices/Values, and Fit Segments from passed structures.
+Data = handles.InVar.Data;
+Plot = handles.InVar.Plot;
+ivIdx = handles.InVar.ivIdx;
+ivSeg = handles.InVar.ivSeg;
+FitK = handles.InVar.FitK;
+
+% plot pressure, sinusoid fits, update indicator
+[handles] = gui_kind_plot (Data, ivIdx, ivSeg, FitK, Plot, handles);
+set(handles.CycleInd, 'String', ['Cycle #' num2str(handles.Cycle,'%02i')]);
+
+% Update handles.
+guidata(hObject, handles);
+
+end
+
+
+% --- Executes on button press in CycleMinus.
+function CycleMinus_Callback(hObject, eventdata, handles)
+% hObject    handle to CycleMinus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+handles.Cycle = handles.Cycle - 1;
+if handles.Cycle == 1
+    set(handles.CycleMinus, 'Enable', 'off');
+end
+if handles.Cycle < handles.CycMx
+    set(handles.CyclePlus, 'Enable', 'on');
+end
+
+% Extract Data, Indices/Values, and Fit Segments from passed structures.
+Data = handles.InVar.Data;
+Plot = handles.InVar.Plot;
+ivIdx = handles.InVar.ivIdx;
+ivSeg = handles.InVar.ivSeg;
+FitK = handles.InVar.FitK;
+
+% plot pressure, sinusoid fits, update indicator
+[handles] = gui_kind_plot (Data, ivIdx, ivSeg, FitK, Plot, handles);
+set(handles.CycleInd, 'String', ['Cycle #' num2str(handles.Cycle,'%02i')]);
+
+% Update handles.
+guidata(hObject, handles);
+
+end
+
+% --- Executes on button press in Remove.
+function Remove_Callback(hObject, eventdata, handles)
+% hObject    handle to Remove (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+%Make the cusor a spinning wheel so user is aware program is busy
+set(handles.figure1, 'pointer', 'watch');
+drawnow;
+
+% obtain variables from InVar Struct for a clear workflow
+ivIdx = handles.InVar.ivIdx;
+ivVal = handles.InVar.ivVal;
+ivSeg = handles.InVar.ivSeg;
+Plot  = handles.InVar.Plot;
+
+FitK = handles.OutVar.FitK;
+
+% store the current structures in UNDO structure for the undo button.
+handles.UNDO.Res  = handles.OutVar;
+handles.UNDO.Plot  = Plot;
+handles.UNDO.ivIdx = ivIdx;
+handles.UNDO.ivVal = ivVal;
+handles.UNDO.ivSeg = ivSeg;
+
+WaveRm = handles.Cycle;
+disp(['GUI_FitKind>Remove: wave ' num2str(WaveRm, '%02i') ...
+    ' is being removed']);
+
+% Erase wave from (2 - Kind) ivIdx, ivVal structures. 
+ivIdx.Ps2(WaveRm)   = [];
+ivIdx.Pe2(WaveRm)   = [];
+ivIdx.Ns2(WaveRm)   = [];
+ivIdx.Ne2(WaveRm)   = [];
+ivIdx.Ps2_D(WaveRm) = [];
+ivIdx.Pe2_D(WaveRm) = [];
+ivIdx.Ns2_D(WaveRm) = [];
+ivIdx.Ne2_D(WaveRm) = [];
+ivVal.Ps2(WaveRm)   = [];
+ivVal.Pe2(WaveRm)   = [];
+ivVal.Ns2(WaveRm)   = [];
+ivVal.Ne2(WaveRm)   = [];
+
+ivIdx.dPmax2(WaveRm)   = [];
+ivIdx.dPmin2(WaveRm)   = [];
+ivIdx.dPmin2_D(WaveRm) = [];
+ivVal.dPmax2(WaveRm)   = [];
+ivVal.dPmin2(WaveRm)   = [];
+
+ivSeg.iv2Time(WaveRm) = [];
+ivSeg.iv2Pres(WaveRm) = [];
+
+FitK.Rsq(WaveRm)      = [];
+FitK.RCoef(WaveRm,:)  = [];
+FitK.BadCyc(WaveRm)   = [];
+FitK.CycICs(WaveRm,:) = [];
+
+Plot.iv2TShift(WaveRm) = [];
+
+% Store changes
+handles.InVar.ivIdx = ivIdx;
+handles.InVar.ivVal = ivVal;
+handles.InVar.ivSeg = ivSeg;
+
+handles.OutVar.FitK = FitK;
+
+handles.CycMx = handles.CycMx - 1;
+if handles.Cycle > handles.CycMx
+    handles.Cycle = handles.CycMx;
+    set(handles.CycleInd, 'String', ['Cycle #' num2str(handles.Cycle,'%02i')]);
+end
+        
+% Plot the results
+Data = handles.InVar.Data;
+Plot = handles.InVar.Plot;
+[handles] = gui_kind_plot (Data, ivIdx, ivSeg, FitK, Plot, handles);
+
+% update global handles & set cursor back to normal
+guidata(hObject,handles);
+set(handles.figure1, 'pointer', 'arrow');
+
+end
+
+
+% --- Executes on button press in Done.
+function Done_Callback(~, ~, handles)
+% hObject    handle to Done (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
@@ -241,132 +299,6 @@ end
 
 end
 
-% --- Executes during object creation, after setting all properties.
-function Mean_txt_CreateFcn(hObject, ~, ~)
-% hObject    handle to Mean_txt (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-end
-
-function Mean_txt_Callback(hObject, eventdata, handles)
-
-% when user chnages the phase value and presses enter, evoke calculate
-% function
-calculate_Callback(hObject, eventdata, handles);
-
-end
-
-% --- Executes during object creation, after setting all properties.
-function Amp_txt_CreateFcn(hObject, ~, ~)
-% hObject    handle to Amp_txt (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-end
-
-function Amp_txt_Callback(hObject, eventdata, handles)
-
-% when user chnages the phase value and presses enter, evoke calculate
-% function
-calculate_Callback(hObject, eventdata, handles);
-
-end
-
-% --- Executes during object creation, after setting all properties.
-function Freq_txt_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to Freq_txt (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-end
-
-function Freq_txt_Callback(hObject, eventdata, handles)
-
-% when user chnages the phase value and presses enter, evoke calculate
-% function
-calculate_Callback(hObject, eventdata, handles);
-
-end
-
-function Phase_txt_Callback(hObject, eventdata, handles)
-
-% when user chnages the phase value and presses enter, evoke calculate
-% function
-calculate_Callback(hObject, eventdata, handles);
-
-end
-% --- Executes during object creation, after setting all properties.
-function Phase_txt_CreateFcn(hObject, ~, ~)
-% hObject    handle to Phase_txt (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-end
-
-% --- Executes on button press in calculate.
-function calculate_Callback(hObject, ~, handles)
-% hObject    handle to calculate (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-%Make the cusor a spinning wheel so user is aware program is busy
-set(handles.figure1, 'pointer', 'watch');
-drawnow;
-disp('GUI_FitKind>calculate_Callback:');
-
-% calculate sinusoids based on new ICs!
-%Mea = str2double(get(handles.Mean_txt,'String'));
-%Amp = str2double(get(handles.Amp_txt,'String'));
-%Fre = str2double(get(handles.Freq_txt,'String'));
-%Pha = str2double(get(handles.Phase_txt,'String'));
-%ICS = [Mea Amp Fre Pha];
-
-% Extract Data, Values, and Fit Segments from passed structures; get fits.
-Data = handles.InVar.Data;
-ivIdx = handles.InVar.ivIdx;
-ivSeg = handles.InVar.ivSeg;
-
-MeanTP = handles.InVar.MeanTP;
-
-[FitK, PlotK] = fit_kind (ivSeg, ivIdx, Data, MeanTP);
-
-Res.FitK = FitK;
-handles.OutVar = Res;
-handles.IvVar.Plot = PlotK;
-
-[handles] = gui_kind_plot (Data, ivIdx, ivSeg, FitK, Plot, handles);
-
-% update global handles & set cursor back to normal
-guidata(hObject,handles);
-set(handles.figure1, 'pointer', 'arrow');
-
-end
-
 % --- Executes on button press in Exit.
 function Exit_Callback(hObject, ~, handles)
 % hObject    handle to Exit (see GCBO)
@@ -377,7 +309,7 @@ function Exit_Callback(hObject, ~, handles)
 % patient, i, will not be evaluated
                 
 % set output to false
-handles.OutVar = false;
+handles.OutVar.Exit = false;
 
 % update handles globally
 guidata(hObject, handles);
@@ -393,7 +325,7 @@ function Discard_Callback(hObject, ~, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % set outputs to true, indicating Discard button
-handles.OutVar = true;
+handles.OutVar.Exit = true;
 
 % update handles globally
 guidata(hObject, handles)
@@ -422,7 +354,15 @@ if ~isempty(handles.UNDO.Res)
     handles.InVar.ivIdx = handles.UNDO.ivIdx;
     handles.InVar.ivVal = handles.UNDO.ivVal;
     handles.InVar.ivSeg = handles.UNDO.ivSeg; 
-    
+
+    % Reset Res indicator (undo only goes one deep)
+    handles.UNDO.Res = [];
+
+    if handles.Cycle == handles.CycMx
+        set(handles.CyclePlus, 'Enable', 'on');
+    end
+    handles.CycMx = handles.CycMx + 1;
+        
     % Extract Data, Values, Fit Segments, Plots, & Segments from handles.
     FitK = handles.OutVar.FitK;
     Data = handles.InVar.Data;
@@ -432,20 +372,24 @@ if ~isempty(handles.UNDO.Res)
 
     [handles] = gui_kind_plot (Data, ivIdx, ivSeg, FitK, Plot, handles);
 
+    % update global handles
+    guidata(hObject,handles);
+
 else
 
     disp('GUI_FitKind>Undo_Callback: Nothing to Undo!');
 
 end
 
-% update global handles & set cursor back to normal
-guidata(hObject,handles);
+% Set cursor back to normal
 set(handles.figure1, 'pointer', 'arrow');
 
 end
 
 % --- Function that updates the main plot
 function [handles] = gui_kind_plot (Data, ivIdx, ivSeg, Fit, Plot, handles);
+
+cycid = handles.Cycle;
 
 axes(handles.pressure_axes);
 
@@ -457,45 +401,43 @@ set(handles.pressure_axes,'ButtonDownFcn', ...
     @(hObject, eventdata)GraphCallBack(hObject, eventdata, handles));
 set(handles.pressure_axes,'fontsize',12);
 
-title('Sinusoidal Fitting','FontSize',20);
-xlabel('Time [s]','FontSize',18);
-ylabel('Data.Pres_Dsue [mmHg]','FontSize',18);
+title('Kind Sinusoidal Fitting','FontSize',16);
+xlabel('Time [s]','FontSize',14);
+ylabel('Data.Pres_Dsue [mmHg]','FontSize',14);
 
 hold on;
 
 mystp = Data.time_step/2;
-mysz = length(ivSeg.iv2Time);
-PmaxT = zeros(mysz,1);
 
-% Attain the sinusoid fit for all points (so Pmax can be visualized
-for i = 1:mysz
+% obtain the range of time of each peak, then normalize to zero
+FitSineTime = Data.Time_D(ivSeg.iv2Time(cycid).PosIso(1,1)):mystp: ...
+    Data.Time_D(ivSeg.iv2Time(cycid).NegIso(end,1))+Plot.iv2TShift(cycid);
 
-    % obtain the range of time of each peak, then normalize to zero
-    FitSineTime = Data.Time_D(ivSeg.iv2Time(i).PosIso(1,1)):mystp: ...
-        Data.Time_D(ivSeg.iv2Time(i).NegIso(end,1))+Plot.iv2TShift(i);
+% plug into Kind equation
+dPtimes = [Data.Time(ivIdx.dPmax2(cycid)) Data.Time(ivIdx.dPmin2(cycid)) ...
+    Data.time_per];
+FitSinePres = data_kind (Fit.RCoef(cycid,:), FitSineTime, dPtimes);
 
-    % plug into Kind equation
-    dPtimes = [Data.Time(ivIdx.dPmax2(i)) Data.Time(ivIdx.dPmin2(i)) ...
-        Data.time_per];
-    FitSinePres = data_kind (Fit.RCoef(i,:), FitSineTime, dPtimes);
+% find time point corresponding to Pmax
+[~, Idx] = min(abs(FitSinePres-Fit.RCoef(cycid,1)));
+PmaxT = FitSineTime(Idx);
 
-    % find time point corresponding to Pmax
-    [~, Idx] = min(abs(FitSinePres-Fit.RCoef(i,1)));
+plot(FitSineTime, FitSinePres, 'k--', PmaxT, Fit.RCoef(cycid,1), 'go');
+hold on;
 
-    PmaxT(i) = FitSineTime(Idx);
+% Set reasonable plot limits.
+xmn = FitSineTime(1)-0.1;
+xmx = FitSineTime(end)+0.1;
+ymx = max(Fit.RCoef(:,1))+5;
 
-    plot(FitSineTime, FitSinePres, 'k--', PmaxT(i), Fit.RCoef(i,1), 'go');
-    hold on;
-end
-
-% check the range of pressure values of Pmax. if the max p_max value is
-% over 450, rescale y axis to (0, 300), so individual waveforms can be seen
-ylim([0, Inf]);
-if max(Fit.RCoef(:,1)) > 450
+xlim([xmn xmx]);
+if ymx > 300
     ylim([0, 300]);
+else
+    ylim([0, ymx]);
 end
 
-legend('Pressure', 'Isovolumic Points',  'Sinusoid Fit','Pmax', ...
+legend('Pressure', 'Isovolumic Points', 'Sinusoid Fit', 'Pmax', ...
     'Location','southoutside', 'Orientation', 'horizontal');
 
 box on;

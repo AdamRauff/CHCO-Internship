@@ -195,6 +195,10 @@ tshift = Tspan(idx)-(tM(2)-P(3));
 
 % Second "half" of the fit residuals
 t23 = t2'-P(3)+tshift;
+
+%maxr1 = max(abs(zero));
+%maxr2 = max(abs(p1m(P,t23)-dPd));
+%disp(['Residuals ' num2str(maxr1) ' ' num2str(maxr2)]);
 zero = [zero; (p1m(P,t23)-dPd)];
 
 end
