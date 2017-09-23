@@ -83,6 +83,7 @@ handles.OutVar.Exit = 'Good';
 
 % Initialize UNDO structure.
 handles.UNDO.Res = [];
+set(handles.Undo, 'Enable', 'off');
 
 % plot pressure, sinusoid fits
 [handles] = takeuchi_plot_single (Data, ivSeg, FitT, Plot, handles);
@@ -263,6 +264,8 @@ if ishandle(handles.figure2)
     [handles] = takeuchi_plot_all (Data, ivSeg, FitT, Plot, handles);
 end
 
+set(handles.Undo, 'Enable', 'on');
+
 % update global handles & set cursor back to normal
 guidata(hObject,handles);
 set(handles.figure1, 'pointer', 'arrow');
@@ -363,42 +366,36 @@ drawnow;
 
 % if the handles.Old variables have been created (user has clicked on the
 % plot and removed pressure waveform(s).
-if ~isempty(handles.UNDO.Res)
-    disp('GUI_FitTakeuchi>Undo_Callback: Restoring Previous Fit & Plot');
-    handles.OutVar = handles.UNDO.Res;
+disp('GUI_FitTakeuchi>Undo_Callback: Restoring Previous Fit & Plot');
+handles.OutVar = handles.UNDO.Res;
 
-    handles.InVar.ivIdx = handles.UNDO.ivIdx;
-    handles.InVar.ivVal = handles.UNDO.ivVal;
-    handles.InVar.ivSeg = handles.UNDO.ivSeg; 
-    handles.InVar.Plot  = handles.UNDO.Plot; 
+handles.InVar.ivIdx = handles.UNDO.ivIdx;
+handles.InVar.ivVal = handles.UNDO.ivVal;
+handles.InVar.ivSeg = handles.UNDO.ivSeg; 
+handles.InVar.Plot  = handles.UNDO.Plot; 
 
-    % Reset Res indicator (undo only goes one deep)
-    handles.UNDO.Res = [];
+% Reset Res indicator (undo only goes one deep)
+handles.UNDO.Res = [];
 
-    if handles.Cycle == handles.CycMx
-        set(handles.CyclePlus, 'Enable', 'on');
-    end
-    handles.CycMx = handles.CycMx + 1;
-        
-    % Extract Data, Values, Fit Segments, Plots, & Segments from handles.
-    FitT = handles.OutVar.FitT;
-    Data = handles.InVar.Data;
-    Plot = handles.InVar.Plot;
-    ivSeg = handles.InVar.ivSeg;
-
-    [handles] = takeuchi_plot_single (Data, ivSeg, FitT, Plot, handles);
-    if ishandle(handles.figure2)
-        [handles] = takeuchi_plot_all (Data, ivSeg, FitT, Plot, handles);
-    end
-
-    % update global handles
-    guidata(hObject,handles);
-
-else
-
-    disp('GUI_FitTakeuchi>Undo_Callback: Nothing to Undo!');
-
+if handles.Cycle == handles.CycMx
+    set(handles.CyclePlus, 'Enable', 'on');
 end
+handles.CycMx = handles.CycMx + 1;
+        
+% Extract Data, Values, Fit Segments, Plots, & Segments from handles.
+FitT = handles.OutVar.FitT;
+Data = handles.InVar.Data;
+Plot = handles.InVar.Plot;
+ivSeg = handles.InVar.ivSeg;
+
+[handles] = takeuchi_plot_single (Data, ivSeg, FitT, Plot, handles);
+if ishandle(handles.figure2)
+    [handles] = takeuchi_plot_all (Data, ivSeg, FitT, Plot, handles);
+end
+set(handles.Undo, 'Enable', 'off');
+
+% update global handles
+guidata(hObject,handles);
 
 % Set cursor back to normal
 set(handles.figure1, 'pointer', 'arrow');
