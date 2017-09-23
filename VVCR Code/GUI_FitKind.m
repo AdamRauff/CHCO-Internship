@@ -148,6 +148,9 @@ FitK = handles.InVar.FitK;
 
 % plot pressure, sinusoid fits, update indicator
 [handles] = kind_plot_single (Data, ivIdx, ivSeg, FitK, Plot, handles);
+if ishandle(handles.figure2)
+    [handles] = kind_plot_all (Data, ivIdx, ivSeg, FitK, Plot, handles);
+end
 set(handles.CycleInd, 'String', ['Cycle #' num2str(handles.Cycle,'%02i')]);
 
 % Update handles.
@@ -179,6 +182,9 @@ FitK = handles.InVar.FitK;
 
 % plot pressure, sinusoid fits, update indicator
 [handles] = kind_plot_single (Data, ivIdx, ivSeg, FitK, Plot, handles);
+if ishandle(handles.figure2)
+    [handles] = kind_plot_all (Data, ivIdx, ivSeg, FitK, Plot, handles);
+end
 set(handles.CycleInd, 'String', ['Cycle #' num2str(handles.Cycle,'%02i')]);
 
 % Update handles.
@@ -262,6 +268,9 @@ end
 Data = handles.InVar.Data;
 Plot = handles.InVar.Plot;
 [handles] = kind_plot_single (Data, ivIdx, ivSeg, FitK, Plot, handles);
+if ishandle(handles.figure2)
+    [handles] = kind_plot_all (Data, ivIdx, ivSeg, FitK, Plot, handles);
+end
 
 % update global handles & set cursor back to normal
 guidata(hObject,handles);
@@ -276,7 +285,9 @@ function Done_Callback(~, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-close(handles.figure2);
+if ishandle(handles.figure2)
+    close(handles.figure2);
+end
 
 % call on uiresume so output function executes
 uiresume(handles.figure1);
@@ -288,7 +299,9 @@ function figure1_CloseRequestFcn(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-close(handles.figure2);
+if ishandle(handles.figure2)
+    close(handles.figure2);
+end
 
 if isequal(get(hObject, 'waitstatus'), 'waiting')
     % The GUI is still in UIWAIT, call UIRESUME
@@ -310,7 +323,9 @@ function Exit_Callback(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-close(handles.figure2);
+if ishandle(handles.figure2)
+    close(handles.figure2);
+end
 
 % keep in mind when the exit button is pressed, the current
 % patient, i, will not be evaluated
@@ -331,7 +346,9 @@ function Discard_Callback(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-close(handles.figure2);
+if ishandle(handles.figure2)
+    close(handles.figure2);
+end
 
 % set outputs to true, indicating Discard button
 handles.OutVar.Exit = true;
@@ -380,6 +397,9 @@ if ~isempty(handles.UNDO.Res)
     ivSeg = handles.InVar.ivSeg;
 
     [handles] = kind_plot_single (Data, ivIdx, ivSeg, FitK, Plot, handles);
+    if ishandle(handles.figure2)
+        [handles] = kind_plot_all (Data, ivIdx, ivSeg, FitK, Plot, handles);
+    end
 
     % update global handles
     guidata(hObject,handles);
@@ -516,9 +536,10 @@ if ~isempty(WaveNumPosRm) && ~isempty(WaveNumNegRm)
         FitK = handles.InVar.FitK;
 
         [handles] = kind_plot_single (Data, ivIdx, ivSeg, FitK, Plot, handles);
+        [handles] = kind_plot_all (Data, ivIdx, ivSeg, FitK, Plot, handles);
 
         % update global handles
-        guidata(hObject,handles);
+        guidata(handles.figure1,handles);
 
     end
 end
@@ -584,11 +605,20 @@ for i = 1:mysz
     hold on;
 end
 
-% check the range of pressure values of Pmax. if the max p_max value is
-% over 450, rescale y axis to (0, 300), so individual waveforms can be seen
-ylim([0, Inf]);
-if max(Fit.RCoef(:,1)) > 450
+ymx = max(Fit.RCoef(:,1))+5;
+
+% Bound the current cycle.
+cycid = handles.Cycle;
+xmn = Data.Time_D(ivSeg.iv1Time(cycid).PosIso(1,1))-0.05;
+xmx = Data.Time_D(ivSeg.iv1Time(cycid).NegIso(end,1))+0.05;
+plot([xmn xmn], [0, ymx], 'r--');
+plot([xmx xmx], [0, ymx], 'r--');
+
+% Set reasonable plot limits.
+if ymx > 300
     ylim([0, 300]);
+else
+    ylim([0, ymx]);
 end
 
 box on;
