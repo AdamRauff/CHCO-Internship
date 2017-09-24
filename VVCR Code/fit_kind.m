@@ -42,8 +42,9 @@ for i = 1:nfits
 
     P0_weight = mean(ivSeg.iv2dPdt(i).NegIso)/mean(ivSeg.iv2Pres(i).PosIso);
 
-    disp(['Cycle #' num2str(i,'%02i') ' Weighting Factor = ' ...
-        num2str(P0_weight, '%8.3f')]);
+%-[Examining weighting factor
+%   disp(['Cycle #' num2str(i,'%02i') ' Weighting Factor = ' ...
+%       num2str(P0_weight, '%8.3f')]);
 
     sin_fun2 = @(P) imbedded_kind (P, Data.Time_D(posidx), ...
         Data.Time_D(negidx), dPtimes, ivSeg.iv2Pres(i).PosIso, ...
@@ -88,7 +89,8 @@ for i = 1:nfits
     SSTO = norm(WavePs-mean(WavePs))^2;
     Ret1.Rsq(i) = 1-SSE/SSTO;
     
-    disp(['    Rsq ' num2str(Ret1.Rsq(i), '%6.4f')]);
+%-[Examining weighting factor
+%   disp(['    Rsq ' num2str(Ret1.Rsq(i), '%6.4f')]);
        
     if Ret1.Rsq(i) < 0.80
        Ret1.BadCyc(i) = 1; 
@@ -230,9 +232,9 @@ tshift = Tspan(idx)-(tM(2)-P(3));
 t23 = t2'-P(3)+tshift;
 
 %-[Residuals in each section]
-maxr1 = norm(zero);
-maxr2 = norm(p1m(P,t23)-dPd);
-disp(['    Norm Residuals ' num2str(maxr1) ' ' num2str(maxr2)]);
+%maxr1 = norm(zero);
+%maxr2 = norm(p1m(P,t23)-dPd);
+%disp(['    Norm Residuals ' num2str(maxr1) ' ' num2str(maxr2)]);
 
 zero = [zero; (p1m(P,t23)-dPd)];
 
