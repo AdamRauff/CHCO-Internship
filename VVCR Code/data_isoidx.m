@@ -211,6 +211,9 @@ else
     badcyc.K = [1];
 end
 
+% # of points it can look before it stops... each point is 4ms.
+lenlim = 10;
+
 for i = 1:mysz
     % Find pres at (dP/dt)max, then find 10% increase, this is end of Kind
     % pos iso segment. 
@@ -233,7 +236,7 @@ for i = 1:mysz
     % of Kind neg iso segment.
     Pcut = 1.20*Dat.Pres(ivIdx.dPmin2(i));
     Pstr = ivIdx.dPmin2(i);
-    Plim = Pstr - 5;
+    Plim = Pstr - lenlim;
     while Dat.Pres(Pstr) < Pcut
         Pstr = Pstr - 1;
 
@@ -254,7 +257,7 @@ for i = 1:mysz
     Pcut = 0.80*Dat.Pres(ivIdx.dPmin2(i));
     Pend = ivIdx.dPmin2(i);
     Dend = length(Dat.Pres);
-    Plim = Pend + 5;
+    Plim = Pend + lenlim;
     while Dat.Pres(Pend) > Pcut
         Pend = Pend + 1;
 

@@ -210,6 +210,8 @@ end
 
 %% Auxilliary Functions to simplify computation of final values.
 
+
+% --- Interpret the return structure coming back from GUIs.
 function [Res, Ret] = interpret_str (str, guinam, patfile, ResIn)
 
 Res = ResIn;
@@ -241,8 +243,9 @@ end
 
 end
 
+
+% --- Compute mean and standard deviation of the named input variable
 function [Out] = compute_MeanStd (In, Var, nam)
-% Compute Mean & StD of input value, given a name, put into Out structure.
 
 Out = In;
 fieldmean = [nam '_Mean'];
@@ -253,8 +256,9 @@ Out.(fieldstd)  = std(Var);
 
 end
 
+
+% --- Compute mean and standard deviation of VVCR from the named input pressure
 function [Out] = compute_VVCR (In, Pes, Pmx, nam)
-% Compute VVCR Mean & StD of pressures, given a name, put into Out structure.
 
 Out = In;
 

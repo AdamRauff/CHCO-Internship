@@ -601,8 +601,14 @@ for i = 1:mysz
 
     PmaxT(i) = FitSineTime(Idx);
 
-    plot(FitSineTime, FitSinePres, 'k--', PmaxT(i), Fit.PIsoMax(i), 'go');
-    hold on;
+    PresMax = max(Data.Pres_D(ivSeg.iv1Time(i).PosIso(1,1):1: ...
+        ivSeg.iv1Time(i).NegIso(end,1)));
+
+    if Fit.PIsoMax(i) > PresMax
+        plot(FitSineTime, FitSinePres, 'k--', PmaxT(i), Fit.PIsoMax(i), 'go');
+    else
+        plot(FitSineTime, FitSinePres, 'r--', PmaxT(i), Fit.PIsoMax(i), 'rx');
+    end
 end
 
 ymx = max(Fit.PIsoMax)+5;

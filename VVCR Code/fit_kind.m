@@ -32,6 +32,7 @@ Ret2.iv2TShift = zeros(nfits,1);
 % structures: ivSeg.iv2Time and ivSeg.iv2Pres
 for i = 1:nfits
 
+
     % Times for (dP/dt)max, (dP/dt)min, and the average period length
     dPtimes = [Data.Time(ivIdx.dPmax2(i)) Data.Time(ivIdx.dPmin2(i)) ...
         Data.time_per];
@@ -39,9 +40,14 @@ for i = 1:nfits
     posidx = ivSeg.iv2Time(i).PosIso;
     negidx = ivSeg.iv2Time(i).NegIso;
 
+    P0_weight = mean(ivSeg.iv2dPdt(i).NegIso)/mean(ivSeg.iv2Pres(i).PosIso);
+
+    disp(['Cycle #' num2str(i,'%02i') ' Weighting Factor = ' ...
+        num2str(P0_weight, '%8.3f')]);
+
     sin_fun2 = @(P) imbedded_kind (P, Data.Time_D(posidx), ...
         Data.Time_D(negidx), dPtimes, ivSeg.iv2Pres(i).PosIso, ...
-        ivSeg.iv2dPdt(i).NegIso);	
+        ivSeg.iv2dPdt(i).NegIso, P0_weight);
 %-[Examining time shift @IC and at finish
 %       ivSeg.iv2dPdt(i).NegIso, 0);
 
@@ -82,7 +88,9 @@ for i = 1:nfits
     SSTO = norm(WavePs-mean(WavePs))^2;
     Ret1.Rsq(i) = 1-SSE/SSTO;
     
-    if Ret1.Rsq(i) < 0.90
+    disp(['    Rsq ' num2str(Ret1.Rsq(i), '%6.4f')]);
+       
+    if Ret1.Rsq(i) < 0.80
        Ret1.BadCyc(i) = 1; 
     end
 
@@ -142,23 +150,24 @@ end
 % END OF fit_kind
 end
 
-function [ zero ] = imbedded_kind ( P, t1, t2, tM, Pd, dPd )
+function [ zero ] = imbedded_kind ( P, t1, t2, tM, Pd, dPd, weight )
 %PMAX_MULTIHARM Summary of this function goes here
 %   This is a placeholder function with multiple arguments that will be
 %   passed using an anoymous handle to lsqnonlin fit within VVCR_FINAL_*
 %   (more explanation to come in that script). lsqnonlin requires an
 %   function with a single argument (namely, the fit coefficients P)
-%       Input Arguments:
-%           P   - fit coefficients Pmax, Pmin, t0, tpmax
-%           t1  - time vector for isovolumic contraction (fit to P)
-%           t2  - time vector for isovolumic relaxation (fit to dP/dt)
-%           tM  - times of (dP/dt)max, (dP/dt)min in actual data, and actual
-%                 period length
-%           Pd  - pressure data during isovolumic contraction
-%           dPd - dP/dt data during isovolumic relaxation
-%       Output Arguments:
-%           zero - difference between fit and data (combined vector of 
-%                  p0m-Pd and p1m-dPd)
+%     Input Arguments:
+%       P      - fit coefficients Pmax, Pmin, t0, tpmax
+%       t1     - time vector for isovolumic contraction (fit to P)
+%       t2     - time vector for isovolumic relaxation (fit to dP/dt)
+%       tM     - times of (dP/dt)max, (dP/dt)min in actual data, and actual
+%                period length
+%       Pd     - pressure data during isovolumic contraction
+%       dPd    - dP/dt data during isovolumic relaxation
+%       weight - Error weighting for Pd error (= mean(Pd)/mean(dPd))
+%     Output Arguments:
+%       zero - difference between fit and data (combined vector of 
+%              p0m-Pd and p1m-dPd)
 %
 %-[Examining time shift @IC and at finish
 %%function [ varargout ] = imbedded_kind ( P, t1, t2, tM, Pd, dPd, flag )
@@ -183,7 +192,7 @@ p0m = @(P,t) a(1)/2*(P(1)-P(2))+P(2)+(P(1)-P(2))*( ...
     a(7)*cos(tp_P2T*6*t) + b(7)*sin(tp_P2T*6*t) );
 
 % First "half" of the fit residuals
-zero = (p0m(P,t13)-Pd);
+zero = weight*(p0m(P,t13)-Pd);
 
 % Time derivative of p0m, used for fitting dP/dt during isovolumic relaxation.
 p1m = @(P,t) tp_P2T*(P(1)-P(2))*( ...
@@ -221,9 +230,9 @@ tshift = Tspan(idx)-(tM(2)-P(3));
 t23 = t2'-P(3)+tshift;
 
 %-[Residuals in each section]
-% maxr1 = max(abs(zero));
-% maxr2 = max(abs(p1m(P,t23)-dPd));
-% disp(['Residuals ' num2str(maxr1) ' ' num2str(maxr2)]);
+maxr1 = norm(zero);
+maxr2 = norm(p1m(P,t23)-dPd);
+disp(['    Norm Residuals ' num2str(maxr1) ' ' num2str(maxr2)]);
 
 zero = [zero; (p1m(P,t23)-dPd)];
 
