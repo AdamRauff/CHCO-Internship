@@ -611,8 +611,12 @@ for i = 1:mysz
 
     PmaxT(i) = FitSineTime(Idx);
 
-    plot(FitSineTime, FitSinePres, 'k--', PmaxT(i), Fit.RCoef(i,1), 'go');
-    hold on;
+
+    if Fit.BadCyc(i)
+        plot(FitSineTime, FitSinePres, 'r--', PmaxT(i), Fit.PIsoMax(i), 'rx');
+    else
+        plot(FitSineTime, FitSinePres, 'k--', PmaxT(i), Fit.PIsoMax(i), 'go');
+    end
 end
 
 ymx = max(Fit.RCoef(:,1))+5;
