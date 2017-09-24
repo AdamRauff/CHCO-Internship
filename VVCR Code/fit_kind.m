@@ -42,11 +42,7 @@ for i = 1:nfits
 
     P0_weight = mean(ivSeg.iv2dPdt(i).NegIso)/mean(ivSeg.iv2Pres(i).PosIso);
 
-<<<<<<< HEAD
 %-[Examining effect of weighting
-=======
-%-[Examining weighting factor
->>>>>>> f7caaf1d9a23a1c9615957069929eff03bff297d
 %   disp(['Cycle #' num2str(i,'%02i') ' Weighting Factor = ' ...
 %       num2str(P0_weight, '%8.3f')]);
 
@@ -93,11 +89,7 @@ for i = 1:nfits
     SSTO = norm(WavePs-mean(WavePs))^2;
     Ret1.Rsq(i) = 1-SSE/SSTO;
     
-<<<<<<< HEAD
 %-[Examining effect of weighting
-=======
-%-[Examining weighting factor
->>>>>>> f7caaf1d9a23a1c9615957069929eff03bff297d
 %   disp(['    Rsq ' num2str(Ret1.Rsq(i), '%6.4f')]);
        
     if Ret1.Rsq(i) < 0.80

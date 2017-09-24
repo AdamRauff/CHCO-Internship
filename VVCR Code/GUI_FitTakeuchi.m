@@ -69,6 +69,11 @@ handles.Cycle = 1;
 handles.CycMx = length(handles.InVar.ivIdx.Ps1);
 set(handles.CycleMinus, 'Enable', 'off');
 
+Rsq = handles.InVar.FitT.Rsq;
+Cyc = handles.Cycle;
+set(handles.CycleInd, 'String', ['Cycle #' num2str(Cyc, '%02i')]);
+set(handles.RsqTxt,   'String', ['Rsq = ' num2str(Rsq(Cyc),'%6.4f')]);
+
 % Extract Data, Indices/Values, and Fit Segments from passed structures.
 Data = handles.InVar.Data;
 Plot = handles.InVar.Plot;
@@ -80,10 +85,6 @@ FitT = handles.InVar.FitT;
 handles.OutVar.FitT = handles.InVar.FitT;
 handles.OutVar.FitO = handles.InVar.FitO;
 handles.OutVar.Exit = 'Good';
-
-% Initialize UNDO structure.
-handles.UNDO.Res = [];
-set(handles.Undo, 'Enable', 'off');
 
 % plot pressure, sinusoid fits
 [handles] = takeuchi_plot_single (Data, ivSeg, FitT, Plot, handles);
@@ -128,27 +129,32 @@ function CyclePlus_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-handles.Cycle = handles.Cycle + 1;
-if handles.Cycle > 1
+Rsq = handles.OutVar.FitT.Rsq;
+Cyc = handles.Cycle;
+
+Cyc = Cyc + 1;
+if Cyc > 1
     set(handles.CycleMinus, 'Enable', 'on');
 end
-if handles.Cycle == handles.CycMx
+if Cyc == handles.CycMx
     set(handles.CyclePlus, 'Enable', 'off');
 end
-set(handles.CycleInd, 'String', ['Cycle #' num2str(handles.Cycle,'%02i')]);
+set(handles.CycleInd, 'String', ['Cycle #' num2str(Cyc,'%02i')]);
+set(handles.RsqTxt,   'String', ['Rsq = ' num2str(Rsq(Cyc),'%6.4f')]);
+
+handles.Cycle = Cyc;
 
 % Extract Data, Indices/Values, and Fit Segments from passed structures.
 Data = handles.InVar.Data;
 Plot = handles.InVar.Plot;
 ivSeg = handles.InVar.ivSeg;
-FitT = handles.InVar.FitT;
+FitT = handles.OutVar.FitT;
 
 % plot pressure, sinusoid fits, update indicator
 [handles] = takeuchi_plot_single (Data, ivSeg, FitT, Plot, handles);
 if ishandle(handles.figure2)
     [handles] = takeuchi_plot_all (Data, ivSeg, FitT, Plot, handles);
 end
-set(handles.CycleInd, 'String', ['Cycle #' num2str(handles.Cycle,'%02i')]);
 
 % Update handles.
 guidata(hObject, handles);
@@ -162,26 +168,32 @@ function CycleMinus_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-handles.Cycle = handles.Cycle - 1;
-if handles.Cycle == 1
+Rsq = handles.OutVar.FitT.Rsq;
+Cyc = handles.Cycle;
+
+Cyc = Cyc - 1;
+if Cyc == 1
     set(handles.CycleMinus, 'Enable', 'off');
 end
-if handles.Cycle < handles.CycMx
+if Cyc < handles.CycMx
     set(handles.CyclePlus, 'Enable', 'on');
 end
+set(handles.CycleInd, 'String', ['Cycle #' num2str(Cyc,'%02i')]);
+set(handles.RsqTxt,   'String', ['Rsq = ' num2str(Rsq(Cyc),'%6.4f')]);
+
+handles.Cycle = Cyc;
 
 % Extract Data, Indices/Values, and Fit Segments from passed structures.
 Data = handles.InVar.Data;
 Plot = handles.InVar.Plot;
 ivSeg = handles.InVar.ivSeg;
-FitT = handles.InVar.FitT;
+FitT = handles.OutVar.FitT;
 
 % plot pressure, sinusoid fits, update indicator
 [handles] = takeuchi_plot_single (Data, ivSeg, FitT, Plot, handles);
 if ishandle(handles.figure2)
     [handles] = takeuchi_plot_all (Data, ivSeg, FitT, Plot, handles);
 end
-set(handles.CycleInd, 'String', ['Cycle #' num2str(handles.Cycle,'%02i')]);
 
 % Update handles.
 guidata(hObject, handles);
@@ -198,65 +210,15 @@ function Remove_Callback(hObject, eventdata, handles)
 set(handles.figure1, 'pointer', 'watch');
 drawnow;
 
-% obtain variables from InVar Struct for a clear workflow
-ivIdx = handles.InVar.ivIdx;
-ivVal = handles.InVar.ivVal;
-ivSeg = handles.InVar.ivSeg;
-Plot  = handles.InVar.Plot;
-
-FitT = handles.OutVar.FitT;
-
-% store the current structures in UNDO structure for the undo button.
-handles.UNDO.Res   = handles.OutVar;
-handles.UNDO.Plot  = Plot;
-handles.UNDO.ivIdx = ivIdx;
-handles.UNDO.ivVal = ivVal;
-handles.UNDO.ivSeg = ivSeg;
-
 WaveRm = handles.Cycle;
 disp(['GUI_FitTakeuchi>Remove: wave ' num2str(WaveRm, '%02i') ...
-    ' is being removed']);
+    ' marked removed']);
 
-% Erase wave from (1 - Takeuchi) ivIdx, ivVal structures. 
-[Plot] = rm_iv_points (Plot, handles.InVar.Data, ivIdx, WaveRm);
+handles.OutVar.FitT.BadCyc(WaveRm) = 1;
 
-ivIdx.Ps1(WaveRm)   = [];
-ivIdx.Ne1(WaveRm)   = [];
-ivIdx.Ps1_D(WaveRm) = [];
-ivIdx.Ne1_D(WaveRm) = [];
-ivVal.Ps1(WaveRm)   = [];
-ivVal.Ne1(WaveRm)   = [];
-
-ivIdx.dPmax1(WaveRm) = [];
-ivIdx.dPmin1(WaveRm) = [];
-ivVal.dPmax1(WaveRm) = [];
-ivVal.dPmin1(WaveRm) = [];
-
-ivSeg.iv1Time(WaveRm) = [];
-ivSeg.iv1Pres(WaveRm) = [];
-
-FitT.Rsq(WaveRm)      = [];
-FitT.RCoef(WaveRm,:)  = [];
-FitT.BadCyc(WaveRm)   = [];
-FitT.PIsoMax(WaveRm)  = [];
-FitT.CycICs(WaveRm,:) = [];
-FitT.VCyc(WaveRm)     = [];
-
-% Store changes
-handles.InVar.ivIdx = ivIdx;
-handles.InVar.ivVal = ivVal;
-handles.InVar.ivSeg = ivSeg;
-handles.InVar.Plot  = Plot;
-
-handles.OutVar.FitT = FitT;
-
-handles.CycMx = handles.CycMx - 1;
-if handles.Cycle > handles.CycMx
-    handles.Cycle = handles.CycMx;
-    set(handles.CycleInd, 'String', ['Cycle #' num2str(handles.Cycle,'%02i')]);
-end
-        
 % Plot the results
+ivSeg = handles.InVar.ivSeg;
+FitT = handles.OutVar.FitT;
 Data = handles.InVar.Data;
 Plot = handles.InVar.Plot;
 [handles] = takeuchi_plot_single (Data, ivSeg, FitT, Plot, handles);
@@ -264,14 +226,14 @@ if ishandle(handles.figure2)
     [handles] = takeuchi_plot_all (Data, ivSeg, FitT, Plot, handles);
 end
 
-set(handles.Undo, 'Enable', 'on');
+set(handles.Include, 'Enable', 'on');
+set(handles.Remove,  'Enable', 'off');
 
 % update global handles & set cursor back to normal
 guidata(hObject,handles);
 set(handles.figure1, 'pointer', 'arrow');
 
 end
-
 
 % --- Executes on button press in Done.
 function Done_Callback(~, ~, handles)
@@ -354,9 +316,9 @@ guidata(hObject, handles)
 uiresume(handles.figure1);
 end
 
-% --- Executes on button press in Undo.
-function Undo_Callback(hObject, ~, handles)
-% hObject    handle to Undo (see GCBO)
+% --- Executes on button press in Include.
+function Include_Callback(hObject, ~, handles)
+% hObject    handle to Include (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
@@ -364,24 +326,11 @@ function Undo_Callback(hObject, ~, handles)
 set(handles.figure1, 'pointer', 'watch');
 drawnow;
 
-% if the handles.Old variables have been created (user has clicked on the
-% plot and removed pressure waveform(s).
-disp('GUI_FitTakeuchi>Undo_Callback: Restoring Previous Fit & Plot');
-handles.OutVar = handles.UNDO.Res;
+disp(['GUI_FitTakeuchi>Include: wave ' num2str(handles.Cycle, ...
+   '%02i') ' included in final analysis']);
 
-handles.InVar.ivIdx = handles.UNDO.ivIdx;
-handles.InVar.ivVal = handles.UNDO.ivVal;
-handles.InVar.ivSeg = handles.UNDO.ivSeg; 
-handles.InVar.Plot  = handles.UNDO.Plot; 
+handles.OutVar.FitT.BadCyc(handles.Cycle) = 0;
 
-% Reset Res indicator (undo only goes one deep)
-handles.UNDO.Res = [];
-
-if handles.Cycle == handles.CycMx
-    set(handles.CyclePlus, 'Enable', 'on');
-end
-handles.CycMx = handles.CycMx + 1;
-        
 % Extract Data, Values, Fit Segments, Plots, & Segments from handles.
 FitT = handles.OutVar.FitT;
 Data = handles.InVar.Data;
@@ -392,7 +341,9 @@ ivSeg = handles.InVar.ivSeg;
 if ishandle(handles.figure2)
     [handles] = takeuchi_plot_all (Data, ivSeg, FitT, Plot, handles);
 end
-set(handles.Undo, 'Enable', 'off');
+
+set(handles.Include, 'Enable', 'off');
+set(handles.Remove,  'Enable', 'on');
 
 % update global handles
 guidata(hObject,handles);
@@ -406,6 +357,14 @@ end
 function [handles] = takeuchi_plot_single (Data, ivSeg, Fit, Plot, handles);
 
 cycid = handles.Cycle;
+
+if Fit.BadCyc(cycid)
+    set(handles.Include, 'Enable', 'on');
+    set(handles.Remove,  'Enable', 'off');
+else
+    set(handles.Include, 'Enable', 'off');
+    set(handles.Remove,  'Enable', 'on');
+end
 
 axes(handles.pressure_axes);
 
@@ -441,8 +400,11 @@ FitSinePres = Fit.RCoef(cycid,1) + Fit.RCoef(cycid,2)* ...
 
 PmaxT = FitSineTime(Idx);
 
-plot(FitSineTime, FitSinePres, 'k--', PmaxT, Fit.PIsoMax(cycid), 'go');
-hold on;
+if Fit.BadCyc(cycid)
+    plot(FitSineTime, FitSinePres, 'r--', PmaxT, Fit.PIsoMax(cycid), 'rx');
+else
+    plot(FitSineTime, FitSinePres, 'k--', PmaxT, Fit.PIsoMax(cycid), 'go');
+end
 
 % Set reasonable plot limits.
 xmn = FitSineTime(1)-0.1;
@@ -475,7 +437,7 @@ function AllPlotsGraph_Callback(hObject, ~, handles)
 Data = handles.InVar.Data;
 Plot = handles.InVar.Plot;
 ivSeg = handles.InVar.ivSeg;
-FitT = handles.InVar.FitT;
+FitT = handles.OutVar.FitT;
 
 % Create all pressures figure
 handles = open_all_plots (Data, ivSeg, FitT, Plot, handles);
@@ -490,6 +452,7 @@ function SubGraphCallback(hObject, eventdata, handles)
 
 cp(1,:) = [eventdata.IntersectionPoint(1), eventdata.IntersectionPoint(2)];
 
+Rsq = handles.OutVar.FitT.Rsq;
 Data = handles.InVar.Data;
 ivIdx = handles.InVar.ivIdx;
 
@@ -516,13 +479,14 @@ if ~isempty(WaveNumPosRm) && ~isempty(WaveNumNegRm)
             set(handles.CycleMinus, 'Enable', 'on');
         end
 
-        set(handles.CycleInd, 'String', ['Cycle #' num2str(handles.Cycle, ...
-            '%02i')]);
+        Cyc = handles.Cycle;
+        set(handles.CycleInd, 'String', ['Cycle #' num2str(Cyc, '%02i')]);
+        set(handles.RsqTxt,   'String', ['Rsq = ' num2str(Rsq(Cyc),'%6.4f')]);
 
         Data = handles.InVar.Data;
         Plot = handles.InVar.Plot;
         ivSeg = handles.InVar.ivSeg;
-        FitT = handles.InVar.FitT;
+        FitT = handles.OutVar.FitT;
 
         [handles] = takeuchi_plot_single (Data, ivSeg, FitT, Plot, handles);
         [handles] = takeuchi_plot_all (Data, ivSeg, FitT, Plot, handles);
@@ -627,17 +591,5 @@ end
 box on;
 grid on;
 hold off;
-
-end
-
-% --- Removes points from the Plot stucture
-function [Plot] = rm_iv_points (PlotIn, Data, ivIdx, rmIdx);
-
-llim = Data.Time_D(ivIdx.Ps1_D(rmIdx));
-ulim = Data.Time_D(ivIdx.Ne1_D(rmIdx));
-
-KeepIdx = find(PlotIn.iv1PlotTime<llim | ulim<PlotIn.iv1PlotTime); 
-Plot.iv1PlotTime = PlotIn.iv1PlotTime(KeepIdx);
-Plot.iv1PlotPres = PlotIn.iv1PlotPres(KeepIdx);
 
 end
