@@ -7,7 +7,6 @@ close all;
 clc;
 
 diary('RV_stdout.txt');
-%mydate = datestr(now,'yyyymmdd-HHMMSS');
 mydate = datestr(now,'ddd mmm dd HH:MM:SS YYYY');
 disp(['VVCR Analysis ' mydate]); 
 
@@ -122,14 +121,17 @@ for i = 1:length(top)
         % Did this within the load_calf file, it is a good idea!! Thanks Adam!
         [Res, Pat] = VVCR_MULTIH_08_09_17(Fold_name,top_name);
         
-        header = ['Pnam, Pmrn, file, Pes_Mean, Pes_StD, PmaxT_Mean, ' ...
-            'PmaxT_StD, PmaxK_Mean, PmaxK_StD, PmaxO_Mean, PmaxO_Std, ' ...
+        header = ['Pnam, Pmrn, file, Pes_Mean, Pes_StD, ' ...
+            'PmaxT_Mean, PmaxT_StD, PmaxK_Mean, PmaxK_StD, ' ...
+            'PmaxO_Mean, PmaxO_Std, PmaxN_Mean, PmaxN_Std, ' ...
             'NumPeaks_T, Vander_T, ', ...
             'VVCRiT_Mean, VVCRiT_StD, VVCRnT_Mean, VVCRnT_StD, ' ...
             'NumPeaks_K, ', ...
             'VVCRiK_Mean, VVCRiK_StD, VVCRnK_Mean, VVCRnK_StD, ' ...  
             'NumPeaks_O, Vander_O, ', ...
             'VVCRiO_Mean, VVCRiO_StD, VVCRnO_Mean, VVCRnO_StD, ' ...
+            'NumPeaks_N, ', ...
+            'VVCRiN_Mean, VVCRiN_StD, VVCRnN_Mean, VVCRnN_StD, ' ...  
             'TotNumWaves\n'];
 
         if ~isstruct(Res)
@@ -227,7 +229,8 @@ for i = 1:length(top)
             end
 
             % Name, MRN, Filename
-            fprintf(fd0, '%s, %s, %s,', Pat.Nam{1}, Pat.MRN{1}, Pat.FileNam);
+            NamNoComma = regexprep (Pat.Nam{1}, ',', '');
+            fprintf(fd0, '%s, %s, %s,', NamNoComma, Pat.MRN{1}, Pat.FileNam);
 
             % Pes and both Pmax - end systolic pressure (Pes), and maximum
             % isovolumic pressure (Pmax) obtained from Takeuchi (Mean + 2*amp)
@@ -236,6 +239,7 @@ for i = 1:length(top)
             fprintf(fd0, '%10.6f, %10.6f,' , Res.PmaxT_Mean, Res.PmaxT_StD);
             fprintf(fd0, '%10.6f, %10.6f,' , Res.PmaxK_Mean, Res.PmaxK_StD);
             fprintf(fd0, '%10.6f, %10.6f,' , Res.PmaxO_Mean, Res.PmaxO_StD);
+            fprintf(fd0, '%10.6f, %10.6f,' , Res.PmaxN_Mean, Res.PmaxN_StD);
 
             % print VVCR - ventricular vascular coupling ratio
             % UT - Dr. Uyen Troung
@@ -250,6 +254,9 @@ for i = 1:length(top)
             fprintf(fd0, '%i, %i, ', Res.numPeaksO, Res.VandO);
             fprintf(fd0, '%8.6f, %8.6f,', Res.VVCRiO_Mean, Res.VVCRiO_StD);
             fprintf(fd0, '%9.5f, %9.5f,', Res.VVCRnO_Mean, Res.VVCRnO_StD);
+            fprintf(fd0, '%i, ', Res.numPeaksN);
+            fprintf(fd0, '%8.6f, %8.6f,', Res.VVCRiN_Mean, Res.VVCRiN_StD);
+            fprintf(fd0, '%9.5f, %9.5f,', Res.VVCRnN_Mean, Res.VVCRnN_StD);
 
             % the number of analyzed peaks and the total number of waves
             fprintf(fd0, '%i\n', Res.TotNumWaves);

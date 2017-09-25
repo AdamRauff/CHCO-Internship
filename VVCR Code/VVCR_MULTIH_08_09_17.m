@@ -129,6 +129,8 @@ Res.Pes  = unique([Data.Pes1' Data.Pes2']);
 Res = compute_MeanStd (Res, Res.Pes, 'Pes'); 
 
 %% (8) Perform Takeuchi fit(s), put up check GUI, and compute return quantities
+% FitT is "new" ICs (w/fitting limits and new ICs), FitO is "old" fit (Adam's
+% unconstrained fit)
 if RunT
     % frequency is the conversion to angular frequency 2*pi/T
     % multiplied by the number of waves found over the time period
@@ -169,16 +171,21 @@ if RunT
 
 else
 
-    [Res.numPeaksT, Res.numPeaksO, Res.PmaxT_Mean, Res.PmaxT_StD, ...
-    Res.PmaxO_Mean, Res.PmaxO_StD, Res.VVCRiT_Mean, Res.VVCRiT_StD, ...
-    Res.VVCRnT_Mean, Res.VVCRnT_StD, Res.VVCRiO_Mean, Res.VVCRiO_StD, ...
-    Res.VVCRnO_Mean, Res.VVCRnO_St] = deal(0); 
+    [Res.numPeaksT, Res.PmaxT_Mean, Res.PmaxT_StD, ...
+    Res.numPeaksO,  Res.PmaxO_Mean, Res.PmaxO_StD, ...
+    Res.VVCRiT_Mean, Res.VVCRiT_StD, Res.VVCRnT_Mean, Res.VVCRnT_StD, ...
+    Res.VVCRiO_Mean, Res.VVCRiO_StD, Res.VVCRnO_Mean, Res.VVCRnO_StD] ...
+    = deal(0); 
+   
 
 end
 
 %% (9) Perform Kind fit, put up check GUI, and compute return quantities
+% FitK is weighted residuals, contraction error weighted to be (roughly)
+% the same as relaxtion error. FitN is "Normal", no weighting.
 if RunK
-    [FitK, PlotK] = fit_kind (ivSeg, ivIdx, Data, mean(FitT.PIsoMax));
+    [FitK, PlotK] = fit_kind (ivSeg, ivIdx, Data, mean(FitT.PIsoMax), 1);
+    [FitN] = fit_kind (ivSeg, ivIdx, Data, mean(FitT.PIsoMax), 0);
 
     % Call the Kind Fit Check GUI
     FitK.MeanTP = mean(RetT.FitT.PIsoMax);
@@ -190,18 +197,27 @@ if RunK
     end
 
     BadCycK = RetK.FitK.BadCyc;
+    BadCycN = FitN.BadCyc;
 
     Res.FitK = RetK.FitK;
+    Res.FitN = FitN;
     Res.numPeaksK = sum(~BadCycK);
+    Res.numPeaksN = Res.numPeaksK;
 
     GOOD_PmxK = RetK.FitK.RCoef(BadCycK~=1,1);
+    GOOD_PmxN = FitN.RCoef(BadCycN~=1,1);
     Res = compute_MeanStd (Res, GOOD_PmxK, 'PmaxK');
+    Res = compute_MeanStd (Res, GOOD_PmxN, 'PmaxN');
     Res = compute_VVCR (Res, Data.Pes2(BadCycK~=1), GOOD_PmxK, 'K');
+    Res = compute_VVCR (Res, Data.Pes2(BadCycN~=1), GOOD_PmxN, 'N');
 
 else
 
-    [Res.numPeaksK, Res.PmaxK_Mean, Res.PmaxK_StD, Res.VVCRiK_Mean, ...
-    Res.VVCRiK_StD, Res.VVCRnK_Mean, Res.VVCRnK_StD] = deal(0); 
+    [Res.numPeaksK, Res.PmaxK_Mean, Res.PmaxK_StD, ...
+    Res.numPeaksN, Res.PmaxN_Mean, Res.PmaxN_StD, ...
+    Res.VVCRiK_Mean, Res.VVCRiK_StD, Res.VVCRnK_Mean, Res.VVCRnK_StD, ...
+    Res.VVCRiN_Mean, Res.VVCRiN_StD, Res.VVCRnN_Mean, Res.VVCRnN_StD] ...
+    = deal(0); 
 
 end
 

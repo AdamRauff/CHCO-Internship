@@ -131,7 +131,7 @@ function CyclePlus_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-Rsq = handles.OutVar.FitT.Rsq;
+Rsq = handles.OutVar.FitK.Rsq;
 Cyc = handles.Cycle;
 
 Cyc = Cyc + 1;
@@ -171,7 +171,7 @@ function CycleMinus_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-Rsq = handles.OutVar.FitT.Rsq;
+Rsq = handles.OutVar.FitK.Rsq;
 Cyc = handles.Cycle;
 
 Cyc = Cyc - 1;

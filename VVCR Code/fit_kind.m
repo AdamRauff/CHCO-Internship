@@ -1,4 +1,4 @@
-function [Ret1, Ret2] = fit_kind (ivSeg, ivIdx, Data, MeanTPmax)
+function [Ret1, Ret2] = fit_kind (ivSeg, ivIdx, Data, MeanTPmax, WgtFlg)
 %
 % ivSeg  - Struct of all pres and time fitting values:
 %            iv1Pres/iv1Time/iv2Pres/iv2Time 1st level structs; Time labels
@@ -40,7 +40,13 @@ for i = 1:nfits
     posidx = ivSeg.iv2Time(i).PosIso;
     negidx = ivSeg.iv2Time(i).NegIso;
 
-    P0_weight = mean(ivSeg.iv2dPdt(i).NegIso)/mean(ivSeg.iv2Pres(i).PosIso);
+    if WgtFlg
+        P0_weight = mean(ivSeg.iv2dPdt(i).NegIso)/mean(ivSeg.iv2Pres(i).PosIso);
+        nam = ' (weighted)';
+    else
+        P0_weight = 1;
+        nam = '';
+    end
 
 %-[Examining effect of weighting
 %   disp(['Cycle #' num2str(i,'%02i') ' Weighting Factor = ' ...
@@ -92,12 +98,12 @@ for i = 1:nfits
 %-[Examining effect of weighting
 %   disp(['    Rsq ' num2str(Ret1.Rsq(i), '%6.4f')]);
        
-    if Ret1.Rsq(i) < 0.80
+    if Ret1.Rsq(i) < 0.70
        Ret1.BadCyc(i) = 1; 
     end
 
     if any( (c-lb) < 0 ) || any ( (ub-c) < 0 )
-       disp(['    fit_kind: fit bounds violated on cycle ' ...
+       disp(['    fit_kind' nam ': fit bounds violated on cycle ' ...
            num2str(i, '%02i')]);
        Ret1.BadCyc(i) = 1;
     end
@@ -141,12 +147,12 @@ end
 % good fit, are not utilized in the VVCR calculation.
 indX = find(Ret1.BadCyc==1); % find indices of the bad waves
 if ~isempty(indX)
-    disp(['    fit_kind: Some waves fit well, ave R^2 = ' ...
+    disp(['    fit_kind' nam ': Some waves fit well, ave R^2 = ' ...
         num2str(mean(Ret1.Rsq(Ret1.BadCyc~=1)),'%5.3f') '.']);
     disp(['        These waves are excluded: ', num2str(indX','%02i ')]);
 else
-    disp(['    fit_kind: All waves fit well, ave R^2 = ' ...
-        num2str(mean(Ret1.Rsq),'%5.3f') '.']);
+    disp(['    fit_kind' nam ': All waves fit well, ave R^2 = ' ...
+            num2str(mean(Ret1.Rsq),'%5.3f') '.']);
 end
 
 % END OF fit_kind
