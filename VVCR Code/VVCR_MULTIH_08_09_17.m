@@ -64,7 +64,7 @@ for i = 1:2
 
     Res.TotNumWaves = GateStr.TotNumWaves;
 
-    % Find isovolumic timings for Takaguichi & Kind method.
+    %% (4) Find isovolumic timings for Takaguichi & Kind method.
     [ivIdx, ivVal, badcyc] = data_isoidx (Data_O, Extr);
 
     % If very few timings were found, filtering may be a problem.
@@ -119,7 +119,7 @@ if ~RunT & ~RunK
 
 end
 
-%% (7) Fourier Series interpolation and finding isovolumic segments for fitting
+%% (5) Fourier Series interpolation and finding isovolumic segments for fitting
 [Data] = data_double (Data_O, ivIdx);
 
 [ivSeg, ivIdx] = data_isoseg (false, Data, ivIdx);
@@ -128,7 +128,7 @@ end
 Res.Pes  = unique([Data.Pes1' Data.Pes2']);
 Res = compute_MeanStd (Res, Res.Pes, 'Pes'); 
 
-%% (8) Perform Takeuchi fit(s), put up check GUI, and compute return quantities
+%% (6) Perform Takeuchi fit(s), put up check GUI, and compute return quantities
 % FitT is "new" ICs (w/fitting limits and new ICs), FitO is "old" fit (Adam's
 % unconstrained fit)
 if RunT
@@ -153,8 +153,8 @@ if RunT
     end
 
     BadCycT = RetT.FitT.BadCyc;
-    BadCycO = RetT.FitO.BadCyc;
-
+    BadCycO = RetT.FitO.BadCyc | RetT.FitT.BadCyc; 
+    
     Res.FitT = RetT.FitT;
     Res.FitO = RetT.FitO;
     Res.numPeaksT = sum(~BadCycT);
@@ -180,7 +180,7 @@ else
 
 end
 
-%% (9) Perform Kind fit, put up check GUI, and compute return quantities
+%% (7) Perform Kind fit, put up check GUI, and compute return quantities
 % FitK is weighted residuals, contraction error weighted to be (roughly)
 % the same as relaxtion error. FitN is "Normal", no weighting.
 if RunK
@@ -197,12 +197,12 @@ if RunK
     end
 
     BadCycK = RetK.FitK.BadCyc;
-    BadCycN = FitN.BadCyc;
+    BadCycN = FitN.BadCyc | RetK.FitK.BadCyc;
 
     Res.FitK = RetK.FitK;
     Res.FitN = FitN;
     Res.numPeaksK = sum(~BadCycK);
-    Res.numPeaksN = Res.numPeaksK;
+    Res.numPeaksN = sum(~BadCycN);
 
     GOOD_PmxK = RetK.FitK.RCoef(BadCycK~=1,1);
     GOOD_PmxN = FitN.RCoef(BadCycN~=1,1);
