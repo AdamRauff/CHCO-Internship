@@ -1,5 +1,5 @@
 % basename.m;
-function new_name = basename (old_name, len);
+function new_name = basename (old_name, len)
 
 % returns a smaller segment of the provided pathname.
 

@@ -582,6 +582,7 @@ plot([xmn xmn], [0, ymx], 'r--');
 plot([xmx xmx], [0, ymx], 'r--');
 
 % Set reasonable plot limits.
+xlim([0 Data.Time_D(end)]);
 if ymx > 300
     ylim([0, 300]);
 else

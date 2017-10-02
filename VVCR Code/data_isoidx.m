@@ -208,7 +208,7 @@ ivVal.dPmin2 = Ext.dPminVal;
 if isempty(idx)
     badcyc.K = [];
 else
-    badcyc.K = [1];
+    badcyc.K = 1;
 end
 
 % # of points it can look before it stops... each point is 4ms.

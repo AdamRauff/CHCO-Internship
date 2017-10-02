@@ -1,4 +1,4 @@
-function [Ret] = data_maxmin (Dat);
+function [Ret] = data_maxmin (Dat)
 % Use findpeaks() to determine extrema of dP/dt.
 
 % The peaks must exceed 100 [mmHg/s] and be
