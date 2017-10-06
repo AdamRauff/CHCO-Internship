@@ -114,7 +114,7 @@ RunK = logical(length(ivIdx.Ps2));
 if ~RunT & ~RunK
 
     % set all output variables to true, return to runAll
-    Res, Pat = deal(true);
+    [Res, Pat] = deal(true);
     return
 
 end
