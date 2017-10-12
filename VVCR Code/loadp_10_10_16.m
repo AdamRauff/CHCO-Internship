@@ -12,6 +12,10 @@ if isa(file(1),'char')
     filename = strcat(npath, file);   % Get the full filename
     redname = basename(filename, 3);  % Get its basename for reporting
     fd0 = fopen(filename);            % open the file descriptor
+    if fd0 < 1
+        [Pres, dPdt, Rvals, nam, mrn, file, npath, marks] = deal (-1);
+        return;
+    end
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
     tmp = textscan(fd0, '%s %s %s %s %s %s',1);

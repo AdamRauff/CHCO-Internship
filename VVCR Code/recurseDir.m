@@ -18,7 +18,7 @@ function [ fileStruct ] = recurseDir(FoldName)
     remDirs = dirNam([dirNam.isdir]);
     for i = 1:length(remDirs)
         if ~strcmp(remDirs(i).name(1),'.')
-            dirFiles = recurseDir([FoldName, remDirs(i).name, '/']);
+            dirFiles = recurseDir([FoldName remDirs(i).name filesep]);
             fileStruct = [fileStruct; dirFiles];
         end
     end

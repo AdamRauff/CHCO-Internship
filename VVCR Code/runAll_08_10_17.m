@@ -20,11 +20,11 @@ end
 
 % attach a forward slash to the end of Fold_name so folder address ends
 % with /
-Fold_name = [Fold_name, '/'];
+Fold_name = [Fold_name filesep];
 
 % list all filenames in the directory of the chosen folder and its
 % subdirectories
-top  = recurseDir(Fold_name);
+top = recurseDir(Fold_name);
 
 % keep track of how many pressure files were analyzed
 fileCount = 0;
@@ -63,6 +63,7 @@ end
 for i = 1:length(top)
     % get individual file (ith file)
     top_name = top(i).name;
+    Fold_name = [top(i).folder filesep];
     
     % -----------------------------------------------------------------
     % this piece of code is only added for the analysis of the text files
@@ -119,7 +120,7 @@ for i = 1:length(top)
         % not. In the catch, record the name of the text file somewhere, so
         % if it is a pressure file that could not be opened, it is remarked
         % Did this within the load_calf file, it is a good idea!! Thanks Adam!
-        [Res, Pat] = VVCR_MULTIH_08_09_17(Fold_name,top_name);
+        [Res, Pat] = VVCR_MULTIH_08_09_17(Fold_name, top_name);
         
         header = ['Pnam, Pmrn, file, Pes_Mean, Pes_StD, ' ...
             'PmaxT_Mean, PmaxT_StD, PmaxK_Mean, PmaxK_StD, ' ...

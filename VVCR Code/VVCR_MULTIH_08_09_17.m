@@ -17,11 +17,15 @@ else
 end
 
 % check to see if RV array was NOT found by loaddp
-if length(Pres) == 1 && Pres == 0
+if length(Pres) == 1
 
     % set output vars to true --> skip this file, return to runAll, keep going
     [Res, Pat] = deal (true);
-    disp('VVCR_MULTIH: Loadp did not detect an RV column');
+    if Pres == 0
+        disp('VVCR_MULTIH: Loadp did not detect an RV column');
+    else
+        disp('VVCR_MULTIH: Loadp could not open file');
+    end
     return
 
 end
