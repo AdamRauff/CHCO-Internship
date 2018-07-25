@@ -30,8 +30,8 @@ if length(Pres) == 1
 
 end
 
-%% (2) Filter pressure data & create time vector.
-[Data_O] = data_filter (dat_typ, Pres, dPdt, Rvals);
+%% (2) Filter pressure data, find pressure acceleration, & create time vector.
+[Data_O] = data_filter (dat_typ, Pres, dPdt_6OCD, Rvals);
 
 %% (3) Determine all indexing for analysis.
 Res.TotNumWaves = 0;
