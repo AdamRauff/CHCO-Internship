@@ -1,4 +1,10 @@
 function [Ret] = data_double (Data_O, ivIdx)
+% This function doubles the size of the data using a Fouier-transform based
+% interpolation technique (nice job Adam! It's periodic data after all!).
+% All fitting is performed on this data, which has a timestep of 2ms for
+% clinical, 0.5ms for calf data.
+% It also finds the Pes point at 30ms prior to (dP/dt)min (the "dog" method
+% of finding Pes). The Vanderpool way (Pes3) is found elsewhere.
 
 % Copy all original data to returned structure.
 Ret = Data_O;
@@ -10,6 +16,7 @@ mystp = Ret.time_step/2;
 
 Ret.Pres_D = interpft(Data_O.Pres, mysz);
 Ret.dPdt_D = interpft(Data_O.dPdt, mysz);
+Ret.dP2t_D = interpft(Data_O.dP2t, mysz);
 Ret.Time_D = mystp:mystp:Data_O.Time(end);
 
 %% Pes = 30 ms prior to dp/dt min; get that time and convert to an integer. 

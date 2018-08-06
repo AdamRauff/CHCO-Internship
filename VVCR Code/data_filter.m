@@ -15,12 +15,6 @@ function [Ret] = data_filter (dat_typ, Pres, dPdt, Rvals)
 % Copy Rvals into stucture for later use.
 Ret.Rvals = Rvals;
 
-% Store original (WITT versions) of pressure & dP/dt in _orig variables
-% (filtered values are returned below in "no underscore" vars and are
-% assumed to be used)...
-Ret.OrigPres = Pres;
-Ret.OrigdPdt = dPdt;
-
 n = 15; % number is approximate cutoff in Hz.
 if dat_typ
     Ret.time_step = 1/250;
@@ -30,7 +24,18 @@ end
 Wp = Ret.time_step*2*n;
 [b,a] = butter(n,Wp);
 
-%% Do the actual calculus
+% Store original (WITT versions) of pressure & dP/dt in _orig variables
+% (filtered values are returned below in "no underscore" vars and are
+% assumed to be used). PA is taken as first order forward difference in
+% this case.
+Ret.OrigPres = Pres;
+Ret.OrigdPdt = dPdt;
+
+Ret.OrigdP2t = diff(dPdt);
+Ret.OrigdP2t(end+1) = Ret.OrigdP2t(end);
+Ret.OrigdP2t = Ret.OrigdP2t/Ret.time_step;
+
+%% Do higher order difference, smoothing, in integration -> cleaner pressure
 % Compute 6th order diff of dPdt from original Pres vector. This overwrites
 % the WITT version, but who cares.
 dPdt = data_centdiff(dat_typ, Pres);
@@ -42,11 +47,6 @@ dPdt = data_centdiff(dat_typ, Pres);
 Ret.dPdt = filtfilt(b,a,dPdt);
 Ret.Pres = cumtrapz(Ret.dPdt)*Ret.time_step+Pres(1);
 Ret.dP2t = data_centdiff(dat_typ, Ret.dPdt);
-
-% FOR DEBUG COMPARISONS - NONFILTERED DATA + LOW ORDER d2P/dt2 RETURNED
-%Ret.dPdt = dPdt;
-%Ret.Pres = Pres;
-%Ret.dP2t = diff(dPdt);
 
 %% construct time array (4ms from catheter, 1ms from calf pressure DAQ)
 Ret.time_end = Ret.time_step*size(Pres,1);

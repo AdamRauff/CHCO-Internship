@@ -1,17 +1,33 @@
 function [ivIdx, ivVal, badcyc] = data_isoidx (Dat, Ext)
+% This code finds indicies and values for the isovolumic sections of the RV
+% pressure waveform. There are several approaches for this: Takeuchi, Kind,
+% and now, Vanderpool. These are defined as:
+% Takeuchi:   IsoC: 20% of (dP/dt)max to (dP/dt)max
+%             IsoR: (dP/dt)min to point at which pressure recovers to value
+%                   at IsoC start.
+% Kind:       IsoC: 20% of (dP/dt)max to 110% of pressure @ (dP/dt)max
+%             IsoR: ±20% of pressure @ (dP/dt)min
+% Vanderpool: IsoC: Max of (d2P/dt2) just prior to (dP/dt)max to (dP/dt)max
+%             IsoR: Same as Takeuchi.
+%
+% Additionally, we find the end-systolic point, to compute Pes. This can be
+% done two ways:
+% Hack:       32ms before (dP/dt)min (from dog paper!)
+% Vanderpool: Min of (d2P/dt2) just prior to (dP/dt)min.
+
+%% Find isovolumic timings for Takeuchi method points.
+disp('    data_isoidx: finding Takeuchi indices');
 
 % Pre allocate variables. Variable name codes are:
 %   ivVal - values;
 %   ivIdx - indices;
 %   1  - 1st method (Takeuchi);
 %   2  - 2nd method (Kind);
+%   3  - 3rd method (Vanderpool);
 %   Ps - positive iso start;
 %   Pe - positive iso end;
 %   Ns - negative iso start;
 %   Ne - negative iso end;
-
-%% Find isovolumic timings for Takeuchi method points.
-disp('    data_isoidx: finding Takeuchi indices');
 
 mysz = length(Ext.dPmaxIdx);
 ivIdx.Ps1 = zeros(mysz,1);
@@ -31,6 +47,7 @@ for i = 1:mysz
 
     EDi = ivIdx.dPmax1(i);
     
+    % COMPUTE [Ps] TIMINGS
     % Start of positive isovolumic time (ivVal.Ps1): 20% (dP/dt)max
     % Step backwards from (dP/dt)max until we reach this point.
     while Dat.dPdt(EDi) > 0.20*ivVal.dPmax1(i)
@@ -45,7 +62,7 @@ for i = 1:mysz
 	        'not captured at start of sample, skipping.']);
 
             EDi = ivIdx.dPmin1(1); 
-            badcyc.T = [badcyc.T, 1]; % add to list of bad curves
+            badcyc.T = [badcyc.T, 1]; % add first to list of bad curves
         end
     end
 
@@ -92,6 +109,7 @@ for i = 1:mysz
     ivVal.Ps1(i) = Dat.Pres(EDi);
     ivIdx.Ps1(i) = EDi;
 
+    % COMPUTE [Ne] TIMINGS
     % find iv*.Ne1 point on the other side of the pressure wave; this point
     % has the same pressure (=ivVal.Ps1); ivVal.Ne1 - ivVal.Ps1 is negative
     ESi = ivIdx.Ps1(i)+15;
@@ -109,7 +127,7 @@ for i = 1:mysz
 	        ', (dP/dt)min not captured at end of sample, skipping.']);
 
             ESi = ivIdx.Ps1(i)-10;
-            badcyc.T = [badcyc.T, i]; % add to list of bad curves
+            badcyc.T = [badcyc.T, -i]; % add to list of bad curves
         end
         
         % if algorithm unable to find the negative ivVal.Ps1, it continues to
@@ -131,7 +149,7 @@ for i = 1:mysz
 	           ', can''t find end isovolumic relaxation pressure, ' ...
 		   'skipping.']);
 
-               badcyc.T = [badcyc.T, i]; % add to list of bad curves
+               badcyc.T = [badcyc.T, -i]; % add to list of bad curves
            end
         end
     end
@@ -172,7 +190,7 @@ for i = 1:mysz
 
         % get rid of curve if it is not already marked
         if isempty(find(badcyc.T==i,1))
-            badcyc.T = [badcyc.T, i];
+            badcyc.T = [badcyc.T, -i];
         end
 
         % ask Hunter about this scenario - Hunter look into this scenario!!!
@@ -204,11 +222,15 @@ ivVal.dPmax2 = Ext.dPmaxVal;
 ivIdx.dPmin2 = Ext.dPminIdx;
 ivVal.dPmin2 = Ext.dPminVal;
 
-[~,idx] = find(badcyc.T==1);
+% I guess originally I just avoided using the first cycle if it was bad,
+% but really I must avoid using any Ps1 values that are bad - those are the
+% positive badcyc.T values.
+[~,idx] = find(badcyc.T > 0);
 if isempty(idx)
     badcyc.K = [];
 else
-    badcyc.K = 1;
+%   badcyc.K = 1;
+    badcyc.K = badcyc.T(idx);
 end
 
 % # of points it can look before it stops... each point is 4ms.
@@ -286,9 +308,90 @@ for i = 1:mysz
 
 end
 
+%% Find Vanderpool times based on pressure acceleration extrema
+% (PA)max before (dP/dt)max, end diastole; and (PA)min before (dP/dt)min,
+% end systole. The first of these gives us the timing [Ps], while the 
+% second allows a non-dog-based calculation of P_es. Like the Takeuchi
+% method, the timings of [Pe] and [Ns] come directly from the dP/dt
+% extrema, so creating copies of the dPmXX values is all that is needed.
+
+disp('    data_isoidx: finding Vanderpool indices');
+
+ivIdx.Ps3 = zeros(mysz,1);
+ivVal.Ps3 = zeros(mysz,1); 
+ivIdx.Ne3 = ivIdx.Ne1;
+ivVal.Ne3 = ivVal.Ne1;
+
+ivIdx.dPmax3 = Ext.dPmaxIdx;
+ivVal.dPmax3 = Ext.dPmaxVal;
+ivIdx.dPmin3 = Ext.dPminIdx;
+ivVal.dPmin3 = Ext.dPminVal;
+
+% Here I must avoid using any negative badcyc.T values, which indicate that
+% the Takeuchi indices failed on Ne1. Additionally I use the Ps1 value to
+% determine a bound for Ps3 (the max of PA should be within 2*Ps1 or so);
+% so if Ps1 was not found (value of badcyc.T > 0)... well we can still
+% attempt with this one, we'll just be more careful!
+[~,idx] = find(badcyc.T < 0);
+if isempty(idx)
+    badcyc.V = [];
+else
+    badcyc.V = badcyc.T(idx);
+end
+
+for i = 1:mysz
+    % Bound ED between dPmax and either double the distance between the
+    % determined Ps1 value, or more broadly the beginning of this cycle.
+    
+    % Find range of indices in which to search for (PA)max
+    Pend = ivIdx.dPmax3(i);
+    
+    idx = find(badcyc.T==i);
+    step = 2*(ivIdx.dPmax3(i)-ivIdx.Ps3(i));
+    if ~isempty(idx) | step <= 0
+        if i == 1
+            % ~third of a period if we're on the first cycle
+            step = round(Dat.time_per/3)
+        else
+            % ~third of the way between dPmax and previous dPmin
+            step = round((ivIdx.dPmax3(i)-ivIdx.dPmin3(i-1))/3);
+        end
+    end
+    Pstr = ivIdx.dPmax3(i)-step;
+    if Pstr < 1
+        Pstr = 1;
+    end
+    
+    [~, idx] = max(Dat.dP2t(Pstr:Pend));
+    ivVal.Ps3(i) = Dat.Pres(Pstr+idx);
+    ivIdx.Ps3(i) = Pstr+idx;
+    
+    % Here, main concern would be that we found the max at the beginning of
+    % the interval, which would indicate that the interval needs to be
+    % larger (or that, for the case of Pstr = 1, we don't have the max in
+    % the dataset).  If idx = 1, then we reject this set.
+    if idx == 1
+        badcyc.V = [badcyc.V, i];
+    end
+     
+    % Bound ES between dPmin half the distance between dPmax & dPmin
+    Pstr = round(0.5*(ivIdx.dPmin3(i)+0.5*ivIdx.dPmax3(i)));
+    Pend = ivIdx.dPmin3(i);
+    
+    [~, idx] = min(Dat.dP2t(Pstr:Pend));
+    ivVal.Pes3(i) = Dat.Pres(Pstr+idx);
+    ivIdx.Pes3(i) = Pstr+idx;
+    
+    % Note that if we have a bound region between dPmax & dPmin then the
+    % above should be (nearly) foolproof. No checks needed...
+    
+end
+
+
 %% Remove bad cycles from ivVal, ivIdx vectors.
-badcyc.T = sort(unique(badcyc.T));
+badcyc.T = sort(unique(abs(badcyc.T)));
 badcyc.K = sort(unique(badcyc.K));
+badcyc.V = sort(unique(badcyc.V));
 
 % Remove bad curves; unique removal for each fit type.
 if ~isempty(badcyc.T)
@@ -315,6 +418,19 @@ if ~isempty(badcyc.K)
     end
 end
 
+if ~isempty(badcyc.V)
+    for i = length(badcyc.T):-1:1
+        j = badcyc.T(i);
+        ivVal.Ps3(j) = []; ivIdx.Ps3(j) = [];
+        ivVal.Ne3(j) = []; ivIdx.Ne3(j) = [];
+
+        ivVal.dPmax3(j) = []; ivIdx.dPmax3(j) = [];
+        ivVal.dPmin3(j) = []; ivIdx.dPmin3(j) = [];
+    end
+end
+
+
 disp(['    data_isoidx: ' num2str(mysz,'%02i') ' extrema sets, ' ...
     num2str(length(ivVal.Ps1),'%02i') ' Takeuchi cycles, ' ...
-    num2str(length(ivVal.Ps2),'%02i') ' Kind cycles']);
+    num2str(length(ivVal.Ps2),'%02i') ' Kind cycles, ', ...
+    num2str(length(ivVal.Ps3),'%02i') ' Vanderpool cycles']);
