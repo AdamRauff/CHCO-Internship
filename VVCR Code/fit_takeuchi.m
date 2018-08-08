@@ -31,8 +31,15 @@ if Method > 0
 end
 
 % Variables for main fit, all returned in Ret1
-nfits = length(ivSeg.iv1Pres);
-
+if Method < 2
+    ivPf = 'iv1Pres';
+    ivTf = 'iv1Time';
+else
+    ivPf = 'iv3Pres';
+    ivTf = 'iv3Time';
+end
+nfits = length(ivSeg.(ivPf));
+    
 Ret1.Rsq = zeros(nfits,1);     % Goodness of fit coefficients
 Ret1.RCoef = zeros(nfits,4);   % Fit regression constants
 Ret1.BadCyc = zeros(nfits,1);  % Which waveforms had a bad fit

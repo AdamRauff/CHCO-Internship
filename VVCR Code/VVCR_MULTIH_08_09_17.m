@@ -149,10 +149,11 @@ if RunT
     ICS.dPminIdx = ivIdx.dPmin1;
 
     [FitT, ivSeg, PlotT] = fit_takeuchi (ivSeg, Data, ICS, 1);
+    [FitV] = fit_takeuchi (ivSeg, Data, ICS, 2);
     [FitO] = fit_takeuchi (ivSeg, Data, ICS, 0);
 
     % Call the Takeuchi Fit Check GUI
-    TStr.Plot = PlotT; TStr.FitT = FitT; TStr.FitO = FitO;
+    TStr.Plot = PlotT; TStr.FitT = FitT; TStr.FitV = FitV; TStr.FitO = FitO;
     RetT = GUI_FitTakeuchi (TStr, Data, ivIdx, ivVal, ivSeg);
     [Res, Ret] = interpret_str (RetT, 'GUI_FitTakeuchi', FileName, Res);
     if Ret

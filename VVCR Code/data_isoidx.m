@@ -339,6 +339,8 @@ else
     badcyc.V = badcyc.T(idx);
 end
 
+step = 2*(ivIdx.dPmax1-ivIdx.Ps1);
+
 for i = 1:mysz
     % Bound ED between dPmax and either double the distance between the
     % determined Ps1 value, or more broadly the beginning of this cycle.
@@ -347,17 +349,23 @@ for i = 1:mysz
     Pend = ivIdx.dPmax3(i);
     
     idx = find(badcyc.T==i);
-    step = 2*(ivIdx.dPmax3(i)-ivIdx.Ps3(i));
-    if ~isempty(idx) | step <= 0
+    if ~isempty(idx) | step(i) <= 0
         if i == 1
-            % ~third of a period if we're on the first cycle
-            step = round(Dat.time_per/3)
+            % ~fifth of a period if we're on the first cycle
+            step(i) = round(0.2*Dat.time_per/Dat.time_step);
         else
-            % ~third of the way between dPmax and previous dPmin
-            step = round((ivIdx.dPmax3(i)-ivIdx.dPmin3(i-1))/3);
+            % ~third of the way between dPmax and previous dPmin. Note that
+            % if there are excuded beats this will go very wrong...!
+            step(i) = round((ivIdx.dPmax3(i)-ivIdx.dPmin3(i-1))/3);
         end
+        disp(['BOUNDING REGION FOR VANDERPOOL Ps INDEX IS NEGATIVE FOR ' ...
+            'CYCLE ' num2str(i)]);
+        disp(['REGION INDICIES APPROXIMATED AS ' num2str(step(i)) '; ' ...
+            'PLEASE REPORT THIS PRESSURE FILE TO DEVELOPER']);
+        disp(['IF REGION IS >> ' num2str(round(0.2*Dat.time_per/ ...
+            Dat.time_step)) ' USE RESULTS WITH CAUTION']);
     end
-    Pstr = ivIdx.dPmax3(i)-step;
+    Pstr = ivIdx.dPmax3(i)-step(i);
     if Pstr < 1
         Pstr = 1;
     end
@@ -374,19 +382,22 @@ for i = 1:mysz
         badcyc.V = [badcyc.V, i];
     end
      
-    % Bound ES between dPmin half the distance between dPmax & dPmin
-    Pstr = round(0.5*(ivIdx.dPmin3(i)+0.5*ivIdx.dPmax3(i)));
+    % We use negative iso values from Takeuchi, so we don't need to find
+    % them again. However, this technique has a more robust way of finding
+    % Pes, and this is the place to do it. Here, we bound ES to be between
+    % dPmin (end) and half the distance between dPmax & dPmin (start).
+    Pstr = round(0.5*(ivIdx.dPmin3(i)+ivIdx.dPmax3(i)));
     Pend = ivIdx.dPmin3(i);
-    
+        
+    % The largest negative value of PA is then the time of end systole.
     [~, idx] = min(Dat.dP2t(Pstr:Pend));
     ivVal.Pes3(i) = Dat.Pres(Pstr+idx);
     ivIdx.Pes3(i) = Pstr+idx;
     
     % Note that if we have a bound region between dPmax & dPmin then the
-    % above should be (nearly) foolproof. No checks needed...
+    % above should be (nearly) foolproof. No checks needed... HOPEFULLY
     
 end
-
 
 %% Remove bad cycles from ivVal, ivIdx vectors.
 badcyc.T = sort(unique(abs(badcyc.T)));
