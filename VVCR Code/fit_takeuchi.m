@@ -1,26 +1,13 @@
 function [Ret1, Ret2, Ret3] = fit_takeuchi (ivSeg, Data, ICS, Method)
 %
 % ivSeg  - Struct of all pres and time fitting values:
-%            iv1Pres/iv1Time/iv2Pres/iv2Time 1st level structs; Time labels
-%              actually contain indices, not real times.
+%            iv(x)Pres/iv(x)Time (x=1,3 used here) 1st level structs; Time
+%              labels actually contain indices, not real times.
 %            PosIso/NegIso 2nd level structs; values for contract and relax
 % Data   - Structure containing Time and Pressure.
 % ICS    - Struct or Vector; If called from VVCR_ (first call), is struct
 %          needed for individual-cycle ICs; if called from a GUI, contains
 %          contstant initial conditions for fit.
-
-% Set existing ivSeg to minimally insure continuity if nothing changes. 
-if Method == 1
-    Ret2 = ivSeg;
-    ext = '';
-else
-    Ret2 = [];
-    if Method == 0
-        ext = '_o';
-    else
-        ext = '+V';
-    end
-end
 
 opts1 = optimoptions (@lsqnonlin);
 opts1.Display = 'off';
@@ -30,16 +17,19 @@ if Method > 0
     opts1.FiniteDifferenceType = 'central';
 end
 
-% Variables for main fit, all returned in Ret1
+% Place appropriate segments (Takeuchi or Vanderpool) into temp Seg struct.
+% Never forget that iv(x)Time actually contains indices, not time values.
 if Method < 2
-    ivPf = 'iv1Pres';
-    ivTf = 'iv1Time';
+    nfits = length(ivSeg.iv1Pres);
+    Seg.Time = ivSeg.iv1Time;
+    Seg.Pres = ivSeg.iv1Pres;
 else
-    ivPf = 'iv3Pres';
-    ivTf = 'iv3Time';
+    nfits = length(ivSeg.iv3Pres);
+    Seg.Time = ivSeg.iv3Time;
+    Seg.Pres = ivSeg.iv3Pres;
 end
-nfits = length(ivSeg.(ivPf));
-    
+
+% Variables produced by the actual fit, all returned in Ret1
 Ret1.Rsq = zeros(nfits,1);     % Goodness of fit coefficients
 Ret1.RCoef = zeros(nfits,4);   % Fit regression constants
 Ret1.BadCyc = zeros(nfits,1);  % Which waveforms had a bad fit
@@ -47,29 +37,46 @@ Ret1.PIsoMax = zeros(nfits,1); % Pmax,iso values obtained from fit
 if isstruct(ICS)
     Ret1.CycICs = zeros(nfits,4); % Saved cycle-specific ICS
 end
-
-% Variables for adding points to GUI_FitTakeuchi plots (w/Vanderpool method)
 Ret1.VCyc = zeros(nfits,1);
+
+% Variables needed for adding points to GUI_FitTakeuchi plots (w/Vanderpool
+% "walk down the pressure curve" method). The results of this method are
+% only shown for the new Takeuchi fit (method=1), so we don't need these
+% for the old (Adam) fit or for the Vanderpool PA segment method (which
+% doesn't use this point-adding technique anyway!). Also set existing ivSeg
+% (that came in on call) to Ret2 to minimally insure continuity of this 
+% variable. Finally, set the char variable 'ext' that is used in providing
+% user feedback.
 if Method == 1
+    ext = '';
+
+    Ret2 = ivSeg;
+    
+    % Ploting vectors of the fitting data for GUI_FitTakeuchi
     ADD_TPoints = []; 
     ADD_PPoints = []; 
-
-    % Ploting vectors of the fitting data for GUI_FitTakeuchi
     Ret3.iv1PlotTime = [];
     Ret3.iv1PlotPres = [];
 else
+    if Method == 0
+        ext = '_o';
+    else
+        ext = '+V';
+    end
+    
+    Ret2 = [];
     Ret3 = [];
 end
 
-% scroll through the number of rows (pressure waves) in the
-% structures: ivSeg.iv1Time and ivSeg.iv1Pres
+% scroll through the number of rows (pressure waves) in the structures:
+% Seg.Time and Seg.Pres
 for i = 1:nfits
     
     % Obtain vectors of fitting time, pressure; then normalize time to start
     % at zero (to obtain consistent phase) for newer methods.
-    WaveTs = [Data.Time_D(ivSeg.iv1Time(i).PosIso)'; ...
-        Data.Time_D(ivSeg.iv1Time(i).NegIso)'];
-    WavePs = [ivSeg.iv1Pres(i).PosIso; ivSeg.iv1Pres(i).NegIso];
+    WaveTs = [Data.Time_D(Seg.Time(i).PosIso)'; ...
+        Data.Time_D(Seg.Time(i).NegIso)'];
+    WavePs = [Seg.Pres(i).PosIso; Seg.Pres(i).NegIso];
     
     if Method > 0
         WaveTsNorm = WaveTs-WaveTs(1);
@@ -149,12 +156,12 @@ for i = 1:nfits
    
     % AR 6/5/17 -----------------------------------------------
     % adding points succesively to beginning of systole to make better fit
-    % of sick patients with wide curves
+    % of sick patients with wide curves. Don't do this for method=2.
     
     % obtain maximum pressure point on actual curve
-    PresMax = max(Data.Pres_D(ivSeg.iv1Time(i).PosIso(1,1):1: ...
-        ivSeg.iv1Time(i).NegIso(end,1)));
-    if Ret1.Rsq(i) > 0.80 && Ret1.PIsoMax(i) < PresMax
+    PresMax = max(Data.Pres_D(Seg.Time(i).PosIso(1,1):1: ...
+        Seg.Time(i).NegIso(end,1)));
+    if Ret1.Rsq(i) > 0.80 & Ret1.PIsoMax(i) < PresMax & method < 2
        
         % keep count of how many points added to systole side
         count = 0;
@@ -167,23 +174,23 @@ for i = 1:nfits
         while Ret1.PIsoMax(i) < PresMax
             
             % add point to iv1Time(i).PosIso and iv1Pres(i).PosIso
-            ivSeg.iv1Time(i).PosIso = ...
-                [(ivSeg.iv1Time(i).PosIso(1,1))-1; ivSeg.iv1Time(i).PosIso];
-            ivSeg.iv1Pres(i).PosIso = ...
-                [Data.Pres_D(ivSeg.iv1Time(i).PosIso(1,1)); ...
-                ivSeg.iv1Pres(i).PosIso];
+            Seg.Time(i).PosIso = ...
+                [(Seg.Time(i).PosIso(1,1))-1; Seg.Time(i).PosIso];
+            Seg.Pres(i).PosIso = ...
+                [Data.Pres_D(Seg.Time(i).PosIso(1,1)); ...
+                Seg.Pres(i).PosIso];
 
             if Method == 1
                 temp_ADD_TPoints = ...
-                    [ADD_TPoints; Data.Time_D(ivSeg.iv1Time(i).PosIso(1,1))];
+                    [ADD_TPoints; Data.Time_D(Seg.Time(i).PosIso(1,1))];
                 temp_ADD_PPoints = ...
-                    [ADD_PPoints; Data.Pres_D(ivSeg.iv1Time(i).PosIso(1,1))];
+                    [ADD_PPoints; Data.Pres_D(Seg.Time(i).PosIso(1,1))];
             end
 
             % update Wave(x)s variables
-            WaveTs = [Data.Time_D(ivSeg.iv1Time(i).PosIso)'; ...
-                Data.Time_D(ivSeg.iv1Time(i).NegIso)'];
-            WavePs = [ivSeg.iv1Pres(i).PosIso; ivSeg.iv1Pres(i).NegIso];
+            WaveTs = [Data.Time_D(Seg.Time(i).PosIso)'; ...
+                Data.Time_D(Seg.Time(i).NegIso)'];
+            WavePs = [Seg.Pres(i).PosIso; Seg.Pres(i).NegIso];
 
             if Method > 0
                 WaveTsNorm = WaveTs-WaveTs(1);

@@ -116,6 +116,7 @@ end
 
 RunT = logical(length(ivIdx.Ps1));
 RunK = logical(length(ivIdx.Ps2));
+RunV = logical(length(ivIdx.Ps3));
 
 % if there were no good pressure waveforms left, then skip patient
 if ~RunT & ~RunK
@@ -149,8 +150,12 @@ if RunT
     ICS.dPminIdx = ivIdx.dPmin1;
 
     [FitT, ivSeg, PlotT] = fit_takeuchi (ivSeg, Data, ICS, 1);
-    [FitV] = fit_takeuchi (ivSeg, Data, ICS, 2);
     [FitO] = fit_takeuchi (ivSeg, Data, ICS, 0);
+    if RunV
+        [FitV] = fit_takeuchi (ivSeg, Data, ICS, 2);
+    else
+        FitV = [];
+    end
 
     % Call the Takeuchi Fit Check GUI
     TStr.Plot = PlotT; TStr.FitT = FitT; TStr.FitV = FitV; TStr.FitO = FitO;
@@ -161,23 +166,31 @@ if RunT
     end
 
     BadCycT = RetT.FitT.BadCyc;
-    BadCycO = RetT.FitO.BadCyc | RetT.FitT.BadCyc; 
+    BadCycO = RetT.FitO.BadCyc | RetT.FitT.BadCyc;
+    BadCycV = RetT.FitV.BadCyc | RetT.FitT.BadCyc;
     
     Res.FitT = RetT.FitT;
     Res.FitO = RetT.FitO;
+    Res.FitV = RetT.FitV;
     Res.numPeaksT = sum(~BadCycT);
     Res.numPeaksO = sum(~BadCycO);
+    Res.numPeaksV = sum(~BadCycV);
 
     GOOD_PmxT = RetT.FitT.PIsoMax(BadCycT~=1);
     GOOD_PmxO = RetT.FitO.PIsoMax(BadCycO~=1);
+    GOOD_PmxV = RetT.FitV.PIsoMax(BadCycV~=1);
     Res = compute_MeanStd (Res, GOOD_PmxT, 'PmaxT');
     Res = compute_MeanStd (Res, GOOD_PmxO, 'PmaxO');
+    Res = compute_MeanStd (Res, GOOD_PmxV, 'PmaxV');
     Res = compute_VVCR (Res, Data.Pes1(BadCycT~=1), GOOD_PmxT, 'T');
     Res = compute_VVCR (Res, Data.Pes1(BadCycO~=1), GOOD_PmxO, 'O');
+    Res = compute_VVCR (Res, Data.Pes3(BadCycV~=1), GOOD_PmxV, 'V');
     Res.VandT = sum(RetT.FitT.VCyc);
     Res.VandO = sum(RetT.FitO.VCyc);
-
+    Res.VandV = sum(RetT.FitV.VCyc);
+    
 else
+    
     [Res.numPeaksT, Res.PmaxT_Mean, Res.PmaxT_StD, ...
     Res.numPeaksO,  Res.PmaxO_Mean, Res.PmaxO_StD, ...
     Res.VVCRiT_Mean, Res.VVCRiT_StD, Res.VVCRnT_Mean, Res.VVCRnT_StD, ...
