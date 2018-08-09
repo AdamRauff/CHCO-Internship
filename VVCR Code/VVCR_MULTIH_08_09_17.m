@@ -188,7 +188,6 @@ if RunT
     Res.VandT = sum(RetT.FitT.VCyc);
     Res.VandO = sum(RetT.FitO.VCyc);
     Res.VandV = sum(RetT.FitV.VCyc);
-    
 else
     
     [Res.numPeaksT, Res.PmaxT_Mean, Res.PmaxT_StD, ...
@@ -196,7 +195,6 @@ else
     Res.VVCRiT_Mean, Res.VVCRiT_StD, Res.VVCRnT_Mean, Res.VVCRnT_StD, ...
     Res.VVCRiO_Mean, Res.VVCRiO_StD, Res.VVCRnO_Mean, Res.VVCRnO_StD] ...
     = deal(0); 
-
 end
 
 %% (7) Perform Kind fit, put up check GUI, and compute return quantities
@@ -229,14 +227,13 @@ if RunK
     Res = compute_MeanStd (Res, GOOD_PmxN, 'PmaxN');
     Res = compute_VVCR (Res, Data.Pes2(BadCycK~=1), GOOD_PmxK, 'K');
     Res = compute_VVCR (Res, Data.Pes2(BadCycN~=1), GOOD_PmxN, 'N');
-
 else
+    
     [Res.numPeaksK, Res.PmaxK_Mean, Res.PmaxK_StD, ...
     Res.numPeaksN, Res.PmaxN_Mean, Res.PmaxN_StD, ...
     Res.VVCRiK_Mean, Res.VVCRiK_StD, Res.VVCRnK_Mean, Res.VVCRnK_StD, ...
     Res.VVCRiN_Mean, Res.VVCRiN_StD, Res.VVCRnN_Mean, Res.VVCRnN_StD] ...
     = deal(0); 
-
 end
 
 % END OF VVCR_MULTIH
@@ -272,7 +269,6 @@ elseif str.Exit == true
 % Everything went well
 else
     Ret = 0;
-
 end
 
 end

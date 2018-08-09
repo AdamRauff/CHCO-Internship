@@ -4,7 +4,8 @@ function [Ret] = data_double (Data_O, ivIdx)
 % All fitting is performed on this data, which has a timestep of 2ms for
 % clinical, 0.5ms for calf data.
 % It also finds the Pes point at 30ms prior to (dP/dt)min (the "dog" method
-% of finding Pes). The Vanderpool way (Pes3) is found elsewhere.
+% of finding Pes). The Vanderpool way (Pes3) is found previously in
+% data_isoidx; it's merely taken into the doubled pointspace here.
 
 % Copy all original data to returned structure.
 Ret = Data_O;
