@@ -5,7 +5,6 @@ function [Ret1, Ret2] = data_isoseg (GUI, Data, ivIdx)
 Ret2 = ivIdx;
 mysz1 = length(ivIdx.Ps1);
 mysz2 = length(ivIdx.Ps2);
-mysz3 = length(ivIdx.Ps3);
 
 % Storing isovolumetric data in structure with two fields: First field is 
 % positive isovolmetric, storing all the points that lie on the left side, 
@@ -20,8 +19,6 @@ Ret1.iv1Time = struct('PosIso', cell(mysz1,1), 'NegIso', cell(mysz1,1));
 Ret1.iv1Pres = struct('PosIso', cell(mysz1,1), 'NegIso', cell(mysz1,1));
 Ret1.iv2Time = struct('PosIso', cell(mysz2,1), 'NegIso', cell(mysz2,1));
 Ret1.iv2Pres = struct('PosIso', cell(mysz2,1), 'NegIso', cell(mysz2,1));
-Ret1.iv3Time = struct('PosIso', cell(mysz3,1), 'NegIso', cell(mysz3,1));
-Ret1.iv3Pres = struct('PosIso', cell(mysz3,1), 'NegIso', cell(mysz3,1));
 
 % When called from VVCR_MULTI, we build the doubled-up indexes. When called
 % from a GUI, we just use those that were already created.
@@ -33,42 +30,34 @@ if ~GUI
     Ret2.Ns2_D = zeros(mysz2,1);
     Ret2.Ne2_D = zeros(mysz2,1);
     Ret2.dPmin2_D = zeros(mysz2,1);
-    Ret2.Ps3_D = zeros(mysz3,1);
-    Ret2.Ne3_D = zeros(mysz3,1);
 end
 
-% Takaguchi Indices - every variable below is an index, EXCEPT for the
-% iv(x)Pres variables, which are actual values of pressure.
+% Takaguchi Indices
 for i = 1: mysz1
 
-    % Positive (1st Isovolumic Section). P2 is an index, not a value, as is
-    % Ps1_D, below.
+    % Positive (1st Isovolumic Section)
     P2 = find(round(Data.Time_D,3) == round(Data.Time(ivIdx.dPmax1(i)),3));
     if ~GUI
         Ret2.Ps1_D(i) = find(round(Data.Time_D,3) == ...
             round(Data.Time(ivIdx.Ps1(i)),3));
     end
 
-    % iv1Time is indices.
     Ret1.iv1Time(i).PosIso(:,1) = (Ret2.Ps1_D(i):1:P2)'; 
     Ret1.iv1Pres(i).PosIso(:,1) = Data.Pres_D(Ret1.iv1Time(i).PosIso(:,1));
 
-    % Negative (2nd Isovolumic Section). Again here, P1 and Ne1_D(i) are
-    % indices.
+    % Negative (2nd Isovolumic Section)
     P1 = find(round(Data.Time_D,3) == round(Data.Time(ivIdx.dPmin1(i)),3));
     if ~GUI
         Ret2.Ne1_D(i) = find(round(Data.Time_D,3) == ...
             round(Data.Time(ivIdx.Ne1(i)),3));
     end
 
-    % iv1Time is again indices.
     Ret1.iv1Time(i).NegIso(:,1) = (P1:1:Ret2.Ne1_D(i))';
     Ret1.iv1Pres(i).NegIso(:,1) = Data.Pres_D(Ret1.iv1Time(i).NegIso(:,1));
 
 end
 
-% Kind Indicies. See above for more explanation. Almost every variable
-% below is an index, not a value.
+% Kind Indicies
 for i = 1: mysz2
 
     % Positive (1st Isovolumic Section)
@@ -95,31 +84,5 @@ for i = 1: mysz2
     Ret1.iv2Time(i).NegIso(:,1) = (Ret2.Ns2_D(i):1:Ret2.Ne2_D(i))';
     Ret1.iv2Pres(i).NegIso(:,1) = Data.Pres_D(Ret1.iv2Time(i).NegIso(:,1));
     Ret1.iv2dPdt(i).NegIso(:,1) = Data.dPdt_D(Ret1.iv2Time(i).NegIso(:,1));
-
-end
-
-% Vanderpool Indices. See above for more explanation. Almost every variable
-% below is an index, not a value.
-for i = 1: mysz1
-
-    % Positive (1st Isovolumic Section)
-    P2 = find(round(Data.Time_D,3) == round(Data.Time(ivIdx.dPmax3(i)),3));
-    if ~GUI
-        Ret2.Ps3_D(i) = find(round(Data.Time_D,3) == ...
-            round(Data.Time(ivIdx.Ps3(i)),3));
-    end
-
-    Ret1.iv3Time(i).PosIso(:,1) = (Ret2.Ps3_D(i):1:P2)'; 
-    Ret1.iv3Pres(i).PosIso(:,1) = Data.Pres_D(Ret1.iv3Time(i).PosIso(:,1));
-
-    % Negative (2nd Isovolumic Section)
-    P1 = find(round(Data.Time_D,3) == round(Data.Time(ivIdx.dPmin3(i)),3));
-    if ~GUI
-        Ret2.Ne3_D(i) = find(round(Data.Time_D,3) == ...
-            round(Data.Time(ivIdx.Ne3(i)),3));
-    end
-
-    Ret1.iv3Time(i).NegIso(:,1) = (P1:1:Ret2.Ne3_D(i))';
-    Ret1.iv3Pres(i).NegIso(:,1) = Data.Pres_D(Ret1.iv3Time(i).NegIso(:,1));
 
 end

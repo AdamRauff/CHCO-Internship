@@ -30,7 +30,7 @@ if length(Pres) == 1
 
 end
 
-%% (2) Filter pressure data, find pressure acceleration, & create time vector.
+%% (2) Filter pressure data & create time vector.
 [Data_O] = data_filter (dat_typ, Pres, dPdt, Rvals);
 
 %% (3) Determine all indexing for analysis.
@@ -91,13 +91,10 @@ for i = 1:2
                     'Retrying with raw data.']);
                 Data_O.FiltPres = Data_O.Pres;
                 Data_O.FiltdPdt = Data_O.dPdt;
-                Data_O.FiltdP2t = Data_O.dP2t;
                 Data_O.Pres = Data_O.OrigPres; 
-                Data_O.dPdt = Data_O.OrigdPdt;
-                Data_O.dP2t = Data_O.OrigdP2t;
+                Data_O.dPdt = Data_O.OrigdPdt; 
                 Data_O = rmfield(Data_O, 'OrigPres');
                 Data_O = rmfield(Data_O, 'OrigdPdt');
-                Data_O = rmfield(Data_O, 'OrigdP2t');
 
             case 'Discard Patient'
                 Res = true;
@@ -116,7 +113,6 @@ end
 
 RunT = logical(length(ivIdx.Ps1));
 RunK = logical(length(ivIdx.Ps2));
-RunV = logical(length(ivIdx.Ps3));
 
 % if there were no good pressure waveforms left, then skip patient
 if ~RunT & ~RunK
@@ -149,16 +145,11 @@ if RunT
     ICS.dPmaxIdx = ivIdx.dPmax1;
     ICS.dPminIdx = ivIdx.dPmin1;
 
-    [FitT, ivSeg, PlotT] = fit_takeuchi (ivSeg, Data, ICS, 1);
-    [FitO] = fit_takeuchi (ivSeg, Data, ICS, 0);
-    if RunV
-        [FitV] = fit_takeuchi (ivSeg, Data, ICS, 2);
-    else
-        FitV = [];
-    end
+    [FitT, ivSeg, PlotT] = fit_takeuchi (ivSeg, Data, ICS);
+    [FitO] = fit_takeuchi_o (ivSeg, Data, ICS);
 
     % Call the Takeuchi Fit Check GUI
-    TStr.Plot = PlotT; TStr.FitT = FitT; TStr.FitV = FitV; TStr.FitO = FitO;
+    TStr.Plot = PlotT; TStr.FitT = FitT; TStr.FitO = FitO;
     RetT = GUI_FitTakeuchi (TStr, Data, ivIdx, ivVal, ivSeg);
     [Res, Ret] = interpret_str (RetT, 'GUI_FitTakeuchi', FileName, Res);
     if Ret
@@ -166,36 +157,30 @@ if RunT
     end
 
     BadCycT = RetT.FitT.BadCyc;
-    BadCycO = RetT.FitO.BadCyc | RetT.FitT.BadCyc;
-    BadCycV = RetT.FitV.BadCyc | RetT.FitT.BadCyc;
+    BadCycO = RetT.FitO.BadCyc | RetT.FitT.BadCyc; 
     
     Res.FitT = RetT.FitT;
     Res.FitO = RetT.FitO;
-    Res.FitV = RetT.FitV;
     Res.numPeaksT = sum(~BadCycT);
     Res.numPeaksO = sum(~BadCycO);
-    Res.numPeaksV = sum(~BadCycV);
 
     GOOD_PmxT = RetT.FitT.PIsoMax(BadCycT~=1);
     GOOD_PmxO = RetT.FitO.PIsoMax(BadCycO~=1);
-    GOOD_PmxV = RetT.FitV.PIsoMax(BadCycV~=1);
     Res = compute_MeanStd (Res, GOOD_PmxT, 'PmaxT');
     Res = compute_MeanStd (Res, GOOD_PmxO, 'PmaxO');
-    Res = compute_MeanStd (Res, GOOD_PmxV, 'PmaxV');
     Res = compute_VVCR (Res, Data.Pes1(BadCycT~=1), GOOD_PmxT, 'T');
     Res = compute_VVCR (Res, Data.Pes1(BadCycO~=1), GOOD_PmxO, 'O');
-    Res = compute_VVCR (Res, Data.Pes3(BadCycV~=1), GOOD_PmxV, 'V');
     Res.VandT = sum(RetT.FitT.VCyc);
     Res.VandO = sum(RetT.FitO.VCyc);
-    Res.VandV = sum(RetT.FitV.VCyc);
-    
+
 else
-    
+
     [Res.numPeaksT, Res.PmaxT_Mean, Res.PmaxT_StD, ...
     Res.numPeaksO,  Res.PmaxO_Mean, Res.PmaxO_StD, ...
     Res.VVCRiT_Mean, Res.VVCRiT_StD, Res.VVCRnT_Mean, Res.VVCRnT_StD, ...
     Res.VVCRiO_Mean, Res.VVCRiO_StD, Res.VVCRnO_Mean, Res.VVCRnO_StD] ...
     = deal(0); 
+   
 
 end
 
@@ -231,6 +216,7 @@ if RunK
     Res = compute_VVCR (Res, Data.Pes2(BadCycN~=1), GOOD_PmxN, 'N');
 
 else
+
     [Res.numPeaksK, Res.PmaxK_Mean, Res.PmaxK_StD, ...
     Res.numPeaksN, Res.PmaxN_Mean, Res.PmaxN_StD, ...
     Res.VVCRiK_Mean, Res.VVCRiK_StD, Res.VVCRnK_Mean, Res.VVCRnK_StD, ...
@@ -276,7 +262,7 @@ else
 end
 
 end
-% --- end interpret_str ---
+
 
 % --- Compute mean and standard deviation of the named input variable
 function [Out] = compute_MeanStd (In, Var, nam)
@@ -289,7 +275,7 @@ Out.(fieldmean) = mean(Var);
 Out.(fieldstd)  = std(Var);
 
 end
-% --- end compute_MeanStd ---
+
 
 % --- Compute mean and standard deviation of VVCR from the named input pressure
 function [Out] = compute_VVCR (In, Pes, Pmx, nam)
@@ -313,4 +299,3 @@ Out.(fieldstd)  = std(Out.(fieldmean));
 Out.(fieldmean) = mean(Out.(fieldmean));
 
 end
-% --- end compute_VVCR ---
