@@ -1,5 +1,5 @@
-function [ivIdx, ivVal, badcyc] = data_isoidx (mysz, Dat, Ext, ivIdx, ...
-    ivVal, badcyc)
+function [ivIdx, ivVal, badcyc] = data_isoidx_k (idxsz, datsz, Dat, Ext, ...
+    ivIdx, ivVal, badcyc)
 % Find isovolumic timings for Kind method points.
 %
 % Kind method states that th pos iso starts at R wave, which isn't available,
@@ -8,16 +8,16 @@ function [ivIdx, ivVal, badcyc] = data_isoidx (mysz, Dat, Ext, ivIdx, ...
 % (iv*.Ps1) vetors into the Kind vectors. We also create unique copies of the
 % extrema vectors for the same reason.
 
-disp('    data_isoidx: finding Kind indices');
+disp('    data_isoidx_k: finding Kind indices');
 
 ivIdx.Ps2 = ivIdx.Ps1;
 ivVal.Ps2 = ivVal.Ps1; 
-ivVal.Pe2 = zeros(mysz,1);
-ivIdx.Pe2 = zeros(mysz,1);
-ivVal.Ns2 = zeros(mysz,1);
-ivIdx.Ns2 = zeros(mysz,1);
-ivVal.Ne2 = zeros(mysz,1);
-ivIdx.Ne2 = zeros(mysz,1);
+ivVal.Pe2 = zeros(idxsz,1);
+ivIdx.Pe2 = zeros(idxsz,1);
+ivVal.Ns2 = zeros(idxsz,1);
+ivIdx.Ns2 = zeros(idxsz,1);
+ivVal.Ne2 = zeros(idxsz,1);
+ivIdx.Ne2 = zeros(idxsz,1);
 
 ivIdx.dPmax2 = Ext.dPmaxIdx;
 ivVal.dPmax2 = Ext.dPmaxVal;
@@ -38,7 +38,9 @@ end
 % # of points it can look before it stops... each point is 4ms.
 lenlim = 10;
 
-for i = 1:mysz
+for i = 1:idxsz
+
+    %% COMPUTE [Pe] TIMINGS
     % Find pres at (dP/dt)max, then find 10% increase, this is end of Kind
     % pos iso segment. 
     Pcut = 1.10*Dat.Pres(ivIdx.dPmax2(i));
@@ -56,6 +58,7 @@ for i = 1:mysz
     ivVal.Pe2(i) = Dat.Pres(Pend);
     ivIdx.Pe2(i) = Pend;
 
+    %% COMPUTE [Ns] TIMINGS
     % Find pres at (dP/dt)min, then find ±20% change, these are start and end
     % of Kind neg iso segment.
     Pcut = 1.20*Dat.Pres(ivIdx.dPmin2(i));
@@ -78,9 +81,9 @@ for i = 1:mysz
     ivVal.Ns2(i) = Dat.Pres(Pstr);
     ivIdx.Ns2(i) = Pstr;
 
+    %% COMPUTE [Ne] TIMINGS
     Pcut = 0.80*Dat.Pres(ivIdx.dPmin2(i));
     Pend = ivIdx.dPmin2(i);
-    Dend = length(Dat.Pres);
     Plim = Pend + lenlim;
     while Dat.Pres(Pend) > Pcut
         Pend = Pend + 1;
@@ -89,11 +92,11 @@ for i = 1:mysz
         % the Takeuchi end (i.e. go beyond the isovolumic portion), we go
         % farther than 5 points away (this may need revision), or, if we're on
         % the last cycle, don't go off the end of the data.
-        if Pend > Dend
+        if Pend > datsz
             disp(['        curve # ' num2str(i, '%02i') ', end of negiso ' ...
 	        'segment not captured at end of sample, skipping.']);
 
-            Pend = Dend;
+            Pend = datsz;
             badcyc.K = [badcyc.K, i];
             break;
         elseif Pend >= ivIdx.Ne1(i) || Pend == Plim

@@ -1,12 +1,12 @@
-function [ivIdx, ivVal, badcyc] = data_isoidx_t (mysz, Dat, Ext)
+function [ivIdx, ivVal, badcyc] = data_isoidx_t (idxsz, datsz, Dat, Ext)
 % Find isovolumic timings for Takeuchi method points.
 
-disp('    data_isoidx: finding Takeuchi indices');
+disp('    data_isoidx_t: finding Takeuchi indices');
 
-ivIdx.Ps1 = zeros(mysz,1);
-ivVal.Ps1 = zeros(mysz,1);
-ivIdx.Ne1 = zeros(mysz,1);
-ivVal.Ne1 = zeros(mysz,1);
+ivIdx.Ps1 = zeros(idxsz,1);
+ivVal.Ps1 = zeros(idxsz,1);
+ivIdx.Ne1 = zeros(idxsz,1);
+ivVal.Ne1 = zeros(idxsz,1);
 
 ivIdx.dPmax1 = Ext.dPmaxIdx;
 ivVal.dPmax1 = Ext.dPmaxVal;
@@ -16,14 +16,15 @@ ivVal.dPmin1 = Ext.dPminVal;
 badcyc.T = [];
 
 % scroll through all maxima
-for i = 1:mysz
+for i = 1:idxsz
 
+    %% COMPUTE [Ps] TIMINGS
     EDi = ivIdx.dPmax1(i);
-    
-    % COMPUTE [Ps] TIMINGS
+    PresCut = 0.20*ivVal.dPmax1(i);
+
     % Start of positive isovolumic time (ivVal.Ps1): 20% (dP/dt)max
     % Step backwards from (dP/dt)max until we reach this point.
-    while Dat.dPdt(EDi) > 0.20*ivVal.dPmax1(i)
+    while Dat.dPdt(EDi) > PresCut
         EDi = EDi - 1;
         if EDi == 0 && i == 1
             % If the first dP/dt max is too early in the data, the pressure
@@ -36,6 +37,7 @@ for i = 1:mysz
 
             EDi = ivIdx.dPmin1(1); 
             badcyc.T = [badcyc.T, 1]; % add first to list of bad curves
+            break;
         end
     end
 
@@ -44,15 +46,15 @@ for i = 1:mysz
     % associated with the physcial system of the catheter.
     % if EDi is less then or equal to 3 points away from dP/dt max
     if abs(EDi-ivIdx.dPmax1(i)) <= 3 
-       EDi = EDi - 1; % bump EDi one time point back
+        EDi = EDi - 1; % bump EDi one time point back
 
-       % Continuation mark is a flag that keeps track of the 3 point behind EDi
-       CONT_MARK = true;
+        % Continuation mark is a flag that keeps track of the 3 point behind EDi
+        CONT_MARK = true;
 
-       % try while loop again, additng the condition that it must be more 
-       % than 4 points away, and the 3 points before EDi must also be below
-       % the peak 
-       while CONT_MARK
+        % try while loop again, additng the condition that it must be more 
+        % than 4 points away, and the 3 points before EDi must also be below
+        % the peak 
+        while CONT_MARK
             if Dat.dPdt(EDi) <= 0.20*ivVal.dPmax1(i) && ...
                 Dat.dPdt(EDi - 1) < 0.20*ivVal.dPmax1(i) && ...
                 Dat.dPdt(EDi - 2) < 0.20*ivVal.dPmax1(i) && ...
@@ -72,17 +74,17 @@ for i = 1:mysz
 		            'skipping.']);
 
                 badcyc.T = [badcyc.T, i]; % add to list of bad curves
-                break
+                break;
             end
             EDi = EDi - 1;
-       end
+        end
     end
 
     % assign iv*.Ps1 values
     ivVal.Ps1(i) = Dat.Pres(EDi);
     ivIdx.Ps1(i) = EDi;
 
-    % COMPUTE [Ne] TIMINGS
+    %% COMPUTE [Ne] TIMINGS
     % find iv*.Ne1 point on the other side of the pressure wave; this point
     % has the same pressure (=ivVal.Ps1); ivVal.Ne1 - ivVal.Ps1 is negative
     ESi = ivIdx.Ps1(i)+15;
@@ -91,7 +93,7 @@ for i = 1:mysz
     while round(Dat.Pres(ESi),1) > round(ivVal.Ps1(i),1)
         ESi = ESi+1;
 
-        if ESi == length(Dat.Pres)
+        if ESi == datsz
             % the last Dat.dPdt min in the data is part of a pressure wave
             % that is not fully contained in the sample; to correct for this,
             % set ESi to be 10 data points (40 ms) prior to the ivVal.Ps1 to
@@ -131,11 +133,11 @@ for i = 1:mysz
     tempNeg_ivVal.Ps1s = ESi-3:1:ESi+3; % create local neighborhood
     
     % if the last pressure wave form is being evaluated
-    if i == length(ivVal.Ps1)
+    if i == idxsz
         
         % check that the temporary neighborhood does not exceed the size of
         % the pressure / time vector
-        while max(tempNeg_ivVal.Ps1s)>length(Dat.Pres)
+        while max(tempNeg_ivVal.Ps1s) > datsz
             tempNeg_ivVal.Ps1s(end) = [];
         end
     end

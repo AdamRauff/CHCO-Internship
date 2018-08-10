@@ -31,16 +31,19 @@ function [ivIdx, ivVal, badcyc] = data_isoidx (Dat, Ext)
 %       2  - 2nd method (Kind);
 %       3  - 3rd method (Vanderpool);
 
-mysz = length(Ext.dPmaxIdx);
+datsz = length(Dat.Pres);
+idxsz = length(Ext.dPmaxIdx);
 
-[ivIdx, ivVal, badcyc] = data_isoidx_t (mysz, Dat, Ext);
-[ivIdx, ivVal, badcyc] = data_isoidx_k (mysz, Dat, Ext, ivIdx, ivVal, badcyc);
-[ivIdx, ivVal, badcyc] = data_isoidx_v (mysz, Dat, Ext, ivIdx, ivVal, badcyc);
+[ivIdx, ivVal, badcyc] = data_isoidx_t (idxsz, datsz, Dat, Ext);
+[ivIdx, ivVal, badcyc] = data_isoidx_v (idxsz, datsz, Dat, Ext, ivIdx, ...
+    ivVal, badcyc);
+[ivIdx, ivVal, badcyc] = data_isoidx_k (idxsz, datsz, Dat, Ext, ivIdx, ...
+    ivVal, badcyc);
 
 %% Remove bad cycles from ivVal, ivIdx vectors.
 badcyc.T = sort(unique(abs(badcyc.T)));
-badcyc.K = sort(unique(badcyc.K));
 badcyc.V = sort(unique(badcyc.V));
+badcyc.K = sort(unique(badcyc.K));
 
 % Remove bad curves; unique removal for each fit type.
 if ~isempty(badcyc.T)
@@ -51,6 +54,17 @@ if ~isempty(badcyc.T)
 
         ivVal.dPmax1(j) = []; ivIdx.dPmax1(j) = [];
         ivVal.dPmin1(j) = []; ivIdx.dPmin1(j) = [];
+    end
+end
+
+if ~isempty(badcyc.V)
+    for i = length(badcyc.T):-1:1
+        j = badcyc.T(i);
+        ivVal.Ps3(j) = []; ivIdx.Ps3(j) = [];
+        ivVal.Ne3(j) = []; ivIdx.Ne3(j) = [];
+
+        ivVal.dPmax3(j) = []; ivIdx.dPmax3(j) = [];
+        ivVal.dPmin3(j) = []; ivIdx.dPmin3(j) = [];
     end
 end
 
@@ -67,46 +81,9 @@ if ~isempty(badcyc.K)
     end
 end
 
-if ~isempty(badcyc.V)
-    for i = length(badcyc.T):-1:1
-        j = badcyc.T(i);
-        ivVal.Ps3(j) = []; ivIdx.Ps3(j) = [];
-        ivVal.Ne3(j) = []; ivIdx.Ne3(j) = [];
-
-        ivVal.dPmax3(j) = []; ivIdx.dPmax3(j) = [];
-        ivVal.dPmin3(j) = []; ivIdx.dPmin3(j) = [];
-    end
-end
-
-disp(['    data_isoidx: ' num2str(mysz,'%02i') ' extrema sets, ' ...
+disp(['    data_isoidx: ' num2str(idxsz,'%02i') ' extrema sets, ' ...
     num2str(length(ivVal.Ps1),'%02i') ' Takeuchi cycles, ' ...
-    num2str(length(ivVal.Ps2),'%02i') ' Kind cycles, ', ...
-    num2str(length(ivVal.Ps3),'%02i') ' Vanderpool cycles']);
+    num2str(length(ivVal.Ps3),'%02i') ' Vanderpool cycles, ', ...
+    num2str(length(ivVal.Ps2),'%02i') ' Kind cycles']);
 
-temp_debug (Dat, ivVal, ivIdx);
-keyboard
 
-% END OF data_isoidx
-end
-
-%% Auxilliary Function(s)
-
-% --- DEBUG CODE: spit out figures showing Vanderpool indices to visually
-% check them...
-function temp_debug (Dat, ivVal, ivIdx)
-
-figure;
-plot(Dat.Time, Dat.Pres);
-hold on;
-plot(Dat.Time(ivIdx.Ps1), ivVal.Ps1, 'go');
-plot(Dat.Time(ivIdx.Ps3), ivVal.Ps3, 'ro');
-plot(Dat.Time(ivIdx.Ne3), ivVal.Ne3, 'co');
-plot(Dat.Time(ivIdx.Pes3), ivVal.Pes3, 'kx');
-
-figure;
-plot(Dat.Time, Dat.dP2t);
-hold on;
-plot(Dat.Time(ivIdx.dPmin3), Dat.dP2t(ivIdx.dPmin3),'go');
-plot(Dat.Time(ivIdx.Ne3), Dat.dP2t(ivIdx.Ne3),'ro');
-
-end

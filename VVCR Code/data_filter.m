@@ -21,30 +21,28 @@ if dat_typ
 else
     Ret.time_step = 1/1000;
 end
+Ret.dat_typ = dat_typ;
+
 Wp = Ret.time_step*2*n;
 [b,a] = butter(n,Wp);
 
-% Store original (WITT versions) of pressure & dP/dt in _orig variables
-% (filtered values are returned below in "no underscore" vars and are
-% assumed to be used). PA is taken as first order forward difference in
-% this case.
+% Store original (WITT versions) of pressure & dP/dt in WITT variables
+% (filtered values are returned below in vars that have no other term and
+% are assumed to be used unless filtering somehow is a problem).
+Ret.WITTPres = Pres;
+Ret.WITTdPdt = dPdt;
+
+% Compute better (6th order central difference) dPdt and d2Pt from base
+% WITT data. These are the "unfiltered" original variants. NEVER EVER use
+% 1st order differences for pressure acceleration.
 Ret.OrigPres = Pres;
-Ret.OrigdPdt = dPdt;
+[Ret.OrigdPdt, Ret.OrigdP2t] = data_centdiff(dat_typ, Pres);
 
-Ret.OrigdP2t = diff(dPdt);
-Ret.OrigdP2t(end+1) = Ret.OrigdP2t(end);
-Ret.OrigdP2t = Ret.OrigdP2t/Ret.time_step;
-
-%% Do higher order difference, smoothing, in integration -> cleaner pressure
-% Compute 6th order diff of dPdt from original Pres vector. This overwrites
-% the WITT version, but who cares.
-dPdt = data_centdiff(dat_typ, Pres);
-
-% dPdt_filt is the filtered dP/dt, Pres_filt is the integral of this (to
-% maintain consistency). Pres(1) is added to the result of cumtrapz, it's
-% the constant of integration. Compute second derivative of pressure using
-% 6th order diff, as with dP/dt. 
-Ret.dPdt = filtfilt(b,a,dPdt);
+% The dPdt we actually (hope to) use is the filtered "Orig" dP/dt from
+% above. Then Pres and d2P/dt2 are the integral and derivative of this
+% filtered result (to maintain consistency). Pres(1) is added to the result
+% of cumtrapz (constant of integration).
+Ret.dPdt = filtfilt(b,a,Ret.OrigdPdt);
 Ret.Pres = cumtrapz(Ret.dPdt)*Ret.time_step+Pres(1);
 Ret.dP2t = data_centdiff(dat_typ, Ret.dPdt);
 

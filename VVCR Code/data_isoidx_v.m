@@ -1,16 +1,28 @@
-function [ivIdx, ivVal, badcyc] = data_isoidx (mysz, Dat, Ext, ivIdx, ...
-    ivVal, badcyc)
-% Find Vanderpool times based on pressure acceleration extrema
+function [ivIdx, ivVal, badcyc] = data_isoidx_v (idxsz, datsz, Dat, Ext, ...
+    ivIdx, ivVal, badcyc)
+% Find isovolumic timings and end systole for Takeuchi method using
+% Vanderpool's technique.
 %
-% All four indices must be uniquely found per cycle. Additionally (PA)min
-% before (dP/dt)min, allows a "non-dog-based" calculation of P_es.
+% Note that Pe and Ns are given by extrema and have already been found.
+%
+% If the data is unfiltered then DA will be so rough that a "walking" 
+% approach to find extrema won't work. So, first check if the data provided
+% is the filtered, or original. If it's the original data, filter DA
+% heavily...
 
-disp('    data_isoidx: finding Vanderpool indices');
+disp('    data_isoidx_v: finding Vanderpool indices for Takeuchi method');
 
-ivIdx.Ps3 = zeros(mysz,1);
-ivVal.Ps3 = zeros(mysz,1);
-ivVal.Ne3 = zeros(mysz,1);
-ivIdx.Ne3 = zeros(mysz,1);
+if ~isfield(Dat, 'OrigdPdt')
+    disp(['        using filtered pressure acceleration for landmark ' ...
+        'finding.']);
+    dP2tOrig = Dat.dP2t;
+    Dat.dP2t = Dat.FiltdP2t;
+end
+
+ivIdx.Ps3 = zeros(idxsz,1);
+ivVal.Ps3 = zeros(idxsz,1);
+ivVal.Ne3 = zeros(idxsz,1);
+ivIdx.Ne3 = zeros(idxsz,1);
 
 ivIdx.dPmax3 = Ext.dPmaxIdx;
 ivVal.dPmax3 = Ext.dPmaxVal;
@@ -18,159 +30,111 @@ ivIdx.dPmin3 = Ext.dPminIdx;
 ivVal.dPmin3 = Ext.dPminVal;
 
 % Unique initialization for Vanderpool: space to store Pes location.
-ivVal.Pes3 = zeros(mysz,1);
-ivIdx.Pes3 = zeros(mysz,1);
+ivVal.Pes3 = zeros(idxsz,1);
+ivIdx.Pes3 = zeros(idxsz,1);
 
 % These are unique from Takeuchi and Kind so we start with a fresh badcyc.
 badcyc.V = [];
 
-% This is an estimate, from Takeuchi cycles, of the isovolumic search
-% regions. We can take an approach that doesn't use this, but since the
-% Takeuchi method is (fairly) reliable, it's a good first guess. Also
-% create a limit variable, one-fifth the size of the average period, that
-% we use to reject cycles if the search region is too large.
-range = 2*(ivIdx.dPmax1-ivIdx.Ps1);
-rnglm = round(0.2*Dat.time_per/Dat.time_step);
+for i = 1:idxsz
 
-for i = 1:mysz
-    % Bound ED, or (PA)max-Contraction, between dPmax and either double the
-    % distance between the determined Ps1 value, or more broadly the from 
-    % the beginning of the cycle. Then bound (PA)min-Contraction using the
-    % same size range.
-    
-    % Custom range flag
-    crange = 0;
-    
-    % Find range of indices in which to search for (PA)max-C
-    Pend = ivIdx.dPmax3(i);
-    
-    idx = find(badcyc.T==i);
-    if ~isempty(idx) | range(i) <= 0
-        crange = 1;
-        if i == 1
-            % ~fifth of a period if we're on the first cycle
-            range(i) = round(0.2*Dat.time_per/Dat.time_step);
-        else
-            % ~third of the way between dPmax and previous dPmin. Note that
-            % if there are excuded beats this will go very wrong...!
-            range(i) = round((ivIdx.dPmax3(i)-ivIdx.dPmin3(i-1))/3);
-        end
-        
-        % Check that custom range isn't too extreme.
-        if range(i) > rnglm | range(i) <= 0           
-            disp(['        curve # ' num2str(i, '%02i') ', bounding ' ...
-                'region for Vanderpool Ps index large or negative, ' ...
-                'skipping.']);
-            badcyc.V = [badcyc.V, i];
-            continue;
+    %% COMPUTE [Ps] TIMINGS
+    EDi = ivIdx.dPmax3(i);
+    dP2Zero = Dat.dP2t(EDi) - 0.01;
+
+    % Start of positive isovolumic time (ivVal.Ps3): @(PA)max before (dP/dt)max
+    % Step backwards from (dP/dt)max until we reach this point.
+    while Dat.dP2t(EDi) > dP2Zero
+        dP2Zero = Dat.dP2t(EDi);
+        EDi = EDi - 1;
+        if EDi == 0 && i == 1
+            % If the first dP/dt max is too early in the data, the pressure
+            % wave does not contain enough information to include. So we remove
+            % the first maximum & min. Escape the loop by setting EDi to be 
+            % index of a minimum.
+
+            disp(['        curve # 01, start of isovolumic contraction ' ...
+	        'not captured at start of sample, skipping.']);
+
+            EDi = ivIdx.dPmin3(1); 
+            badcyc.V = [badcyc.V, 1]; % add first to list of bad curves
         end
     end
-    
-    Pstr = ivIdx.dPmax3(i)-range(i);
-    if Pstr < 1
-        Pstr = 1;
+    EDi = EDi + 1;
+
+    % assign iv*.Ps1 values
+    ivVal.Ps3(i) = Dat.Pres(EDi);
+    ivIdx.Ps3(i) = EDi;
+ 
+    %% COMPUTE [Pes] TIMINGS
+    ESi = ivIdx.dPmin3(i);
+    dP2Zero = Dat.dP2t(ESi) + 0.01;
+
+    % Position of end systole (ivVal.Pes3): @(PA)min before (dP/dt)min.
+    % Step backwards from (dP/dt)min until we reach this point. 
+    while Dat.dP2t(ESi) < dP2Zero
+        dP2Zero = Dat.dP2t(ESi);
+        ESi = ESi - 1;
     end
-    
-    % find (PA)max before (dP/dt)max - the time of end diastole.
-    if data_isoidx_checkrng (Pstr:Pend, i, 'end diastole')
-        continue;
-    end
-    [~, idx] = max(Dat.dP2t(Pstr:Pend));
-    ivVal.Ps3(i) = Dat.Pres(Pstr+idx);
-    ivIdx.Ps3(i) = Pstr+idx;
-    
-    % If we found the max at the beginning of the interval, that (might)
-    % indicate that the interval needs to be larger (or that, for the case
-    % of Pstr = 1, we don't have the max in the dataset).  If idx = 1, then
-    % we reject this set.
-    if idx == 1
-        disp(['        curve # ' num2str(i, '%02i') ', (PA)max ' ...
-	        'found at start of search interval for ED, skipping.']);
-        badcyc.V = [badcyc.V, i];
-        continue;
-    end
-     
-    % Here, we bound ES to be between dPmin (end) and half the distance
-    % between dPmax & dPmin (start).
-    Pstr = round(0.5*(ivIdx.dPmin3(i)+ivIdx.dPmax3(i)));
-    Pend = ivIdx.dPmin3(i);
-        
-    % Find (PA)min before (dP/dt)min - the time of end systole.
-    if data_isoidx_checkrng (Pstr:Pend, i, 'end systole')
-        continue;
-    end
-    [~, idx] = min(Dat.dP2t(Pstr:Pend));
-    ivVal.Pes3(i) = Dat.Pres(Pstr+idx);
-    ivIdx.Pes3(i) = Pstr+idx;
-    % Note that if we have a bound region between dPmax & dPmin then the
-    % above should be (nearly) foolproof.
-    
-    % Finally, we use the step(i) as in the contraction region to find the
-    % end of relaxation.
-    Pstr = ivIdx.dPmin3(i);
-    if crange
-        % Use similar idea for range as with ES bounding, above.
-        Pend = round(0.5*(ivIdx.dPmin3(i)-ivIdx.dPmax3(i)));
-        
-        % Check that custom range isn't too extreme.
-        if Pend > rnglm | Pend <= 0
-            disp(['        curve # ' num2str(i, '%02i') ', bounding ' ...
-                'region for Vanderpool end iso relaxation index large ' ...
-                'or negative, skipping.']);
-            badcyc.V = [badcyc.V, i];
-            continue;
+    ESi = ESi + 1;
+    % Check for minimum distance here?
+
+    % assign iv*.Pes3 values
+    ivVal.Pes3(i) = Dat.Pres(ESi);
+    ivIdx.Pes3(i) = ESi;
+
+    %% COMPUTE [Ne] TIMINGS
+    Eir = ivIdx.dPmin3(i);
+    dP2Zero = Dat.dP2t(Eir) - 0.01;
+
+    % Position of end iso relax (ivVal.Ns3): @(PA)max after (dP/dt)min.
+    % Step forwards from (dP/dt)min until we reach this point.     
+    while Dat.dP2t(Eir) > dP2Zero
+        dP2Zero = Dat.dP2t(Eir);
+        Eir = Eir + 1;
+
+        if Eir == datsz
+            % the last end iso relax is out of the dataset, so we must
+            % exclude this set.
+            disp(['        curve # ' num2str(i, '%02i') ', end iso '...
+	            'relaxation not captured at end of sample, skipping.']);
+
+            Eir = datsz - 10; % protect assignment below from overflow
+            badcyc.V = [badcyc.V, i]; % add to list of bad curves
+            break;
         end
-        Pend = Pstr + Pend;
-    else
 
-        Pend = Pstr + range(i);
     end
+    Eir = Eir - 1;
     
-    if Pend > length(Dat.dP2t)
-        disp(['        curve # ' num2str(i, '%02i') ', (PA)max ' ...
-	        'search interval exceeds length of data for end iso ' ...
-            'relax, skipping.']);
-        badcyc.V = [badcyc.V, i];
-        continue;
-    end
-       
-    
-    % Find (PA)max after (dP/dt)min - the time of end iso relax.
-    if data_isoidx_checkrng (Pstr:Pend, i, 'end iso relaxation')
-        continue;
-    end
-    [~, idx] = max(Dat.dP2t(Pstr:Pend));
-    ivVal.Ne3(i) = Dat.Pres(Pstr+idx);
-    ivIdx.Ne3(i) = Pstr+idx;
-    
-    % If we found the max at the end of the interval, that (might)
-    % indicate that the interval needs to be larger (or that, for the case
-    % of Pend = end, we don't have the max in the dataset).  If idx is this
-    % length, then we reject this set.
-    if idx == length(Pstr:Pend)
-        disp(['        curve # ' num2str(i, '%02i') ', (PA)max ' ...
-	        'found at end of search interval for end iso relax, ' ...
-            'skipping.']);
-        badcyc.V = [badcyc.V, i];
-        continue;
-    end
+    % assign iv*.Ne values
+    ivVal.Ne3(i) = Dat.Pres(Eir);
+    ivIdx.Ne3(i) = Eir;
+end
+
+temp_debug (Dat, ivVal, ivIdx);
 
 end
 
-% END data_isoidx_v
+% --- DEBUG CODE: spit out figures showing Vanderpool indices to visually
+% check them...
+function temp_debug (Dat, ivVal, ivIdx)
+
+figure;
+plot(Dat.Time, Dat.Pres,'b');
+hold on;
+plot(Dat.Time(ivIdx.Ps1), ivVal.Ps1, 'gs');
+plot(Dat.Time(ivIdx.Ps3), ivVal.Ps3, 'go');
+plot(Dat.Time(ivIdx.Ne3), ivVal.Ne3, 'ro');
+plot(Dat.Time(ivIdx.Pes3), ivVal.Pes3, 'kx');
+
+figure;
+plot(Dat.Time, Dat.dP2t,'b');
+hold on;
+plot(Dat.Time(ivIdx.dPmax3), Dat.dP2t(ivIdx.dPmax3),'gx');
+plot(Dat.Time(ivIdx.Ps3), Dat.dP2t(ivIdx.Ps3),'go');
+plot(Dat.Time(ivIdx.dPmin3), Dat.dP2t(ivIdx.dPmin3),'rx');
+plot(Dat.Time(ivIdx.Pes3), Dat.dP2t(ivIdx.Pes3),'r+');
+plot(Dat.Time(ivIdx.Ne3), Dat.dP2t(ivIdx.Ne3),'ro');
+
 end
-
-%% Auxilliary Function(s)
-
-% --- Test range of input, return error if it's too small.
-function [ret] = data_isoidx_checkrng (range, cyc, messag)
-
-ret = 0;
-if length(range) < 4
-    disp(['        curve # ' num2str(cyc, '%02i') ', bounding ' ...
-        'region for ' messag ' too small for good fit, skipping.']);
-    ret = 1;
-end
-
-end
-% --- END data_isoidx_checkrng

@@ -161,7 +161,7 @@ for i = 1:nfits
     % obtain maximum pressure point on actual curve
     PresMax = max(Data.Pres_D(Seg.Time(i).PosIso(1,1):1: ...
         Seg.Time(i).NegIso(end,1)));
-    if Ret1.Rsq(i) > 0.80 & Ret1.PIsoMax(i) < PresMax & method < 2
+    if Ret1.Rsq(i) > 0.80 & Ret1.PIsoMax(i) < PresMax & Method < 2
        
         % keep count of how many points added to systole side
         count = 0;
