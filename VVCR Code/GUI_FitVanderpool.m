@@ -368,14 +368,14 @@ end
 axes(handles.pressure_axes);
 
 h = plot(Data.Time_D,Data.Pres_D,'b', ...
-         Plot.iv1PlotTime,Plot.iv1PlotPres,'ro');
+         Plot.iv3PlotTime,Plot.iv3PlotPres,'ro');
 set(h, 'HitTest', 'off');
 
 set(handles.pressure_axes,'ButtonDownFcn', ...
     @(hObject, eventdata)MainGraphCallback(hObject, eventdata, handles));
 set(handles.pressure_axes,'fontsize',12);
 
-title('Takeuchi Sinusoidal Fitting','FontSize',16);
+title('Takeuchi/Vanderpool Sinusoidal Fitting','FontSize',16);
 xlabel('Time [s]','FontSize',14);
 ylabel('Pressure [mmHg]','FontSize',14);
 
@@ -385,8 +385,8 @@ mystp = Data.time_step/2;
 
 % Attain the sinusoid fit for this cycle (so Pmax can be visualized)
 % obtain the range of time of each peak, then normalize to zero
-FitSineTime = Data.Time_D(ivSeg.iv1Time(cycid).PosIso(1,1)):mystp: ...
-    Data.Time_D(ivSeg.iv1Time(cycid).NegIso(end,1));
+FitSineTime = Data.Time_D(ivSeg.iv3Time(cycid).PosIso(1,1)):mystp: ...
+    Data.Time_D(ivSeg.iv3Time(cycid).NegIso(end,1));
 
 % plug into Naeiji equation that was just solved for; normalize range
 % to start at one (as was done in fitting).
@@ -531,7 +531,7 @@ function [handles] = takeuchi_plot_all (Data, ivSeg, Fit, Plot, handles);
 axes(handles.figure2.CurrentAxes);
 
 h = plot(Data.Time_D,Data.Pres_D,'b', ...
-         Plot.iv1PlotTime,Plot.iv1PlotPres,'ro');
+         Plot.iv3PlotTime,Plot.iv3PlotPres,'ro');
 set(h, 'HitTest', 'off');
 
 set(handles.figure2.CurrentAxes,'ButtonDownFcn', ...
@@ -544,15 +544,15 @@ ylabel('Pressure [mmHg]','FontSize',12);
 hold on;
 
 mystp = Data.time_step/2;
-mysz = length(ivSeg.iv1Time);
+mysz = length(ivSeg.iv3Time);
 PmaxT = zeros(mysz,1);
 
 % Attain the sinusoid fit for all points (so Pmax can be visualized
 for i = 1:mysz
 
     % obtain the range of time of each peak, then normalize to zero
-    FitSineTime = Data.Time_D(ivSeg.iv1Time(i).PosIso(1,1)):mystp: ...
-        Data.Time_D(ivSeg.iv1Time(i).NegIso(end,1));
+    FitSineTime = Data.Time_D(ivSeg.iv3Time(i).PosIso(1,1)):mystp: ...
+        Data.Time_D(ivSeg.iv3Time(i).NegIso(end,1));
 
     % plug into Naeiji equation that was just solved for; normalize range
     % to start at one (as was done in fitting).
@@ -575,8 +575,8 @@ ymx = max(Fit.PIsoMax)+5;
 
 % Bound the current cycle.
 cycid = handles.Cycle;
-xmn = Data.Time_D(ivSeg.iv1Time(cycid).PosIso(1,1))-0.05;
-xmx = Data.Time_D(ivSeg.iv1Time(cycid).NegIso(end,1))+0.05;
+xmn = Data.Time_D(ivSeg.iv3Time(cycid).PosIso(1,1))-0.05;
+xmx = Data.Time_D(ivSeg.iv3Time(cycid).NegIso(end,1))+0.05;
 plot([xmn xmn], [0, ymx], 'r--');
 plot([xmx xmx], [0, ymx], 'r--');
 

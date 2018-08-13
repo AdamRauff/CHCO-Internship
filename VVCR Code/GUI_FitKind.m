@@ -65,7 +65,8 @@ handles.InVar.ivIdx = cell2mat(varargin(3));
 handles.InVar.ivVal = cell2mat(varargin(4));
 handles.InVar.ivSeg = cell2mat(varargin(5));
 
-handles.InVar.MeanTP = handles.InVar.FitK.MeanTP;
+% Not sure, honestly, why this was being passed to Kind check.
+%handles.InVar.MeanTP = handles.InVar.FitK.MeanTP;
 
 handles.Cycle = 1;
 handles.CycMx = length(handles.InVar.ivIdx.Ps2);

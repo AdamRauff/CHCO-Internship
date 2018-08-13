@@ -203,27 +203,25 @@ if RunT
 
     % Call the Vanderpool Fit Check GUI
     VStr.Plot = PlotV; VStr.FitV = FitV;
-    RetT = GUI_FitVanderpool (VStr, Data, ivIdx, ivVal, ivSeg);
-    [Res, Ret] = interpret_str (RetT, 'GUI_FitVanderpool', FileName, Res);
+    RetV = GUI_FitVanderpool (VStr, Data, ivIdx, ivVal, ivSeg);
+    [Res, Ret] = interpret_str (RetV, 'GUI_FitVanderpool', FileName, Res);
     if Ret
         return;
     end
 
-    BadCycV = RetT.FitV.BadCyc;
+    BadCycV = RetV.FitV.BadCyc;
     
-    Res.FitV = RetT.FitV;
+    Res.FitV = RetV.FitV;
     Res.numPeaksV = sum(~BadCycV);
 
-    GOOD_PmxV = RetT.FitV.PIsoMax(BadCycV~=1);
+    GOOD_PmxV = RetV.FitV.PIsoMax(BadCycV~=1);
     Res = compute_MeanStd (Res, GOOD_PmxV, 'PmaxV');
     Res = compute_VVCR (Res, Data.Pes3(BadCycV~=1), GOOD_PmxV, 'V');
-    Res.VandV = sum(RetT.FitV.VCyc);
+    Res.VandV = sum(RetV.FitV.VCyc);
 else
     
-    [Res.numPeaksT, Res.PmaxT_Mean, Res.PmaxT_StD, ...
-    Res.numPeaksO,  Res.PmaxO_Mean, Res.PmaxO_StD, ...
-    Res.VVCRiT_Mean, Res.VVCRiT_StD, Res.VVCRnT_Mean, Res.VVCRnT_StD, ...
-    Res.VVCRiO_Mean, Res.VVCRiO_StD, Res.VVCRnO_Mean, Res.VVCRnO_StD] ...
+    [Res.numPeaksV, Res.PmaxV_Mean, Res.PmaxV_StD, ...
+    Res.VVCRiV_Mean, Res.VVCRiV_StD, Res.VVCRnV_Mean, Res.VVCRnV_StD] ...
     = deal(0); 
 end
 
@@ -231,11 +229,23 @@ end
 % FitK is weighted residuals, contraction error weighted to be (roughly)
 % the same as relaxtion error. FitN is "Normal", no weighting.
 if RunK
-    [FitK, PlotK] = fit_kind (ivSeg, ivIdx, Data, mean(FitT.PIsoMax), 1);
-    [FitN] = fit_kind (ivSeg, ivIdx, Data, mean(FitT.PIsoMax), 0);
+    if RunT
+        TakPIsoMax = mean(FitT.PIsoMax);
+    else
+        TakPIsoMax = 2*mean(Data.Pes2);
+    end
+
+    [FitK, PlotK] = fit_kind (ivSeg, ivIdx, Data, TakPIsoMax, 1);
+    [FitN] = fit_kind (ivSeg, ivIdx, Data, TakPIsoMax, 0);
 
     % Call the Kind Fit Check GUI
-    FitK.MeanTP = mean(RetT.FitT.PIsoMax);
+    % Not sure why MeanTP was being sent to fit check. Isn't used once it
+    % arrives. Comment out for now, remove later if it's never used...
+    %if RunT
+    %    FitK.MeanTP = mean(RetT.FitT.PIsoMax);
+    %else
+    %    FitK.MeanTP = mean(RetT.FitT.PIsoMax);
+    %end
     KStr.Plot = PlotK; KStr.FitK = FitK;
     RetK = GUI_FitKind (KStr, Data, ivIdx, ivVal, ivSeg);
     [Res, Ret] = interpret_str (RetK, 'GUI_FitKind', FileName, Res);
