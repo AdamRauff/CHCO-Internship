@@ -39,30 +39,34 @@ if isstruct(ICS)
 end
 Ret1.VCyc = zeros(nfits,1);
 
-% Variables needed for adding points to GUI_FitTakeuchi plots (w/Vanderpool
+% Variables needed for adding points to any Takeuchi method fit (w/Vanderpool
 % "walk down the pressure curve" method). The results of this method are
-% only shown for the new Takeuchi fit (method=1), so we don't need these
-% for the old (Adam) fit or for the Vanderpool PA segment method (which
-% doesn't use this point-adding technique anyway!). Also set existing ivSeg
-% (that came in on call) to Ret2 to minimally insure continuity of this 
+% only shown for the new Takeuchi fit (Method=1), or the Vanderpool landmarks
+% (Method=2), but we don't need these for the old (Adam) fit. Also set existing
+% ivSeg (that came in on call) to Ret2 to minimally insure continuity of this 
 % variable. Finally, set the char variable 'ext' that is used in providing
 % user feedback.
-if Method == 1
-    ext = '';
-
+if Method > 0
     Ret2 = ivSeg;
     
-    % Ploting vectors of the fitting data for GUI_FitTakeuchi
+    % Ploting vectors of the fitting data for GUI_FitTakeuchi or
+    % GUI_FitVanderpool. Because the Takeuchi and Vanderpool methods each
+    % can have unique rejections, the iv*Plot vectors must be unique, although
+    % ADD_ vectors are local to this function.
     ADD_TPoints = []; 
     ADD_PPoints = []; 
     Ret3.iv1PlotTime = [];
     Ret3.iv1PlotPres = [];
-else
-    if Method == 0
-        ext = '_o';
+    Ret3.iv3PlotTime = [];
+    Ret3.iv3PlotPres = [];
+
+    if Method == 1
+        ext = '';
     else
         ext = '+V';
     end
+else
+    ext = '-o';
     
     Ret2 = [];
     Ret3 = [];
@@ -133,8 +137,8 @@ for i = 1:nfits
        Ret1.BadCyc(i) = 1; 
     end
 
-    if Method == 1
-        if any( (c-lb) < 0 ) || any ( (ub-c) < 0 )
+    if Method > 0
+        if any( (c-lb) < 0 ) | any ( (ub-c) < 0 )
             disp(['    fit_takeuchi: fit bounds violated on cycle ' ...
                 num2str(i, '%02i')]);
             Ret1.BadCyc(i) = 1; 
@@ -152,6 +156,9 @@ for i = 1:nfits
     if Method == 1
         Ret3.iv1PlotTime = [Ret3.iv1PlotTime; WaveTs];
         Ret3.iv1PlotPres = [Ret3.iv1PlotPres; WavePs];
+    elseif Method == 2
+        Ret3.iv3PlotTime = [Ret3.iv3PlotTime; WaveTs];
+        Ret3.iv3PlotPres = [Ret3.iv3PlotPres; WavePs];
     end
    
     % AR 6/5/17 -----------------------------------------------
@@ -161,12 +168,12 @@ for i = 1:nfits
     % obtain maximum pressure point on actual curve
     PresMax = max(Data.Pres_D(Seg.Time(i).PosIso(1,1):1: ...
         Seg.Time(i).NegIso(end,1)));
-    if Ret1.Rsq(i) > 0.80 & Ret1.PIsoMax(i) < PresMax & Method < 2
+    if Ret1.Rsq(i) > 0.80 & Ret1.PIsoMax(i) < PresMax
        
         % keep count of how many points added to systole side
         count = 0;
 
-        if Method == 1
+        if Method > 0
             temp_ADD_TPoints = [];
             temp_ADD_PPoints = [];
         end
@@ -174,13 +181,12 @@ for i = 1:nfits
         while Ret1.PIsoMax(i) < PresMax
             
             % add point to iv1Time(i).PosIso and iv1Pres(i).PosIso
-            Seg.Time(i).PosIso = ...
-                [(Seg.Time(i).PosIso(1,1))-1; Seg.Time(i).PosIso];
-            Seg.Pres(i).PosIso = ...
-                [Data.Pres_D(Seg.Time(i).PosIso(1,1)); ...
+            Seg.Time(i).PosIso = [(Seg.Time(i).PosIso(1,1))-1; ...
+                Seg.Time(i).PosIso];
+            Seg.Pres(i).PosIso = [Data.Pres_D(Seg.Time(i).PosIso(1,1)); ...
                 Seg.Pres(i).PosIso];
 
-            if Method == 1
+            if Method > 0
                 temp_ADD_TPoints = ...
                     [ADD_TPoints; Data.Time_D(Seg.Time(i).PosIso(1,1))];
                 temp_ADD_PPoints = ...
@@ -244,7 +250,7 @@ for i = 1:nfits
             end
         end
 
-        if Method == 1 & Ret1.VCyc(i) == true 
+        if Method > 0 & Ret1.VCyc(i) == true 
             ADD_TPoints = [ADD_TPoints; temp_ADD_TPoints];
             ADD_PPoints = [ADD_PPoints; temp_ADD_PPoints];
         end
@@ -267,6 +273,12 @@ if any(Ret1.VCyc)
 
         % Update ivSeg; iv1Time & iv1Pres may be updated in Vanderpool section.
         Ret2 = ivSeg;
+    elseif Method == 2
+        Ret3.iv3PlotTime = [Ret3.iv3PlotTime; ADD_TPoints];
+        Ret3.iv3PlotPres = [Ret3.iv3PlotPres; ADD_PPoints];
+
+        % Update ivSeg; iv1Time & iv1Pres may be updated in Vanderpool section.
+        Ret2 = ivSeg;
     end
 
     temp = 1:1:nfits;
@@ -275,7 +287,7 @@ if any(Ret1.VCyc)
 end
 
 % Give GUI_FitTakeuchi first ICs to work with, average of the specific ones?
-if Method > 1 & isstruct(ICS)
+if Method > 0 & isstruct(ICS)
     if length(Ret1.CycICs(:)) > 4
         Ret1.InitIC = mean(Ret1.CycICs);
     else

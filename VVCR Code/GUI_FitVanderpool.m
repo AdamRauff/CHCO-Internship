@@ -1,28 +1,28 @@
-function varargout = GUI_FitTakeuchi (varargin)
-% GUI_FitTakeuchi MATLAB code for GUI_FitTakeuchi.fig
-%      GUI_FitTakeuchi, by itself, creates a new GUI_FitTakeuchi 
+function varargout = GUI_FitVanderpool (varargin)
+% GUI_FitVanderpool MATLAB code for GUI_FitVanderpool.fig
+%      GUI_FitVanderpool, by itself, creates a new GUI_FitVanderpool 
 %      or raises the existing singleton*.
 %
-%      H = GUI_FitTakeuchi returns the handle to a new GUI_FitTakeuchi
+%      H = GUI_FitVanderpool returns the handle to a new GUI_FitVanderpool
 %      or the handle to the existing singleton*.
 %
-%      GUI_FitTakeuchi('CALLBACK',hObject,eventData,handles,...) calls
-%      the local function named CALLBACK in GUI_FitTakeuchi.M with the 
+%      GUI_FitVanderpool('CALLBACK',hObject,eventData,handles,...) calls
+%      the local function named CALLBACK in GUI_FitVanderpool.M with the 
 %      given input arguments.
 %
-%      GUI_FitTakeuchi('Property','Value',...) creates a new GUI_Fit-
+%      GUI_FitVanderpool('Property','Value',...) creates a new GUI_Fit-
 %      Takeuchi or raises the existing singleton*.  Starting from the left,
-%      property value pairs are applied to the GUI before GUI_FitTakeuchi-
+%      property value pairs are applied to the GUI before GUI_FitVanderpool-
 %      _OpeningFcn gets called.  An unrecognized property name or invalid 
 %      value makes property application stop.  All inputs are passed to 
-%      GUI_FitTakuchi_OpeningFcn via varargin.
+%      GUI_FitVanderpool_OpeningFcn via varargin.
 %
 %      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only
 %      one instance to run (singleton)".
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Edit the above text to modify the response to help GUI_FitTakeuchi
+% Edit the above text to modify the response to help GUI_FitVanderpool
 
 % Last Modified by GUIDE v2.5 23-Sep-2017 09:40:45
 
@@ -30,8 +30,8 @@ function varargout = GUI_FitTakeuchi (varargin)
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
                    'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @GUI_FitTakeuchi_OpeningFcn, ...
-                   'gui_OutputFcn',  @GUI_FitTakeuchi_OutputFcn, ...
+                   'gui_OpeningFcn', @GUI_FitVanderpool_OpeningFcn, ...
+                   'gui_OutputFcn',  @GUI_FitVanderpool_OutputFcn, ...
                    'gui_LayoutFcn',  [] , ...
                    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
@@ -46,15 +46,15 @@ end
 % End initialization code - DO NOT EDIT
 end
 
-% --- Executes just before GUI_FitTakeuchi is made visible.
-function GUI_FitTakeuchi_OpeningFcn(hObject, eventdata, handles, varargin)
+% --- Executes just before GUI_FitVanderpool is made visible.
+function GUI_FitVanderpool_OpeningFcn(hObject, eventdata, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% varargin   command line arguments to GUI_FitTakeuchi (see VARARGIN)
+% varargin   command line arguments to GUI_FitVanderpool (see VARARGIN)
 
-% Choose default command line output for GUI_FitTakeuchi
+% Choose default command line output for GUI_FitVanderpool
 handles.output = hObject;
 
 % set the input variable in the global handles environment
@@ -69,7 +69,7 @@ handles.Cycle = 1;
 handles.CycMx = length(handles.InVar.ivIdx.Ps1);
 set(handles.CycleMinus, 'Enable', 'off');
 
-Rsq = handles.InVar.FitT.Rsq;
+Rsq = handles.InVar.FitV.Rsq;
 Cyc = handles.Cycle;
 set(handles.CycleInd, 'String', ['Cycle #' num2str(Cyc, '%02i')]);
 set(handles.RsqTxt,   'String', ['Rsq = ' num2str(Rsq(Cyc),'%6.4f')]);
@@ -79,21 +79,20 @@ Data = handles.InVar.Data;
 Plot = handles.InVar.Plot;
 ivVal = handles.InVar.ivVal;
 ivSeg = handles.InVar.ivSeg;
-FitT = handles.InVar.FitT;
+FitV = handles.InVar.FitV;
 
 % store first fit output into output structure.
-handles.OutVar.FitT = handles.InVar.FitT;
-handles.OutVar.FitO = handles.InVar.FitO;
+handles.OutVar.FitV = handles.InVar.FitV;
 handles.OutVar.Exit = 'Good';
 
 % plot pressure, sinusoid fits
-[handles] = takeuchi_plot_single (Data, ivSeg, FitT, Plot, handles);
-[handles] = open_all_plots (Data, ivSeg, FitT, Plot, handles);
+[handles] = takeuchi_plot_single (Data, ivSeg, FitV, Plot, handles);
+[handles] = open_all_plots (Data, ivSeg, FitV, Plot, handles);
 
 % Update handles.
 guidata(hObject, handles);
 
-% UIWAIT makes GUI_FitTakeuchi wait for user response (see UIRESUME)
+% UIWAIT makes GUI_FitVanderpool wait for user response (see UIRESUME)
 uiwait(handles.figure1);
 end
 
@@ -102,14 +101,14 @@ function MainGraphCallback(hObject, eventdata, handles)
 
 % get the current point
 cp(1,:) = [eventdata.IntersectionPoint(1), eventdata.IntersectionPoint(2)];
-disp('GUI_FitTakeuchi>MainGraphCallback:');
+disp('GUI_FitVanderpool>MainGraphCallback:');
 disp(['    Time:     ',num2str(cp(1))]);
 disp(['    Pressure: ',num2str(cp(2))]);
 
 end
 
 % --- Outputs from this function are returned to the command line.
-function varargout = GUI_FitTakeuchi_OutputFcn(hObject, ~, handles) 
+function varargout = GUI_FitVanderpool_OutputFcn(hObject, ~, handles) 
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -129,7 +128,7 @@ function CyclePlus_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-Rsq = handles.OutVar.FitT.Rsq;
+Rsq = handles.OutVar.FitV.Rsq;
 Cyc = handles.Cycle;
 
 Cyc = Cyc + 1;
@@ -148,12 +147,12 @@ handles.Cycle = Cyc;
 Data = handles.InVar.Data;
 Plot = handles.InVar.Plot;
 ivSeg = handles.InVar.ivSeg;
-FitT = handles.OutVar.FitT;
+FitV = handles.OutVar.FitV;
 
 % plot pressure, sinusoid fits, update indicator
-[handles] = takeuchi_plot_single (Data, ivSeg, FitT, Plot, handles);
+[handles] = takeuchi_plot_single (Data, ivSeg, FitV, Plot, handles);
 if ishandle(handles.figure2)
-    [handles] = takeuchi_plot_all (Data, ivSeg, FitT, Plot, handles);
+    [handles] = takeuchi_plot_all (Data, ivSeg, FitV, Plot, handles);
 end
 
 % Update handles.
@@ -168,7 +167,7 @@ function CycleMinus_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-Rsq = handles.OutVar.FitT.Rsq;
+Rsq = handles.OutVar.FitV.Rsq;
 Cyc = handles.Cycle;
 
 Cyc = Cyc - 1;
@@ -187,12 +186,12 @@ handles.Cycle = Cyc;
 Data = handles.InVar.Data;
 Plot = handles.InVar.Plot;
 ivSeg = handles.InVar.ivSeg;
-FitT = handles.OutVar.FitT;
+FitV = handles.OutVar.FitV;
 
 % plot pressure, sinusoid fits, update indicator
-[handles] = takeuchi_plot_single (Data, ivSeg, FitT, Plot, handles);
+[handles] = takeuchi_plot_single (Data, ivSeg, FitV, Plot, handles);
 if ishandle(handles.figure2)
-    [handles] = takeuchi_plot_all (Data, ivSeg, FitT, Plot, handles);
+    [handles] = takeuchi_plot_all (Data, ivSeg, FitV, Plot, handles);
 end
 
 % Update handles.
@@ -211,19 +210,19 @@ set(handles.figure1, 'pointer', 'watch');
 drawnow;
 
 WaveRm = handles.Cycle;
-disp(['GUI_FitTakeuchi>Remove: wave ' num2str(WaveRm, '%02i') ...
+disp(['GUI_FitVanderpool>Remove: wave ' num2str(WaveRm, '%02i') ...
     ' marked removed']);
 
-handles.OutVar.FitT.BadCyc(WaveRm) = 1;
+handles.OutVar.FitV.BadCyc(WaveRm) = 1;
 
 % Plot the results
 ivSeg = handles.InVar.ivSeg;
-FitT = handles.OutVar.FitT;
+FitV = handles.OutVar.FitV;
 Data = handles.InVar.Data;
 Plot = handles.InVar.Plot;
-[handles] = takeuchi_plot_single (Data, ivSeg, FitT, Plot, handles);
+[handles] = takeuchi_plot_single (Data, ivSeg, FitV, Plot, handles);
 if ishandle(handles.figure2)
-    [handles] = takeuchi_plot_all (Data, ivSeg, FitT, Plot, handles);
+    [handles] = takeuchi_plot_all (Data, ivSeg, FitV, Plot, handles);
 end
 
 set(handles.Include, 'Enable', 'on');
@@ -326,20 +325,20 @@ function Include_Callback(hObject, ~, handles)
 set(handles.figure1, 'pointer', 'watch');
 drawnow;
 
-disp(['GUI_FitTakeuchi>Include: wave ' num2str(handles.Cycle, ...
+disp(['GUI_FitVanderpool>Include: wave ' num2str(handles.Cycle, ...
    '%02i') ' included in final analysis']);
 
-handles.OutVar.FitT.BadCyc(handles.Cycle) = 0;
+handles.OutVar.FitV.BadCyc(handles.Cycle) = 0;
 
 % Extract Data, Values, Fit Segments, Plots, & Segments from handles.
-FitT = handles.OutVar.FitT;
+FitV = handles.OutVar.FitV;
 Data = handles.InVar.Data;
 Plot = handles.InVar.Plot;
 ivSeg = handles.InVar.ivSeg;
 
-[handles] = takeuchi_plot_single (Data, ivSeg, FitT, Plot, handles);
+[handles] = takeuchi_plot_single (Data, ivSeg, FitV, Plot, handles);
 if ishandle(handles.figure2)
-    [handles] = takeuchi_plot_all (Data, ivSeg, FitT, Plot, handles);
+    [handles] = takeuchi_plot_all (Data, ivSeg, FitV, Plot, handles);
 end
 
 set(handles.Include, 'Enable', 'off');
@@ -437,10 +436,10 @@ function AllPlotsGraph_Callback(hObject, ~, handles)
 Data = handles.InVar.Data;
 Plot = handles.InVar.Plot;
 ivSeg = handles.InVar.ivSeg;
-FitT = handles.OutVar.FitT;
+FitV = handles.OutVar.FitV;
 
 % Create all pressures figure
-handles = open_all_plots (Data, ivSeg, FitT, Plot, handles);
+handles = open_all_plots (Data, ivSeg, FitV, Plot, handles);
 
 % Update handles.
 guidata(hObject, handles);
@@ -452,7 +451,7 @@ function SubGraphCallback(hObject, eventdata, handles)
 
 cp(1,:) = [eventdata.IntersectionPoint(1), eventdata.IntersectionPoint(2)];
 
-Rsq = handles.OutVar.FitT.Rsq;
+Rsq = handles.OutVar.FitV.Rsq;
 Data = handles.InVar.Data;
 ivIdx = handles.InVar.ivIdx;
 
@@ -486,10 +485,10 @@ if ~isempty(WaveNumPosRm) && ~isempty(WaveNumNegRm)
         Data = handles.InVar.Data;
         Plot = handles.InVar.Plot;
         ivSeg = handles.InVar.ivSeg;
-        FitT = handles.OutVar.FitT;
+        FitV = handles.OutVar.FitV;
 
-        [handles] = takeuchi_plot_single (Data, ivSeg, FitT, Plot, handles);
-        [handles] = takeuchi_plot_all (Data, ivSeg, FitT, Plot, handles);
+        [handles] = takeuchi_plot_single (Data, ivSeg, FitV, Plot, handles);
+        [handles] = takeuchi_plot_all (Data, ivSeg, FitV, Plot, handles);
 
         % update figure1 handles
         guidata(handles.figure1, handles);

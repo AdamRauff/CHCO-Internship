@@ -34,10 +34,10 @@ function [ivIdx, ivVal, badcyc] = data_isoidx (Dat, Ext)
 datsz = length(Dat.Pres);
 idxsz = length(Ext.dPmaxIdx);
 
-[ivIdx, ivVal, badcyc] = data_isoidx_t (idxsz, datsz, Dat, Ext);
-[ivIdx, ivVal, badcyc] = data_isoidx_v (idxsz, datsz, Dat, Ext, ivIdx, ...
+[ivIdx, ivVal, badcyc] = isoidx_takeuchi (idxsz, datsz, Dat, Ext);
+[ivIdx, ivVal, badcyc] = isoidx_vanderpool (idxsz, datsz, Dat, Ext, ivIdx, ...
     ivVal, badcyc);
-[ivIdx, ivVal, badcyc] = data_isoidx_k (idxsz, datsz, Dat, Ext, ivIdx, ...
+[ivIdx, ivVal, badcyc] = isoidx_kind (idxsz, datsz, Dat, Ext, ivIdx, ...
     ivVal, badcyc);
 
 %% Remove bad cycles from ivVal, ivIdx vectors.

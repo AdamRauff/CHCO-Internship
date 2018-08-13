@@ -132,9 +132,11 @@ end
 
 [ivSeg, ivIdx] = data_isoseg (false, Data, ivIdx);
 
-% Get Pes processing done prior to fits based on accepted segmentations
+% Get Pes processing done prior to fits based on accepted segmentations. First
+% call gets Dog-Pes, second gets PA-based Pes (Vanderpool).
 Res.Pes  = unique([Data.Pes1' Data.Pes2']);
 Res = compute_MeanStd (Res, Res.Pes, 'Pes'); 
+Res = compute_MeanStd (Res, Data.Pes3, 'PesV'); 
 
 %% (6) Perform Takeuchi fit(s), put up check GUI, and compute return quantities
 % FitT is "new" ICs (w/fitting limits and new ICs), FitO is "old" fit (Adam's
@@ -151,14 +153,9 @@ if RunT
 
     [FitT, ivSeg, PlotT] = fit_takeuchi (ivSeg, Data, ICS, 1);
     [FitO] = fit_takeuchi (ivSeg, Data, ICS, 0);
-    if RunV
-        [FitV] = fit_takeuchi (ivSeg, Data, ICS, 2);
-    else
-        FitV = [];
-    end
 
     % Call the Takeuchi Fit Check GUI
-    TStr.Plot = PlotT; TStr.FitT = FitT; TStr.FitV = FitV; TStr.FitO = FitO;
+    TStr.Plot = PlotT; TStr.FitT = FitT; TStr.FitO = FitO;
     RetT = GUI_FitTakeuchi (TStr, Data, ivIdx, ivVal, ivSeg);
     [Res, Ret] = interpret_str (RetT, 'GUI_FitTakeuchi', FileName, Res);
     if Ret
@@ -167,26 +164,59 @@ if RunT
 
     BadCycT = RetT.FitT.BadCyc;
     BadCycO = RetT.FitO.BadCyc | RetT.FitT.BadCyc;
-    BadCycV = RetT.FitV.BadCyc | RetT.FitT.BadCyc;
     
     Res.FitT = RetT.FitT;
     Res.FitO = RetT.FitO;
-    Res.FitV = RetT.FitV;
     Res.numPeaksT = sum(~BadCycT);
     Res.numPeaksO = sum(~BadCycO);
-    Res.numPeaksV = sum(~BadCycV);
 
     GOOD_PmxT = RetT.FitT.PIsoMax(BadCycT~=1);
     GOOD_PmxO = RetT.FitO.PIsoMax(BadCycO~=1);
-    GOOD_PmxV = RetT.FitV.PIsoMax(BadCycV~=1);
     Res = compute_MeanStd (Res, GOOD_PmxT, 'PmaxT');
     Res = compute_MeanStd (Res, GOOD_PmxO, 'PmaxO');
-    Res = compute_MeanStd (Res, GOOD_PmxV, 'PmaxV');
     Res = compute_VVCR (Res, Data.Pes1(BadCycT~=1), GOOD_PmxT, 'T');
     Res = compute_VVCR (Res, Data.Pes1(BadCycO~=1), GOOD_PmxO, 'O');
-    Res = compute_VVCR (Res, Data.Pes3(BadCycV~=1), GOOD_PmxV, 'V');
     Res.VandT = sum(RetT.FitT.VCyc);
     Res.VandO = sum(RetT.FitO.VCyc);
+else
+    
+    [Res.numPeaksT, Res.PmaxT_Mean, Res.PmaxT_StD, ...
+    Res.numPeaksO,  Res.PmaxO_Mean, Res.PmaxO_StD, ...
+    Res.VVCRiT_Mean, Res.VVCRiT_StD, Res.VVCRnT_Mean, Res.VVCRnT_StD, ...
+    Res.VVCRiO_Mean, Res.VVCRiO_StD, Res.VVCRnO_Mean, Res.VVCRnO_StD] ...
+    = deal(0); 
+end
+
+%% (7) Perform Takeuchi fit w/Vanderpool Landmarks, put up check GUI, and 
+% compute return quantities. FitV uses "new" ICs (w/fitting limits and new
+% as with above. No "old" (unconstrained) fit here.
+if RunT
+    % frequency is the conversion to angular frequency 2*pi/T
+    % multiplied by the number of waves found over the time period
+    % ICs structure for first pass - enables individual computation of ICs
+    ICS.Freq = 2*pi/Data.time_per;
+    ICS.Pres = Data.Pres;
+    ICS.dPmaxIdx = ivIdx.dPmax3;
+    ICS.dPminIdx = ivIdx.dPmin3;
+
+    [FitV, ivSeg, PlotV] = fit_takeuchi (ivSeg, Data, ICS, 2);
+
+    % Call the Vanderpool Fit Check GUI
+    VStr.Plot = PlotV; VStr.FitV = FitV;
+    RetT = GUI_FitVanderpool (VStr, Data, ivIdx, ivVal, ivSeg);
+    [Res, Ret] = interpret_str (RetT, 'GUI_FitVanderpool', FileName, Res);
+    if Ret
+        return;
+    end
+
+    BadCycV = RetT.FitV.BadCyc;
+    
+    Res.FitV = RetT.FitV;
+    Res.numPeaksV = sum(~BadCycV);
+
+    GOOD_PmxV = RetT.FitV.PIsoMax(BadCycV~=1);
+    Res = compute_MeanStd (Res, GOOD_PmxV, 'PmaxV');
+    Res = compute_VVCR (Res, Data.Pes3(BadCycV~=1), GOOD_PmxV, 'V');
     Res.VandV = sum(RetT.FitV.VCyc);
 else
     
@@ -197,7 +227,7 @@ else
     = deal(0); 
 end
 
-%% (7) Perform Kind fit, put up check GUI, and compute return quantities
+%% (8) Perform Kind fit, put up check GUI, and compute return quantities
 % FitK is weighted residuals, contraction error weighted to be (roughly)
 % the same as relaxtion error. FitN is "Normal", no weighting.
 if RunK
