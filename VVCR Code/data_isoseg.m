@@ -64,12 +64,11 @@ for i = 1: mysz1
     % iv1Time is again indices.
     Ret1.iv1Time(i).NegIso(:,1) = (P1:1:Ret2.Ne1_D(i))';
     Ret1.iv1Pres(i).NegIso(:,1) = Data.Pres_D(Ret1.iv1Time(i).NegIso(:,1));
-
 end
 
 % Vanderpool Indices. See above for more explanation. Almost every variable
 % below is an index, not a value.
-for i = 1: mysz1
+for i = 1: mysz3
 
     % Positive (1st Isovolumic Section)
     P2 = find(round(Data.Time_D,3) == round(Data.Time(ivIdx.dPmax3(i)),3));
@@ -89,8 +88,7 @@ for i = 1: mysz1
     end
 
     Ret1.iv3Time(i).NegIso(:,1) = (P1:1:Ret2.Ne3_D(i))';
-    Ret1.iv3Pres(i).NegIso(:,1) = Data.Pres_D(Ret1.iv3Time(i).NegIso(:,1));
-
+    Ret1.iv3Pres(i).NegIso(:,1) = Data.Pres_D(Ret1.iv3Time(i).NegIso(:,1));   
 end
 
 % Kind Indicies. See above for more explanation. Almost every variable
@@ -121,5 +119,4 @@ for i = 1: mysz2
     Ret1.iv2Time(i).NegIso(:,1) = (Ret2.Ns2_D(i):1:Ret2.Ne2_D(i))';
     Ret1.iv2Pres(i).NegIso(:,1) = Data.Pres_D(Ret1.iv2Time(i).NegIso(:,1));
     Ret1.iv2dPdt(i).NegIso(:,1) = Data.dPdt_D(Ret1.iv2Time(i).NegIso(:,1));
-
 end

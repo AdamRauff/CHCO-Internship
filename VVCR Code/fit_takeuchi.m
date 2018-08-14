@@ -81,7 +81,7 @@ for i = 1:nfits
     WaveTs = [Data.Time_D(Seg.Time(i).PosIso)'; ...
         Data.Time_D(Seg.Time(i).NegIso)'];
     WavePs = [Seg.Pres(i).PosIso; Seg.Pres(i).NegIso];
-    
+
     if Method > 0
         WaveTsNorm = WaveTs-WaveTs(1);
     else
