@@ -69,7 +69,7 @@ for i = 1:2
     Res.TotNumWaves = GateStr.TotNumWaves;
 
     %% (4) Find isovolumic timings for Takaguichi & Kind method.
-    [ivIdx, ivVal, badcyc] = data_isoidx (Data_O, Extr);
+    [ivIdx, ivVal] = data_isoidx (Data_O, Extr);
 
     % If very few timings were found, filtering may be a problem.
     mingood = min([length(ivIdx.Ps1) length(ivIdx.Ps2)]);
@@ -110,8 +110,7 @@ for i = 1:2
     else
         break;
 
-    end
-        
+    end     
 end
 
 RunT = logical(length(ivIdx.Ps1));

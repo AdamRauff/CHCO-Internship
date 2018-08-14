@@ -112,7 +112,7 @@ for i = 1:idxsz
     ivIdx.Ne3(i) = Eir;
 end
 
-temp_debug (Dat, ivVal, ivIdx);
+%temp_debug (Dat, ivVal, ivIdx);
 
 end
 

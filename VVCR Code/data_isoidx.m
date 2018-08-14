@@ -1,4 +1,4 @@
-function [ivIdx, ivVal, badcyc] = data_isoidx (Dat, Ext)
+function [ivIdx, ivVal] = data_isoidx (Dat, Ext)
 % This code finds indicies and values for the isovolumic sections of the RV
 % pressure waveform. There are several approaches for this: Takeuchi, Kind,
 % and now, Vanderpool. These are defined as (note d2P/dt2 is abbreivated PA
@@ -45,45 +45,19 @@ badcyc.T = sort(unique(abs(badcyc.T)));
 badcyc.V = sort(unique(badcyc.V));
 badcyc.K = sort(unique(badcyc.K));
 
-% Remove bad curves; unique removal for each fit type.
-if ~isempty(badcyc.T)
-    for i = length(badcyc.T):-1:1
-        j = badcyc.T(i);
-        ivVal.Ps1(j) = []; ivIdx.Ps1(j) = [];
-        ivVal.Ne1(j) = []; ivIdx.Ne1(j) = [];
+% Remove bad curves by passing fields unique to each type of landmarks to
+% removal code.
 
-        ivVal.dPmax1(j) = []; ivIdx.dPmax1(j) = [];
-        ivVal.dPmin1(j) = []; ivIdx.dPmin1(j) = [];
-    end
-end
+[ivVal, ivIdx] = clean_isoidx (badcyc.T, ivVal, ivIdx, ...
+    char('Ps1', 'Ne1', 'dPmax1', 'dPmin1'));
 
-if ~isempty(badcyc.V)
-    for i = length(badcyc.T):-1:1
-        j = badcyc.T(i);
-        ivVal.Ps3(j) = []; ivIdx.Ps3(j) = [];
-        ivVal.Ne3(j) = []; ivIdx.Ne3(j) = [];
+[ivVal, ivIdx] = clean_isoidx (badcyc.V, ivVal, ivIdx, ...
+    char('Ps3', 'Ne3', 'dPmax3', 'dPmin3', 'Pes3'));
 
-        ivVal.dPmax3(j) = []; ivIdx.dPmax3(j) = [];
-        ivVal.dPmin3(j) = []; ivIdx.dPmin3(j) = [];
-    end
-end
-
-if ~isempty(badcyc.K)
-    for i = length(badcyc.K):-1:1
-        j = badcyc.K(i);
-        ivVal.Ps2(j) = []; ivIdx.Ps2(j) = [];
-        ivVal.Pe2(j) = []; ivIdx.Pe2(j) = [];
-        ivVal.Ns2(j) = []; ivIdx.Ns2(j) = [];
-        ivVal.Ne2(j) = []; ivIdx.Ne2(j) = [];
-
-        ivVal.dPmax2(j) = []; ivIdx.dPmax2(j) = [];
-        ivVal.dPmin2(j) = []; ivIdx.dPmin2(j) = [];
-    end
-end
+[ivVal, ivIdx] = clean_isoidx (badcyc.K, ivVal, ivIdx, ...
+    char('Ps2', 'Pe2', 'Ns2', 'Ne2', 'dPmax2', 'dPmin2'));
 
 disp(['    data_isoidx: ' num2str(idxsz,'%02i') ' extrema sets, ' ...
     num2str(length(ivVal.Ps1),'%02i') ' Takeuchi cycles, ' ...
     num2str(length(ivVal.Ps3),'%02i') ' Vanderpool cycles, ', ...
     num2str(length(ivVal.Ps2),'%02i') ' Kind cycles']);
-
-

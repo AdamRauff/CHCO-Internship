@@ -120,3 +120,10 @@ for i = 1: mysz2
     Ret1.iv2Pres(i).NegIso(:,1) = Data.Pres_D(Ret1.iv2Time(i).NegIso(:,1));
     Ret1.iv2dPdt(i).NegIso(:,1) = Data.dPdt_D(Ret1.iv2Time(i).NegIso(:,1));
 end
+
+%% NEED CHECKS HERE FOR EMPTY SEGMENTS (JUST IN CASE)...
+% Find empty segments and remove them from both the iv(x) vectors as well as
+% the iv(XXX) vectors as well. Should turn the checks at the end of data_isoidx
+% into a subfunction that can be called to remove data from the iv(XXX) vectors,
+% and call it there (three times), then call it here if needed along with 
+% another subfunction that cleans the iv(X)Pres/iv(X)Time vectors as well.

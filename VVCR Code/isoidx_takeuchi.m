@@ -144,10 +144,10 @@ for i = 1:idxsz
     
     % calculate the difference between the local neighborhood
     % (tempNeg_ivVal.Ps1s) and ivVal.Ps1
-    ivVal.Ps1_Diffs = abs(ivVal.Ps1(i)-Dat.Pres(tempNeg_ivVal.Ps1s));
+    Ps1_Diffs = abs(ivVal.Ps1(i)-Dat.Pres(tempNeg_ivVal.Ps1s));
 
     % find minimum difference
-    [~, tempInds] = min(ivVal.Ps1_Diffs);
+    [~, tempInds] = min(Ps1_Diffs);
 
     % assign "Negative" iv*.Ps1 values, i.e. iv*.Ne1 values
     ivIdx.Ne1(i) = tempNeg_ivVal.Ps1s(tempInds);
