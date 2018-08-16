@@ -1,7 +1,6 @@
 function [Ret1, Ret2] = data_isoseg (GUI, Data, ivIdx)
 
 % convert time, pressure indices to 2x data points indicies
-
 Ret2 = ivIdx;
 mysz1 = length(ivIdx.Ps1);
 mysz2 = length(ivIdx.Ps2);
@@ -123,7 +122,7 @@ end
 
 %% NEED CHECKS HERE FOR EMPTY SEGMENTS (JUST IN CASE)...
 % Find empty segments and remove them from both the iv(x) vectors as well as
-% the iv(XXX) vectors as well. Should turn the checks at the end of data_isoidx
-% into a subfunction that can be called to remove data from the iv(XXX) vectors,
-% and call it there (three times), then call it here if needed along with 
-% another subfunction that cleans the iv(X)Pres/iv(X)Time vectors as well.
+% the iv(XXX) vectors as well. The checks at the end of data_isoidx are now
+% functionalized so that they can be called to here remove data from the
+% iv(XXX) vectors, along with another subfunction that cleans the iv(X)Pres
+% /iv(X)Time vectors as well.

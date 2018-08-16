@@ -39,20 +39,20 @@ if isstruct(ICS)
 end
 Ret1.VCyc = zeros(nfits,1);
 
-% Variables needed for adding points to any Takeuchi method fit (w/Vanderpool
-% "walk down the pressure curve" method). The results of this method are
-% only shown for the new Takeuchi fit (Method=1), or the Vanderpool landmarks
-% (Method=2), but we don't need these for the old (Adam) fit. Also set existing
-% ivSeg (that came in on call) to Ret2 to minimally insure continuity of this 
-% variable. Finally, set the char variable 'ext' that is used in providing
-% user feedback.
+% Variables needed for adding points to any Takeuchi method fit (w/
+% Vanderpool "walk down the pressure curve" method). The results of this
+% method are only shown for the new Takeuchi fit (Method=1), or the
+% Vanderpool landmarks (Method=2), but we don't need these for the old
+% (Adam ICs) fit. Also set existing ivSeg (that came in on call) to Ret2 to
+% minimally insure continuity of this variable. Finally, set the char
+% variable 'ext' that is used in providing user feedback.
 if Method > 0
     Ret2 = ivSeg;
     
     % Ploting vectors of the fitting data for GUI_FitTakeuchi or
     % GUI_FitVanderpool. Because the Takeuchi and Vanderpool methods each
-    % can have unique rejections, the iv*Plot vectors must be unique, although
-    % ADD_ vectors are local to this function.
+    % can have unique rejections, the iv*Plot vectors must be unique, 
+    % although ADD_ vectors are local to this function.
     ADD_TPoints = []; 
     ADD_PPoints = []; 
     Ret3.iv1PlotTime = [];
@@ -76,8 +76,8 @@ end
 % Seg.Time and Seg.Pres
 for i = 1:nfits
     
-    % Obtain vectors of fitting time, pressure; then normalize time to start
-    % at zero (to obtain consistent phase) for newer methods.
+    % Obtain vectors of fitting time, pressure; then normalize start time
+    % to zero for every waveform (to obtain consistent phase) for newer methods.
     WaveTs = [Data.Time_D(Seg.Time(i).PosIso)'; ...
         Data.Time_D(Seg.Time(i).NegIso)'];
     WavePs = [Seg.Pres(i).PosIso; Seg.Pres(i).NegIso];
@@ -152,7 +152,6 @@ for i = 1:nfits
     % store the time points and pressure points in one array for easy
     % plotting - first pass (call from VVCR_); otherwise, reconsitute these
     % arrays if needed just outside this loop.
-
     if Method == 1
         Ret3.iv1PlotTime = [Ret3.iv1PlotTime; WaveTs];
         Ret3.iv1PlotPres = [Ret3.iv1PlotPres; WavePs];

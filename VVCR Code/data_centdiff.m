@@ -34,7 +34,6 @@ vd = vd';
 % This is for second deriviative straight from 0th order. Again here, use a
 % higher order (but not quite 6th) to get more accurate edge terms.
 
-
 vdd(1) = Inv12hh*(35*v(1)-104*v(2)+114*v(3)-56*v(4)+11*v(5));
 vdd(2) = Inv12hh*(11*v(1)-20*v(2)+6*v(3)+4*v(4)-v(5));
 vdd(3) = Inv12hh*(-v(1)+16*v(2)-30*v(3)+16*v(4)-1*v(5));

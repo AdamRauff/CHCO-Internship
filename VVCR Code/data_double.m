@@ -34,7 +34,6 @@ Ret.Pes2 = Ret.Pres_D(uint16(dtmin2_30/mystp));
 % Vanderpool, Pes is at the minimum of d2P/dt2 just before (dP/dt)min. The
 % finding technique code below is from data_isoseg (which actually is
 % called for the rest of the times just after this routine).
-
 mysz3 = length(ivIdx.Ps3);
 Ret.Pes3Times = zeros(mysz3,1);
 Ret.Pes3 = zeros(mysz3,1);

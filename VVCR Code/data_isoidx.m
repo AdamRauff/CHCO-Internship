@@ -47,7 +47,6 @@ badcyc.K = sort(unique(badcyc.K));
 
 % Remove bad curves by passing fields unique to each type of landmarks to
 % removal code.
-
 [ivVal, ivIdx] = clean_isoidx (badcyc.T, ivVal, ivIdx, ...
     char('Ps1', 'Ne1', 'dPmax1', 'dPmin1'));
 

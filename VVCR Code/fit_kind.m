@@ -32,7 +32,6 @@ Ret2.iv2TShift = zeros(nfits,1);
 % structures: ivSeg.iv2Time and ivSeg.iv2Pres
 for i = 1:nfits
 
-
     % Times for (dP/dt)max, (dP/dt)min, and the average period length
     dPtimes = [Data.Time(ivIdx.dPmax2(i)) Data.Time(ivIdx.dPmin2(i)) ...
         Data.time_per];
@@ -98,7 +97,7 @@ for i = 1:nfits
 %-[Examining effect of weighting
 %   disp(['    Rsq ' num2str(Ret1.Rsq(i), '%6.4f')]);
        
-    if Ret1.Rsq(i) < 0.70
+    if Ret1.Rsq(i) < 0.60
        Ret1.BadCyc(i) = 1; 
     end
 
