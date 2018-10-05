@@ -1,20 +1,18 @@
 function [ Res, Pat ] = VVCR_MULTIH_08_09_17( PathName, FileName)
 
-%% (1) Read in data from the given Pat.FileNam
-% determine if Pat.FileNam is from calf or humans to apply apprpriate loadp
-% function
-
-% if thrid digit/entry of Pat.FileNamname is numeric == human Pat.FileNam
-% otherwise, calf Pat.FileNam --> use calf loadp function
+%% (1) Read in data from the given FileName
+% determine if FileName is from calf or humans to apply apprpriate loadp func
+% if third digit/entry of FileName is numeric == human; otherwise, calf.
 if FileName(1) == 'H' && ischar(FileName(2)) && ~isnan(str2double(FileName(3)));
-    [Pres, dPdt, Rvals, Pat.Nam, Pat.MRN, Pat.FileNam, ~, ~] = ...
-        loadp_10_10_16(PathName, FileName, 1);
-    dat_typ = 1;
+    [Pres, dPdt, Rvals, Pat] = loadp_10_04_18(PathName, FileName);
+    Pat.type = 1;
 else
-    [Pres, dPdt, Rvals, Pat.FileNam, ~] = ...
-        load_calf_p_5_17_17(PathName, FileName, 100);
-    dat_typ = 0;
+    [Pres, dPdt, Rvals, Pat.FileNam] = load_calf_p_5_17_17(PathName, ...
+        FileName, 100);
+    Pat.tres = 1e-3;
+    Pat.type = 0;
 end
+Pat.FileNam = FileName;
 
 % check to see if RV array was NOT found by loaddp
 if length(Pres) == 1
@@ -31,17 +29,15 @@ if length(Pres) == 1
 end
 
 %% (2) Filter pressure data, find pressure acceleration, & create time vector.
-[Data_O] = data_filter (dat_typ, Pres, dPdt, Rvals);
+[Data_O] = data_filter (Pat, Pres, dPdt, Rvals);
 
 %% (3) Determine all indexing for analysis.
 Res.TotNumWaves = 0;
 for i = 1:2
-    % Capture Extrema and record number found.
+    % Capture Extrema and record number found, then build input structure for
+    % GUI, then call.
     [Extr] = data_maxmin (Data_O);
-    Data_O.time_per = Extr.time_per;
 
-    % Call GUI for assessment of extrema. Build input structure.
-    % Pressure and derivative, their extrema
     PeakStr.Data = Data_O;
     PeakStr.Extr = Extr;
 
@@ -59,7 +55,7 @@ for i = 1:2
     if Ret
         return;
     end
-   
+    
     % update minima and maxima per user filter GUI
     Extr.dPmaxIdx = GateStr.Extr.dPmaxIdx;
     Extr.dPmaxVal = GateStr.Extr.dPmaxVal;
@@ -67,6 +63,17 @@ for i = 1:2
     Extr.dPminVal = GateStr.Extr.dPminVal;
 
     Res.TotNumWaves = GateStr.TotNumWaves;
+
+    % Find cycle periods, AFTER GUI_GateCheck
+    if length(Extr.dPmaxIdx) > 1 & length(Extr.dPmaxVal) > 1
+        cyclenIdx = mean([median(diff(Extr.dPminIdx)) median(diff(Extr.dPmaxIdx))]);
+        Data_O.time_per = cyclenIdx*Data_O.time_step;
+    else
+        Data_O.time_per = Data_O.Time(end);
+    end
+    disp(['    VVCR_MULTIH: Average Period = ' num2str(Data_O.time_per, ...
+        '%05.3f') ' sec, timestep ' num2str(Data_O.time_step*1000, '%04.1f') ...
+        ' ms']);
 
     %% (4) Find isovolumic timings for Takaguichi & Kind method.
     [ivIdx, ivVal] = data_isoidx (Data_O, Extr);
@@ -118,7 +125,7 @@ RunK = logical(length(ivIdx.Ps2));
 RunV = logical(length(ivIdx.Ps3));
 
 % if there were no good pressure waveforms left, then skip patient
-if ~RunT & ~RunK
+if ~RunT & ~RunK & ~RunV
 
     % set all output variables to true, return to runAll
     [Res, Pat] = deal(true);
@@ -179,8 +186,8 @@ if RunT
     Res.VandO = sum(RetT.FitO.VCyc);
 else
     
-    [Res.numPeaksT, Res.PmaxT_Mean, Res.PmaxT_StD, ...
-    Res.numPeaksO,  Res.PmaxO_Mean, Res.PmaxO_StD, ...
+    [Res.numPeaksT, Res.PmaxT_Mean, Res.PmaxT_StD, Res.VandT, ...
+    Res.numPeaksO,  Res.PmaxO_Mean, Res.PmaxO_StD, Res.VandO, ...
     Res.VVCRiT_Mean, Res.VVCRiT_StD, Res.VVCRnT_Mean, Res.VVCRnT_StD, ...
     Res.VVCRiO_Mean, Res.VVCRiO_StD, Res.VVCRnO_Mean, Res.VVCRnO_StD] ...
     = deal(0); 
@@ -189,7 +196,7 @@ end
 %% (7) Perform Takeuchi fit w/Vanderpool Landmarks, put up check GUI, and 
 % compute return quantities. FitV uses "new" ICs (w/fitting limits and new
 % as with above. No "old" (unconstrained) fit here.
-if RunT
+if RunV
     % frequency is the conversion to angular frequency 2*pi/T
     % multiplied by the number of waves found over the time period
     % ICs structure for first pass - enables individual computation of ICs
@@ -219,7 +226,7 @@ if RunT
     Res.VandV = sum(RetV.FitV.VCyc);
 else
     
-    [Res.numPeaksV, Res.PmaxV_Mean, Res.PmaxV_StD, ...
+    [Res.numPeaksV, Res.PmaxV_Mean, Res.PmaxV_StD, Res.VandV, ...
     Res.VVCRiV_Mean, Res.VVCRiV_StD, Res.VVCRnV_Mean, Res.VVCRnV_StD] ...
     = deal(0); 
 end
@@ -298,7 +305,7 @@ end
 if str.Exit == false
     Res = false;
     disp('VVCR_MULTIH: You chose to exit the analysis');
-    disp(['    The Pat.FileNam ', patfile, ' was not evaluated.']);
+    disp(['    The file ', patfile, ' was not evaluated.']);
 
 % The discard patient button has been pressed
 elseif str.Exit == true

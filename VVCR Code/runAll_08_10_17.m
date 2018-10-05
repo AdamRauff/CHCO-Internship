@@ -233,8 +233,8 @@ for i = 1:length(top)
             end
 
             % Name, MRN, Filename
-            NamNoComma = regexprep (Pat.Nam{1}, ',', '');
-            fprintf(fd0, '%s, %s, %s,', NamNoComma, Pat.MRN{1}, Pat.FileNam);
+            NamNoComma = regexprep (Pat.Nam, ',', '');
+            fprintf(fd0, '%s, %s, %s,', NamNoComma, Pat.MRN, Pat.FileNam);
 
             % Pes and both Pmax - end systolic pressure (Pes), and maximum
             % isovolumic pressure (Pmax) obtained from Takeuchi (Mean + 2*amp)

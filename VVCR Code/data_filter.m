@@ -1,4 +1,4 @@
-function [Ret] = data_filter (dat_typ, Pres, dPdt, Rvals)
+function [Ret] = data_filter (Pat, Pres, dPdt, Rvals)
 % Digital filter of Pres & dP/dt. May be necessary for multiharmoic fit,
 % not yet sure. Below, n = filter order (higher gives more rapid
 % attenuation after the passband); TimeStep is sampling rate of clinical
@@ -16,12 +16,8 @@ function [Ret] = data_filter (dat_typ, Pres, dPdt, Rvals)
 Ret.Rvals = Rvals;
 
 n = 15; % number is approximate cutoff in Hz.
-if dat_typ
-    Ret.time_step = 1/250;
-else
-    Ret.time_step = 1/1000;
-end
-Ret.dat_typ = dat_typ;
+Ret.time_step = Pat.tstp;
+Ret.dat_typ = Pat.type;
 
 Wp = Ret.time_step*2*n;
 [b,a] = butter(n,Wp);
@@ -36,7 +32,7 @@ Ret.WITTdPdt = dPdt;
 % WITT data. These are the "unfiltered" original variants. NEVER EVER use
 % 1st order differences for pressure acceleration.
 Ret.OrigPres = Pres;
-[Ret.OrigdPdt, Ret.OrigdP2t] = data_centdiff(dat_typ, Pres);
+[Ret.OrigdPdt, Ret.OrigdP2t] = data_centdiff(Pat.type, Pres);
 
 % The dPdt we actually (hope to) use is the filtered "Orig" dP/dt from
 % above. Then Pres and d2P/dt2 are the integral and derivative of this
@@ -44,7 +40,7 @@ Ret.OrigPres = Pres;
 % of cumtrapz (constant of integration).
 Ret.dPdt = filtfilt(b,a,Ret.OrigdPdt);
 Ret.Pres = cumtrapz(Ret.dPdt)*Ret.time_step+Pres(1);
-Ret.dP2t = data_centdiff(dat_typ, Ret.dPdt);
+Ret.dP2t = data_centdiff(Pat.type, Ret.dPdt);
 
 %% construct time array (4ms from catheter, 1ms from calf pressure DAQ)
 Ret.time_end = Ret.time_step*size(Pres,1);

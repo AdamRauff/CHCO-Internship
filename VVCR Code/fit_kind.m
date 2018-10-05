@@ -84,7 +84,7 @@ for i = 1:nfits
     %   the start time beyond the start of the isovolumic phase? I think no.
     % - Beta: 0.6 is the "best value" for rats, so we give it some leeway.
 
-    lb = [Data.Pes2(i)  0.0 tstivc-ivcdur 0.35];
+    lb = [Data.Pes2(i)  0.0 tstivc-ivcdur 0.50];
     ub = [         500 30.0 tstivc        0.70];
 
     [c,SSE,~] = lsqnonlin (sin_fun2,c2,lb,ub,opts1);
@@ -158,7 +158,7 @@ end
 end
 
 function [ zero ] = imbedded_kind ( P, t1, t2, tM, Pd, dPd, weight )
-%PMAX_MULTIHARM Summary of this function goes here
+%IMBEDDED_KIND Summary of this function goes here
 %   This is a placeholder function with multiple arguments that will be
 %   passed using an anoymous handle to lsqnonlin fit within VVCR_FINAL_*
 %   (more explanation to come in that script). lsqnonlin requires an
