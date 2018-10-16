@@ -5,14 +5,16 @@ function [ Res, Pat ] = VVCR_MULTIH_08_09_17( PathName, FileName)
 % if third digit/entry of FileName is numeric == human; otherwise, calf.
 if FileName(1) == 'H' && ischar(FileName(2)) && ~isnan(str2double(FileName(3)));
     [Pres, dPdt, Rvals, Pat] = loadp_10_04_18(PathName, FileName);
-    Pat.type = 1;
+    if isstruct(Pat)
+        Pat.type = 1;
+        Pat.FileNam = FileName;
+    end
 else
     [Pres, dPdt, Rvals, Pat.FileNam] = load_calf_p_5_17_17(PathName, ...
         FileName, 100);
     Pat.tres = 1e-3;
     Pat.type = 0;
 end
-Pat.FileNam = FileName;
 
 % check to see if RV array was NOT found by loaddp
 if length(Pres) == 1
