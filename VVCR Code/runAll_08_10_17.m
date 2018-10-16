@@ -122,7 +122,8 @@ for i = 1:length(top)
         % Did this within the load_calf file, it is a good idea!! Thanks Adam!
         [Res, Pat] = VVCR_MULTIH_08_09_17(Fold_name, top_name);
         
-        header = ['Pnam,Pmrn,file, Pes_Mean, Pes_StD, PesV_Mean, PesV_StD, ',...
+        header = ['Pnam, Pmrn, file, HR, ' ...
+            'Pes_Mean, Pes_StD, PesV_Mean, PesV_StD, ',...
             'PmaxT_Mean, PmaxT_StD, PmaxV_Mean, PmaxV_StD, ' ...
             'PmaxK_Mean, PmaxK_Std, ' ...
             'PmaxO_Mean, PmaxO_Std, PmaxN_Mean, PmaxN_Std, ' ...
@@ -234,38 +235,39 @@ for i = 1:length(top)
 
             % Name, MRN, Filename
             NamNoComma = regexprep (Pat.Nam, ',', '');
-            fprintf(fd0, '%s, %s, %s,', NamNoComma, Pat.MRN, Pat.FileNam);
-
+            fprintf(fd0, '%s, %s, %s, ', NamNoComma, Pat.MRN, Pat.FileNam);
+            fprintf(fd0, '%10.6f, ' , Res.HR);
+            
             % Pes and both Pmax - end systolic pressure (Pes), and maximum
             % isovolumic pressure (Pmax) obtained from Takeuchi (Mean + 2*amp)
             % and Kind (Pmax) methods
-            fprintf(fd0, '%10.6f, %10.6f,' , Res.Pes_Mean, Res.Pes_StD);
-            fprintf(fd0, '%10.6f, %10.6f,' , Res.PesV_Mean, Res.PesV_StD);
-            fprintf(fd0, '%10.6f, %10.6f,' , Res.PmaxT_Mean, Res.PmaxT_StD);
-            fprintf(fd0, '%10.6f, %10.6f,' , Res.PmaxV_Mean, Res.PmaxV_StD);
-            fprintf(fd0, '%10.6f, %10.6f,' , Res.PmaxK_Mean, Res.PmaxK_StD);
-            fprintf(fd0, '%10.6f, %10.6f,' , Res.PmaxO_Mean, Res.PmaxO_StD);
-            fprintf(fd0, '%10.6f, %10.6f,' , Res.PmaxN_Mean, Res.PmaxN_StD);
+            fprintf(fd0, '%10.6f, %10.6f, ' , Res.Pes_Mean, Res.Pes_StD);
+            fprintf(fd0, '%10.6f, %10.6f, ' , Res.PesV_Mean, Res.PesV_StD);
+            fprintf(fd0, '%10.6f, %10.6f, ' , Res.PmaxT_Mean, Res.PmaxT_StD);
+            fprintf(fd0, '%10.6f, %10.6f, ' , Res.PmaxV_Mean, Res.PmaxV_StD);
+            fprintf(fd0, '%10.6f, %10.6f, ' , Res.PmaxK_Mean, Res.PmaxK_StD);
+            fprintf(fd0, '%10.6f, %10.6f, ' , Res.PmaxO_Mean, Res.PmaxO_StD);
+            fprintf(fd0, '%10.6f, %10.6f, ' , Res.PmaxN_Mean, Res.PmaxN_StD);
 
             % print VVCR - ventricular vascular coupling ratio
             % UT - Dr. Uyen Troung
             % KH - Dr. Kendall Hunter
             % Res.VVCRnT_Mean = 1/Res.VVCRiT_Mean, they are reciprocals
             fprintf(fd0, '%i, %i, ', Res.numPeaksT, Res.VandT);
-            fprintf(fd0, '%8.6f, %8.6f,', Res.VVCRiT_Mean, Res.VVCRiT_StD);
-            fprintf(fd0, '%9.5f, %9.5f,', Res.VVCRnT_Mean, Res.VVCRnT_StD);
+            fprintf(fd0, '%8.6f, %8.6f, ', Res.VVCRiT_Mean, Res.VVCRiT_StD);
+            fprintf(fd0, '%9.5f, %9.5f, ', Res.VVCRnT_Mean, Res.VVCRnT_StD);
             fprintf(fd0, '%i, %i, ', Res.numPeaksV, Res.VandV);
-            fprintf(fd0, '%8.6f, %8.6f,', Res.VVCRiV_Mean, Res.VVCRiV_StD);
-            fprintf(fd0, '%9.5f, %9.5f,', Res.VVCRnV_Mean, Res.VVCRnV_StD);
+            fprintf(fd0, '%8.6f, %8.6f, ', Res.VVCRiV_Mean, Res.VVCRiV_StD);
+            fprintf(fd0, '%9.5f, %9.5f, ', Res.VVCRnV_Mean, Res.VVCRnV_StD);
             fprintf(fd0, '%i, ', Res.numPeaksK);
-            fprintf(fd0, '%8.6f, %8.6f,', Res.VVCRiK_Mean, Res.VVCRiK_StD);
-            fprintf(fd0, '%9.5f, %9.5f,', Res.VVCRnK_Mean, Res.VVCRnK_StD);
+            fprintf(fd0, '%8.6f, %8.6f, ', Res.VVCRiK_Mean, Res.VVCRiK_StD);
+            fprintf(fd0, '%9.5f, %9.5f, ', Res.VVCRnK_Mean, Res.VVCRnK_StD);
             fprintf(fd0, '%i, %i, ', Res.numPeaksO, Res.VandO);
-            fprintf(fd0, '%8.6f, %8.6f,', Res.VVCRiO_Mean, Res.VVCRiO_StD);
-            fprintf(fd0, '%9.5f, %9.5f,', Res.VVCRnO_Mean, Res.VVCRnO_StD);
+            fprintf(fd0, '%8.6f, %8.6f, ', Res.VVCRiO_Mean, Res.VVCRiO_StD);
+            fprintf(fd0, '%9.5f, %9.5f, ', Res.VVCRnO_Mean, Res.VVCRnO_StD);
             fprintf(fd0, '%i, ', Res.numPeaksN);
-            fprintf(fd0, '%8.6f, %8.6f,', Res.VVCRiN_Mean, Res.VVCRiN_StD);
-            fprintf(fd0, '%9.5f, %9.5f,', Res.VVCRnN_Mean, Res.VVCRnN_StD);
+            fprintf(fd0, '%8.6f, %8.6f, ', Res.VVCRiN_Mean, Res.VVCRiN_StD);
+            fprintf(fd0, '%9.5f, %9.5f, ', Res.VVCRnN_Mean, Res.VVCRnN_StD);
 
             % the number of analyzed peaks and the total number of waves
             fprintf(fd0, '%i\n', Res.TotNumWaves);

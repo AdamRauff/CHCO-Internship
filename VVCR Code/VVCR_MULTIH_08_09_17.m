@@ -73,6 +73,8 @@ for i = 1:2
     else
         Data_O.time_per = Data_O.Time(end);
     end
+    Res.HR = 60/Data_O.time_per;
+        
     disp(['    VVCR_MULTIH: Average Period = ' num2str(Data_O.time_per, ...
         '%05.3f') ' sec, timestep ' num2str(Data_O.time_step*1000, '%04.1f') ...
         ' ms']);
