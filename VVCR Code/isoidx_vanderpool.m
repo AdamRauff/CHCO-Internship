@@ -10,6 +10,10 @@ function [ivIdx, ivVal, badcyc] = isoidx_vanderpool (idxsz, datsz, Dat, Ext, ...
 % is the filtered, or original. If it's the original data, filter DA
 % heavily...
 
+% This causes the code to move back farther from (dP/dt)min to find Pes (to
+% the max of (PA) rather than just to the min of (PA)).
+ALT_PES = 1;
+
 disp('    data_isoidx_v: finding Vanderpool indices for Takeuchi method');
 
 if ~isfield(Dat, 'OrigdPdt')
@@ -78,11 +82,46 @@ for i = 1:idxsz
     end
     ESi = ESi + 1;
     % Check for minimum distance here?
-
+    
+    % Experimental end systole (ivVal.Pes3): @(PA)max before (dP/dt)min.
+    if ALT_PES
+        % Method 1: Step backwards from (PA)min (computed above) until we reach
+        % this point. 
+        dP2Zero = Dat.dP2t(ESi) - 0.01;
+        while Dat.dP2t(ESi) > dP2Zero
+            dP2Zero = Dat.dP2t(ESi);
+            ESi = ESi - 1;
+        end
+        ESi = ESi + 1;
+    
+        % Method 2: find absolute minimum of (PA) after RVSP and before 
+        % (dP/dt)min, using min(). Then step forward from this point. This
+        % avoids finding an early (false) (PA)min.
+        [~,Pmi] = max(Dat.Pres(ivIdx.dPmax3(i):ivIdx.dPmin3(i)));
+        Pmi = ivIdx.dPmax3(i)+Pmi-1;
+        [~,ESEi] = min(Dat.dP2t(Pmi:ivIdx.dPmin3(i)));
+        ESEi = Pmi+ESEi-1;
+        
+        dP2Zero = Dat.dP2t(ESEi) - 0.01;
+        while Dat.dP2t(ESEi) > dP2Zero
+            dP2Zero = Dat.dP2t(ESEi);
+            ESEi = ESEi - 1;
+            if ESEi < Pmi
+                break;
+            end
+        end
+        ESEi = ESEi + 1;
+        
+        % Only keep method 2 if it's earlier than method 1.
+        if ESEi < ESi
+            ESi = ESEi;
+        end
+    end
+    
     % assign iv*.Pes3 values
     ivVal.Pes3(i) = Dat.Pres(ESi);
     ivIdx.Pes3(i) = ESi;
-
+    
     %% COMPUTE [Ne] TIMINGS
     Eir = ivIdx.dPmin3(i);
     dP2Zero = Dat.dP2t(Eir) - 0.01;
@@ -120,21 +159,23 @@ end
 % check them...
 function temp_debug (Dat, ivVal, ivIdx)
 
-figure;
+figure('Name', 'Pressure');
 plot(Dat.Time, Dat.Pres,'b');
 hold on;
-plot(Dat.Time(ivIdx.Ps1), ivVal.Ps1, 'gs');
-plot(Dat.Time(ivIdx.Ps3), ivVal.Ps3, 'go');
-plot(Dat.Time(ivIdx.Ne3), ivVal.Ne3, 'ro');
-plot(Dat.Time(ivIdx.Pes3), ivVal.Pes3, 'kx');
+h(1) = plot(Dat.Time(ivIdx.Ps1), ivVal.Ps1, 'gs');
+h(2) = plot(Dat.Time(ivIdx.Ps3), ivVal.Ps3, 'go');
+h(3) = plot(Dat.Time(ivIdx.Ne3), ivVal.Ne3, 'ro');
+h(4) = plot(Dat.Time(ivIdx.Pes3), ivVal.Pes3, 'kx');
+legend(h, 'Ps1', 'Ps3', 'Ns', 'Pes');
 
-figure;
+figure('Name', 'd2P/dt2');
 plot(Dat.Time, Dat.dP2t,'b');
 hold on;
-plot(Dat.Time(ivIdx.dPmax3), Dat.dP2t(ivIdx.dPmax3),'gx');
-plot(Dat.Time(ivIdx.Ps3), Dat.dP2t(ivIdx.Ps3),'go');
-plot(Dat.Time(ivIdx.dPmin3), Dat.dP2t(ivIdx.dPmin3),'rx');
-plot(Dat.Time(ivIdx.Pes3), Dat.dP2t(ivIdx.Pes3),'r+');
-plot(Dat.Time(ivIdx.Ne3), Dat.dP2t(ivIdx.Ne3),'ro');
+h(1) = plot(Dat.Time(ivIdx.dPmax3), Dat.dP2t(ivIdx.dPmax3),'gx');
+h(2) = plot(Dat.Time(ivIdx.Ps3), Dat.dP2t(ivIdx.Ps3),'go');
+h(3) = plot(Dat.Time(ivIdx.dPmin3), Dat.dP2t(ivIdx.dPmin3),'rx');
+h(4) = plot(Dat.Time(ivIdx.Pes3), Dat.dP2t(ivIdx.Pes3),'r+');
+h(5) = plot(Dat.Time(ivIdx.Ne3), Dat.dP2t(ivIdx.Ne3),'ro');
+legend(h, 'dPmx', 'Ps', 'dPmn', 'Pes', 'Ne');
 
 end

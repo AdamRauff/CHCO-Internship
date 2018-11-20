@@ -1,15 +1,9 @@
-function [vd, vdd] = data_centdiff (dat_typ, v)
+function [vd, vdd] = data_centdiff (h, v)
 % compute higher order differences of given vector "v" for use in all 
 % methods. Not totally sure if this helps, but it seems to be /slightly/
 % smoother than forward diff. Also should be zero-phase lag result.
 
-% Set timestep and data length before computing diffs
-if dat_typ
-    h = 1/250;
-else
-    h = 1/1000;
-end
-
+% Set data length before computing diffs
 n = length(v);
 Inv12h  = 1/(12*h);
 Inv12hh = Inv12h/h;

@@ -46,13 +46,19 @@ badcyc.V = sort(unique(badcyc.V));
 badcyc.K = sort(unique(badcyc.K));
 
 % Remove bad curves by passing fields unique to each type of landmarks to
-% removal code.
+% removal code. If Vanderpool Pes technique yields non-NaN results, keep them,
+% otherwise throw out the whole mess.
 [ivVal, ivIdx] = clean_isoidx (badcyc.T, ivVal, ivIdx, ...
     char('Ps1', 'Ne1', 'dPmax1', 'dPmin1'));
 
-[ivVal, ivIdx] = clean_isoidx (badcyc.V, ivVal, ivIdx, ...
-    char('Ps3', 'Ne3', 'dPmax3', 'dPmin3', 'Pes3'));
-
+if isnan(ivVal.Pes3)
+    [ivVal, ivIdx] = clean_isoidx (badcyc.V, ivVal, ivIdx, ...
+        char('Ps3', 'Ne3', 'dPmax3', 'dPmin3', 'Pes3'));
+else
+    [ivVal, ivIdx] = clean_isoidx (badcyc.V, ivVal, ivIdx, ...
+        char('Ps3', 'Ne3', 'dPmax3', 'dPmin3')); 
+end
+    
 [ivVal, ivIdx] = clean_isoidx (badcyc.K, ivVal, ivIdx, ...
     char('Ps2', 'Pe2', 'Ns2', 'Ne2', 'dPmax2', 'dPmin2'));
 

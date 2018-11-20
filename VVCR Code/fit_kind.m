@@ -9,6 +9,12 @@ function [Ret1, Ret2] = fit_kind (ivSeg, ivIdx, Data, MeanTPmax, WgtFlg)
 %          needed for individual-cycle ICs; if called from a GUI, contains
 %          contstant initial conditions for fit.
 
+% This causes the code to more strongly weight the isovolumic contraction
+% residuals compared to the "balanced" mean weights. The value (which
+% should be larger than 1) is the actual weight. If set to zero, this will
+% have no effect.
+WGHT_CONT = 0;
+
 opts1 = optimoptions (@lsqnonlin);
 opts1.Display = 'off';
 opts1.MaxFunctionEvaluations = 2000;
@@ -41,6 +47,9 @@ for i = 1:nfits
 
     if WgtFlg
         P0_weight = mean(ivSeg.iv2dPdt(i).NegIso)/mean(ivSeg.iv2Pres(i).PosIso);
+        if WGHT_CONT
+            P0_weight = P0_weight/WGHT_CONT;
+        end
         nam = ' (weighted)';
     else
         P0_weight = 1;

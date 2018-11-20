@@ -32,7 +32,7 @@ Ret.WITTdPdt = dPdt;
 % WITT data. These are the "unfiltered" original variants. NEVER EVER use
 % 1st order differences for pressure acceleration.
 Ret.OrigPres = Pres;
-[Ret.OrigdPdt, Ret.OrigdP2t] = data_centdiff(Pat.type, Pres);
+[Ret.OrigdPdt, Ret.OrigdP2t] = data_centdiff(Pat.tstp, Pres);
 
 % The dPdt we actually (hope to) use is the filtered "Orig" dP/dt from
 % above. Then Pres and d2P/dt2 are the integral and derivative of this
@@ -40,7 +40,7 @@ Ret.OrigPres = Pres;
 % of cumtrapz (constant of integration).
 Ret.dPdt = filtfilt(b,a,Ret.OrigdPdt);
 Ret.Pres = cumtrapz(Ret.dPdt)*Ret.time_step+Pres(1);
-Ret.dP2t = data_centdiff(Pat.type, Ret.dPdt);
+Ret.dP2t = data_centdiff(Pat.tstp, Ret.dPdt);
 
 %% construct time array (4ms from catheter, 1ms from calf pressure DAQ)
 Ret.time_end = Ret.time_step*size(Pres,1);
