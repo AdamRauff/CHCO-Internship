@@ -111,7 +111,7 @@ for i = 1:nfits
     end
 
     if any( abs(c-lb) < 1e-6 ) || any ( abs(ub-c) < 1e-6 )
-       disp(['    fit_kind' nam ': fit bounds violated on cycle ' ...
+       disp(['        fit_kind' nam ': fit bounds violated on cycle ' ...
            num2str(i, '%02i')]);
        Ret1.BadCyc(i) = 1;
     end
@@ -164,7 +164,7 @@ else
             num2str(mean(Ret1.Rsq),'%5.3f') '.']);
 end
 
-fprintf ('        RevPmax %7.3f %6.3f %6.4f %6.4f\n', c(1), c(2), c(3), c(4));
+%fprintf ('        RevPmax %7.3f %6.3f %6.4f %6.4f\n', c(1), c(2), c(3), c(4));
 
 % END OF fit_kind
 end

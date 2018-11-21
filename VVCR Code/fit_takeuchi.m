@@ -139,8 +139,8 @@ for i = 1:nfits
 
     if Method > 0
         if any( abs(c-lb) < 1e-6 ) || any ( abs(ub-c) < 1e-6 )
-            disp(['    fit_takeuchi: fit bounds violated on cycle ' ...
-                num2str(i, '%02i')]);
+            disp(['        fit_takeuchi' ext ': fit bounds violated on ' ...
+                'cycle ' num2str(i, '%02i')]);
             Ret1.BadCyc(i) = 1; 
         end
     end
