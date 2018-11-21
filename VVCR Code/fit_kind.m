@@ -14,6 +14,7 @@ function [Ret1, Ret2] = fit_kind (ivSeg, ivIdx, Data, MeanTPmax, WgtFlg)
 % should be larger than 1) is the actual weight. If set to zero, this will
 % have no effect.
 WGHT_CONT = 0;
+BOUND_VIO = 0;
 
 opts1 = optimoptions (@lsqnonlin);
 opts1.Display = 'off';
@@ -111,9 +112,14 @@ for i = 1:nfits
     end
 
     if any( abs(c-lb) < 1e-6 ) || any ( abs(ub-c) < 1e-6 )
-       disp(['        fit_kind' nam ': fit bounds violated on cycle ' ...
-           num2str(i, '%02i')]);
-       Ret1.BadCyc(i) = 1;
+        if ~BOUND_VIO 
+            fprintf('    fit_kind%s: fit bounds violated on cycle %02i', ...
+                nam, i);
+            BOUND_VIO = 1;
+        else
+            fprintf(' %02i', i);
+        end    
+        Ret1.BadCyc(i) = 1;
     end
     
     %getting all the c values in a matrix
@@ -155,6 +161,9 @@ end
 % as a debugger to check that the "bad" waves, the ones that don't have a
 % good fit, are not utilized in the VVCR calculation.
 indX = find(Ret1.BadCyc==1); % find indices of the bad waves
+if BOUND_VIO
+    fprintf('\n');
+end
 if ~isempty(indX)
     disp(['    fit_kind' nam ': Some waves fit well, ave R^2 = ' ...
         num2str(mean(Ret1.Rsq(Ret1.BadCyc~=1)),'%5.3f') '.']);
