@@ -392,14 +392,17 @@ hold on;
 
 mystp = Data.time_step/2;
 
+% Offset to normalize start time to zero.
+zero = Data.Time_D(ivSeg.iv2Time(cycid).PosIso(1,1));
+
 % obtain the range of time of each peak, then normalize to zero
 FitSineTime = Data.Time_D(ivSeg.iv2Time(cycid).PosIso(1,1)):mystp: ...
     Data.Time_D(ivSeg.iv2Time(cycid).NegIso(end,1))+Plot.iv2TShift(cycid);
 
 % plug into Kind equation
-dPtimes = [Data.Time(ivIdx.dPmax2(cycid)) Data.Time(ivIdx.dPmin2(cycid)) ...
-    Data.time_per];
-FitSinePres = data_kind (Fit.RCoef(cycid,:), FitSineTime, dPtimes);
+dPtimes = [Data.Time(ivIdx.dPmax2(cycid))-zero ...
+    Data.Time(ivIdx.dPmin2(cycid))-zero Data.time_per];
+FitSinePres = data_kind (Fit.RCoef(cycid,:), FitSineTime-zero, dPtimes);
 
 % find time point corresponding to Pmax
 [~, Idx] = min(abs(FitSinePres-Fit.RCoef(cycid,1)));
@@ -558,20 +561,22 @@ PmaxT = zeros(mysz,1);
 % Attain the sinusoid fit for all points (so Pmax can be visualized
 for i = 1:mysz
 
+    % Offset to normalize start time to zero.
+    zero = Data.Time_D(ivSeg.iv2Time(i).PosIso(1,1));
+    
     % obtain the range of time of each peak, then normalize to zero
     FitSineTime = Data.Time_D(ivSeg.iv2Time(i).PosIso(1,1)):mystp: ...
         Data.Time_D(ivSeg.iv2Time(i).NegIso(end,1))+Plot.iv2TShift(i);
 
     % plug into Kind equation
-    dPtimes = [Data.Time(ivIdx.dPmax2(i)) Data.Time(ivIdx.dPmin2(i)) ...
-        Data.time_per];
-    FitSinePres = data_kind (Fit.RCoef(i,:), FitSineTime, dPtimes);
+    dPtimes = [Data.Time(ivIdx.dPmax2(i))-zero ...
+        Data.Time(ivIdx.dPmin2(i))-zero Data.time_per];
+    FitSinePres = data_kind (Fit.RCoef(i,:), FitSineTime-zero, dPtimes);
 
     % find time point corresponding to Pmax
     [~, Idx] = min(abs(FitSinePres-Fit.RCoef(i,1)));
 
     PmaxT(i) = FitSineTime(Idx);
-
 
     if Fit.BadCyc(i)
         plot(FitSineTime, FitSinePres, 'r--', PmaxT(i), Fit.RCoef(i,1), 'rx');

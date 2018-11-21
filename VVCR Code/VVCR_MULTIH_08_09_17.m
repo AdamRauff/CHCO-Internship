@@ -245,8 +245,8 @@ if RunK
         TakPIsoMax = 2*mean(Data.Pes2);
     end
 
-    [FitK, PlotK] = fit_kind (ivSeg, ivIdx, Data, TakPIsoMax, 1);
-    [FitN] = fit_kind (ivSeg, ivIdx, Data, TakPIsoMax, 0);
+    [FitK, PlotK] = fit_kind (ivSeg, ivIdx, Data, TakPIsoMax, 0);
+    [FitN] = fit_kind (ivSeg, ivIdx, Data, TakPIsoMax, 1);
 
     % Call the Kind Fit Check GUI
     % Not sure why MeanTP was being sent to fit check. Isn't used once it

@@ -38,10 +38,16 @@ Ret2.iv2TShift = zeros(nfits,1);
 % structures: ivSeg.iv2Time and ivSeg.iv2Pres
 for i = 1:nfits
 
-    % Times for (dP/dt)max, (dP/dt)min, and the average period length
-    dPtimes = [Data.Time(ivIdx.dPmax2(i)) Data.Time(ivIdx.dPmin2(i)) ...
-        Data.time_per];
+    % zero is computed to offset each cycle to start at t=0 (not sure why I
+    % didn't do this from the start, D'OH!
+    zero = Data.Time_D(ivSeg.iv2Time(i).PosIso(1));
 
+    % Times for (dP/dt)max, (dP/dt)min, and the average period length.
+    dPtimes = [Data.Time(ivIdx.dPmax2(i))-zero ...
+        Data.Time(ivIdx.dPmin2(i))-zero Data.time_per];
+
+    % Indices for the isovolumic phases. Offset of the times occurs when these
+    % are used to get values from Time_D.
     posidx = ivSeg.iv2Time(i).PosIso;
     negidx = ivSeg.iv2Time(i).NegIso;
 
@@ -60,24 +66,19 @@ for i = 1:nfits
 %   disp(['Cycle #' num2str(i,'%02i') ' Weighting Factor = ' ...
 %       num2str(P0_weight, '%8.3f')]);
 
-    sin_fun2 = @(P) imbedded_kind (P, Data.Time_D(posidx), ...
-        Data.Time_D(negidx), dPtimes, ivSeg.iv2Pres(i).PosIso, ...
+    sin_fun2 = @(P) imbedded_kind (P, Data.Time_D(posidx)-zero, ...
+        Data.Time_D(negidx)-zero, dPtimes, ivSeg.iv2Pres(i).PosIso, ...
         ivSeg.iv2dPdt(i).NegIso, P0_weight);
 %-[Examining time shift @IC and at finish
 %       ivSeg.iv2dPdt(i).NegIso, 0);
-
-    % Start of isovolumic contraction, isovolumic contration duration. Used
-    % in ICs and fitting limits.
-    tstivc = Data.Time_D(ivIdx.Ps2_D(i));
-    ivcdur = Data.Time_D(ivIdx.Pe2_D(i))-tstivc;
     
     % Deriving the initial values from the data
     % P1 Mean Pmax from Takeuchi fits.
-    % P2 Pmin, guess small, like 2-5.
-    % P3 use Time(ivIdx.Ps1) - that will be close
+    % P2 Pmin, guess small, like 10.
+    % P3 use 0.0 (start of time-normalized iso contraction)
     % P4 use 58% (that's their IC!)
 
-    c2 = [MeanTPmax, 2, tstivc, 0.58];
+    c2 = [MeanTPmax, 10, 0.00, 0.58];
     Ret1.CycICs(i,:) = c2; 
 
     % First Set of Limits - very weak bounds on t_Pmax.
@@ -89,12 +90,11 @@ for i = 1:nfits
     %   bound (500 mmHg?)
     % - Min pressure must be larger than zero, but less than... Pes? Or
     %   something even smaller? 
-    % - t_Pmax... this is the hard one. Should the fit be allowed to push
-    %   the start time beyond the start of the isovolumic phase? I think no.
+    % - t0 should be pretty small and probably positive
     % - Beta: 0.6 is the "best value" for rats, so we give it some leeway.
 
-    lb = [Data.Pes2(i)  0.0 tstivc-ivcdur 0.50];
-    ub = [         500 30.0 tstivc        0.70];
+    lb = [Data.Pes2(i)  0.0 -0.005 0.48];
+    ub = [         500 40.0  0.020 0.72];
 
     [c,SSE,~] = lsqnonlin (sin_fun2,c2,lb,ub,opts1);
     
@@ -110,7 +110,7 @@ for i = 1:nfits
        Ret1.BadCyc(i) = 1; 
     end
 
-    if any( (c-lb) < 0 ) || any ( (ub-c) < 0 )
+    if any( abs(c-lb) < 1e-6 ) || any ( abs(ub-c) < 1e-6 )
        disp(['    fit_kind' nam ': fit bounds violated on cycle ' ...
            num2str(i, '%02i')]);
        Ret1.BadCyc(i) = 1;
@@ -119,15 +119,16 @@ for i = 1:nfits
     %getting all the c values in a matrix
     Ret1.RCoef(i,:) = c; 
 
+%   fprintf ('        RevPmax %7.3f %6.3f %6.4f %6.4f\n', c(1), c(2), c(3), c(4));
+    
     % store the time points and pressure points in one array for easy
     % plotting - first pass (call from VVCR_); otherwise, reconsitute these
     % arrays if needed just outside this loop.
-
-    [~, tsh, padd] = data_kind (c, Data.Time_D(posidx(1)), dPtimes);
+    [~, tsh, padd] = data_kind (c, Data.Time_D(posidx(1))-zero, dPtimes);
     psh = padd-Data.Pres_D(ivIdx.dPmin2_D(i));
 
     Ret2.iv2TShift(i) = tsh;
-
+    
     Ret2.iv2PlotTime = [Ret2.iv2PlotTime Data.Time_D(posidx) ...
         tsh+Data.Time_D(negidx)];
     Ret2.iv2PlotPres = [Ret2.iv2PlotPres Data.Pres_D(posidx)' ...
@@ -163,6 +164,8 @@ else
             num2str(mean(Ret1.Rsq),'%5.3f') '.']);
 end
 
+fprintf ('        RevPmax %7.3f %6.3f %6.4f %6.4f\n', c(1), c(2), c(3), c(4));
+
 % END OF fit_kind
 end
 
@@ -193,11 +196,17 @@ a = [1.0481 -0.4361 -0.0804 -0.0148  0.0020  0.0023  0.0012];
 b = [ 0.000  0.2420 -0.0255 -0.0286 -0.0121 -0.0039 -0.0016];
 TN = 2.658;
 
-% Substitutions to simplify eqns and reduce math overhead
-t_pmax = tM(1) + P(4)*(tM(2)-tM(1)) - P(3);
+% Substitutions to simplify eqns and reduce math overhead. t_pmax is the
+% (normalized) time of (dP/dt)max plus beta*(diff between extrema); t0 [P(3)] is
+% not subtracted from this because each cycle time is iso-normalized such that
+% the first point of the isovolumic contraction occurs at t_N = 0. Thus the
+% normalized position of the isovolumic max is only relative to beta [P(4)].
+% Then tp_P2T is the constant in the sin/cos terms.
+t_pmax = tM(1) + P(4)*(tM(2)-tM(1));
 tp_P2T = 2*pi/(t_pmax*TN);
 
-% Equation for fitting isovolumic contraction: straight out of the paper.
+% Equation for fitting isovolumic contraction: straight out of the paper. t13 is
+% the (iso-normalized) time minus t0 (fitting constant P(3)).
 t13 = t1'-P(3);
 p0m = @(P,t) a(1)/2*(P(1)-P(2))+P(2)+(P(1)-P(2))*( ...
     a(2)*cos(tp_P2T*1*t) + b(2)*sin(tp_P2T*1*t) + ...
@@ -207,7 +216,7 @@ p0m = @(P,t) a(1)/2*(P(1)-P(2))+P(2)+(P(1)-P(2))*( ...
     a(6)*cos(tp_P2T*5*t) + b(6)*sin(tp_P2T*5*t) + ...
     a(7)*cos(tp_P2T*6*t) + b(7)*sin(tp_P2T*6*t) );
 
-% First "half" of the fit residuals
+% First "half" of the fit residuals.
 zero = weight*(p0m(P,t13)-Pd);
 
 % Time derivative of p0m, used for fitting dP/dt during isovolumic relaxation.
@@ -229,9 +238,15 @@ p1m = @(P,t) tp_P2T*(P(1)-P(2))*( ...
 % time for the multiharmonic at which comparisons are made - and it's centered 
 % around each vector's (dP/dt)min.
 %
-Tspan = t13(1) : 0.005: (t13(1)+tM(3)*1.1);
+% Tspan is just some range (shifted or not it's irrelevant) in which we believe
+% we can find the isovolumic (dP/dt)min.
+Tspan = t1(end) : 0.0001: tM(3);
 dPt0 = p1m (P, Tspan);
 [~,idx] = min(dPt0);
+
+% Once isovolumic (dP/dt)min is found in [Tspan(idx)] we find the shift distance
+% to the minimum found in the data [tM(2)]. Because this match will be negative
+% shifted by t0 [P(3)] in the function, we add it back here.
 tshift = Tspan(idx)-(tM(2)-P(3));
 
 %-[Examining time shift @IC and at finish

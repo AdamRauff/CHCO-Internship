@@ -1,6 +1,7 @@
 function [ pres, tshift, pshift ] = data_kind ( P, tdat, tM )
 %   This is an external function that provides the Kind fit for plotting
-%   and other non-fitting uses.
+%   and other non-fitting uses. Equations are explained fully in the function
+%   used for fitting, imbedded_kind().
 %     Input Arguments:
 %       P    - fit coefficients Pmax, Pmin, t0, tpmax
 %       tdat - time vector for pressure output
@@ -20,7 +21,7 @@ b = [ 0.000  0.2420 -0.0255 -0.0286 -0.0121 -0.0039 -0.0016];
 TN = 2.658;
 
 % Substitutions to simplify eqns and reduce math overhead
-t_pmax = tM(1) + P(4)*(tM(2)-tM(1)) - P(3);
+t_pmax = tM(1) + P(4)*(tM(2)-tM(1));
 tp_P2T = 2*pi/(t_pmax*TN);
 
 % Equation for fitting isovolumic contraction: straight out of the paper.
@@ -36,9 +37,7 @@ p0m = @(P,t) a(1)/2*(P(1)-P(2))+P(2)+(P(1)-P(2))*( ...
 % Pressure for plotting against fitting data
 pres = p0m (P, tdatshift);
 
-if length(tdat) > 1
-    tshift = 0;
-    pshift = 0;
+if nargout == 1
     return;
 end
 
@@ -53,7 +52,7 @@ p1m = @(P,t) tp_P2T*(P(1)-P(2))*( ...
 
 % Code to compute (dP/dt)min offset: Given the fit coefficients in P, find
 % the fitted time of (dP/dt)min, then compute difference. Voila!
-Tspan = tdatshift(1) : 0.005 : (tdatshift(1)+tM(3)*1.1);
+Tspan = tdat(1) : 0.0001 : tM(3);
 dPt0 = p1m (P, Tspan);
 [~,idx] = min(dPt0);
 

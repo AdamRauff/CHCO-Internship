@@ -35,8 +35,9 @@ else
     badcyc.K = badcyc.T(idx);
 end
 
-% # of points it can look before it stops... each point is 4ms.
-lenlim = 10;
+% # of points it can look before it stops... each point is Dat.time_step, limit
+% this to about 40ms back in time.
+lenlim = round(0.040/Dat.time_step);
 
 for i = 1:idxsz
 
@@ -68,7 +69,7 @@ for i = 1:idxsz
         Pstr = Pstr - 1;
 
         % Don't let this go too far: add this cycle to "bad list" if we back up
-        % to (dP/dt)max (which is really far!) or if we go farther than 5 points
+        % to (dP/dt)max (which is really far!) or if we go farther than 40 msec
         % away (this may need revision).
         if Pstr < ivIdx.dPmax2(i) || Pstr == Plim
             disp(['        curve # ' num2str(i, '%02i') ', can''t find ' ...
@@ -90,7 +91,7 @@ for i = 1:idxsz
 
         % Don't let this go too far: add this cycle to "bad list" if we exceed
         % the Takeuchi end (i.e. go beyond the isovolumic portion), we go
-        % farther than 5 points away (this may need revision), or, if we're on
+        % farther than 40 msec away (this may need revision), or, if we're on
         % the last cycle, don't go off the end of the data.
         if Pend > datsz
             disp(['        curve # ' num2str(i, '%02i') ', end of negiso ' ...
