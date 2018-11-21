@@ -2,9 +2,9 @@ function [ivIdx, ivVal, badcyc] = isoidx_kind (idxsz, datsz, Dat, Ext, ...
     ivIdx, ivVal, badcyc)
 % Find isovolumic timings for Kind method points.
 %
-% Kind method states that th pos iso starts at R wave, which isn't available,
-% so we approximate by using the same time as Takeuchi. However, when waves
-% are deleted we need unique vectors for each method, so we copy the Takeuchi
+% Kind method states that th pos iso starts at R wave, which isn't available, so
+% we approximate by using the same time as Takeuchi. However, when waves are
+% deleted we need unique vectors for each method, so we copy the Takeuchi
 % (iv*.Ps1) vetors into the Kind vectors. We also create unique copies of the
 % extrema vectors for the same reason.
 
@@ -24,9 +24,9 @@ ivVal.dPmax2 = Ext.dPmaxVal;
 ivIdx.dPmin2 = Ext.dPminIdx;
 ivVal.dPmin2 = Ext.dPminVal;
 
-% I guess originally I just avoided using the first cycle if it was bad,
-% but really I must avoid using any Ps1 values that are bad - those are the
-% positive badcyc.T values.
+% I guess originally I just avoided using the first cycle if it was bad, but
+% really I must avoid using any Ps1 values that are bad - those are the positive
+% badcyc.T values.
 [~,idx] = find(badcyc.T > 0);
 if isempty(idx)
     badcyc.K = [];
@@ -42,8 +42,8 @@ lenlim = round(0.040/Dat.time_step);
 for i = 1:idxsz
 
     %% COMPUTE [Pe] TIMINGS
-    % Find pres at (dP/dt)max, then find 10% increase, this is end of Kind
-    % pos iso segment. 
+    % Find pres at (dP/dt)max, then find 10% increase, this is end of Kind pos
+    % iso segment.
     Pcut = 1.10*Dat.Pres(ivIdx.dPmax2(i));
     Pend = ivIdx.dPmax2(i);
     while Dat.Pres(Pend) < Pcut
@@ -60,8 +60,8 @@ for i = 1:idxsz
     ivIdx.Pe2(i) = Pend;
 
     %% COMPUTE [Ns] TIMINGS
-    % Find pres at (dP/dt)min, then find ±20% change, these are start and end
-    % of Kind neg iso segment.
+    % Find pres at (dP/dt)min, then find ±20% change, these are start and end of
+    % Kind neg iso segment.
     Pcut = 1.20*Dat.Pres(ivIdx.dPmin2(i));
     Pstr = ivIdx.dPmin2(i);
     Plim = Pstr - lenlim;

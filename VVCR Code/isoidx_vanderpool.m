@@ -1,17 +1,16 @@
 function [ivIdx, ivVal, badcyc] = isoidx_vanderpool (idxsz, datsz, Dat, Ext, ...
     ivIdx, ivVal, badcyc)
-% Find isovolumic timings and end systole for Takeuchi method using
-% Vanderpool's technique.
+% Find isovolumic timings and end systole for Takeuchi method using Vanderpool's
+% technique.
 %
 % Note that Pe and Ns are given by extrema and have already been found.
 %
-% If the data is unfiltered then DA will be so rough that a "walking" 
-% approach to find extrema won't work. So, first check if the data provided
-% is the filtered, or original. If it's the original data, filter DA
-% heavily...
+% If the data is unfiltered then DA will be so rough that a "walking" approach
+% to find extrema won't work. So, first check if the data provided is the
+% filtered, or original. If it's the original data, filter DA heavily...
 
-% This causes the code to move back farther from (dP/dt)min to find Pes (to
-% the max of (PA) rather than just to the min of (PA)).
+% This causes the code to move back farther from (dP/dt)min to find Pes (to the
+% max of (PA) rather than just to the min of (PA)).
 ALT_PES = 1;
 
 disp('    data_isoidx_v: finding Vanderpool indices for Takeuchi method');
@@ -33,10 +32,6 @@ ivVal.dPmax3 = Ext.dPmaxVal;
 ivIdx.dPmin3 = Ext.dPminIdx;
 ivVal.dPmin3 = Ext.dPminVal;
 
-% Unique initialization for Vanderpool: space to store Pes location.
-ivVal.Pes3 = zeros(idxsz,1);
-ivIdx.Pes3 = zeros(idxsz,1);
-
 % These are unique from Takeuchi and Kind so we start with a fresh badcyc.
 badcyc.V = [];
 
@@ -52,11 +47,10 @@ for i = 1:idxsz
         dP2Zero = Dat.dP2t(EDi);
         EDi = EDi - 1;
         if EDi == 0 && i == 1
-            % If the first dP/dt max is too early in the data, the pressure
-            % wave does not contain enough information to include. So we remove
-            % the first maximum & min. Escape the loop by setting EDi to be 
-            % index of a minimum.
-
+            % If the first dP/dt max is too early in the data, the pressure wave
+            % does not contain enough information to include. So we remove the
+            % first maximum & min. Escape the loop by setting EDi to be index of
+            % a minimum.
             disp(['        curve # 01, start of isovolumic contraction ' ...
 	        'not captured at start of sample, skipping.']);
 
@@ -70,58 +64,7 @@ for i = 1:idxsz
     ivVal.Ps3(i) = Dat.Pres(EDi);
     ivIdx.Ps3(i) = EDi;
  
-    %% COMPUTE [Pes] TIMINGS
-    ESi = ivIdx.dPmin3(i);
-    dP2Zero = Dat.dP2t(ESi) + 0.01;
 
-    % Position of end systole (ivVal.Pes3): @(PA)min before (dP/dt)min.
-    % Step backwards from (dP/dt)min until we reach this point. 
-    while Dat.dP2t(ESi) < dP2Zero
-        dP2Zero = Dat.dP2t(ESi);
-        ESi = ESi - 1;
-    end
-    ESi = ESi + 1;
-    % Check for minimum distance here?
-    
-    % Experimental end systole (ivVal.Pes3): @(PA)max before (dP/dt)min.
-    if ALT_PES
-        % Method 1: Step backwards from (PA)min (computed above) until we reach
-        % this point. 
-        dP2Zero = Dat.dP2t(ESi) - 0.01;
-        while Dat.dP2t(ESi) > dP2Zero
-            dP2Zero = Dat.dP2t(ESi);
-            ESi = ESi - 1;
-        end
-        ESi = ESi + 1;
-    
-        % Method 2: find absolute minimum of (PA) after RVSP and before 
-        % (dP/dt)min, using min(). Then step forward from this point. This
-        % avoids finding an early (false) (PA)min.
-        [~,Pmi] = max(Dat.Pres(ivIdx.dPmax3(i):ivIdx.dPmin3(i)));
-        Pmi = ivIdx.dPmax3(i)+Pmi-1;
-        [~,ESEi] = min(Dat.dP2t(Pmi:ivIdx.dPmin3(i)));
-        ESEi = Pmi+ESEi-1;
-        
-        dP2Zero = Dat.dP2t(ESEi) - 0.01;
-        while Dat.dP2t(ESEi) > dP2Zero
-            dP2Zero = Dat.dP2t(ESEi);
-            ESEi = ESEi - 1;
-            if ESEi < Pmi
-                break;
-            end
-        end
-        ESEi = ESEi + 1;
-        
-        % Only keep method 2 if it's earlier than method 1.
-        if ESEi < ESi
-            ESi = ESEi;
-        end
-    end
-    
-    % assign iv*.Pes3 values
-    ivVal.Pes3(i) = Dat.Pres(ESi);
-    ivIdx.Pes3(i) = ESi;
-    
     %% COMPUTE [Ne] TIMINGS
     Eir = ivIdx.dPmin3(i);
     dP2Zero = Dat.dP2t(Eir) - 0.01;
@@ -155,9 +98,10 @@ end
 
 end
 
-% --- DEBUG CODE: spit out figures showing Vanderpool indices to visually
-% check them...
+% --- DEBUG CODE: spit out figures w/Vanderpool indices to visually check them.
 function temp_debug (Dat, ivVal, ivIdx)
+
+error('this won''t work with [Pes3] right now, fix it first');
 
 figure('Name', 'Pressure');
 plot(Dat.Time, Dat.Pres,'b');

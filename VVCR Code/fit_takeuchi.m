@@ -118,8 +118,8 @@ for i = 1:nfits
         end
         Ret1.CycICs(i,:)= c2; % Saved cycle specific ICs
 
-        lb = [  0.0   0.0    ICS.Freq -2*pi/3];
-        ub = [500.0 500.0  2*ICS.Freq   -pi/3];
+        lb = [  0.0   0.0  1.5*ICS.Freq -2*pi/3];
+        ub = [500.0 500.0  2.5*ICS.Freq   -pi/4];
     end
 
     if Method > 0
@@ -147,7 +147,9 @@ for i = 1:nfits
     % Store all coefficients, Pmax for return
     Ret1.RCoef(i,:) = c;
     Ret1.PIsoMax(i) = c(1)+abs(c(2));
-
+    
+    %fprintf ('        RevPmax %7.3f %6.3f %6.4f %6.4f\n', c(1), c(2), c(3), c(4));
+    
     % store the time points and pressure points in one array for easy plotting -
     % first pass (call from VVCR_); otherwise, reconsitute these arrays if
     % needed just outside this loop.

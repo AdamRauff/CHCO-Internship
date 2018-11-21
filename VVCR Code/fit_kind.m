@@ -1,4 +1,4 @@
-function [Ret1, Ret2] = fit_kind (ivSeg, ivIdx, Data, MeanTPmax, WgtFlg)
+function [Ret1, Ret2] = fit_kind (ivSeg, ivIdx, Data, WgtFlg)
 %
 % ivSeg  - Struct of all pres and time fitting values:
 %            iv1Pres/iv1Time/iv2Pres/iv2Time 1st level structs; Time labels
@@ -73,15 +73,17 @@ for i = 1:nfits
 %       ivSeg.iv2dPdt(i).NegIso, 0);
     
     % Deriving the initial values from the data
-    % P1 Mean Pmax from Takeuchi fits.
+    % P1 2.5*Pes - doesn't depend on any other fit, and is a good start (this
+    %    value gives a VVCR of 1.5, halfway between conditions of max work (1.0)
+    %    and max efficiency (2.0).
     % P2 Pmin, guess small, like 10.
     % P3 use 0.0 (start of time-normalized iso contraction)
     % P4 use 58% (that's their IC!)
 
-    c2 = [MeanTPmax, 10, 0.00, 0.58];
+    c2 = [2.5*Data.PesP(i), 10, 0.00, 0.58];
     Ret1.CycICs(i,:) = c2; 
 
-    % First Set of Limits - very weak bounds on t_Pmax.
+    % First Set of Limits - very weak bounds on t_Pmax. OLD DO NOT USE
     % lb = [Data.Pes2(i)  0.0            -0.1   0.2];
     % ub = [        1000 30.0  Data.Time(end)   0.8];
     %
@@ -93,7 +95,7 @@ for i = 1:nfits
     % - t0 should be pretty small and probably positive
     % - Beta: 0.6 is the "best value" for rats, so we give it some leeway.
 
-    lb = [Data.Pes2(i)  0.0 -0.005 0.48];
+    lb = [Data.PesP(i)  0.0 -0.005 0.48];
     ub = [         500 40.0  0.020 0.72];
 
     [c,SSE,~] = lsqnonlin (sin_fun2,c2,lb,ub,opts1);

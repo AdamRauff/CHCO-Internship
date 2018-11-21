@@ -21,28 +21,27 @@ Ret.dP2t_D = interpft(Data_O.dP2t, mysz);
 Ret.Time_D = mystp:mystp:Data_O.Time(end);
 
 %% Pes approximations.
-% Original = 30ms prior to (dP/dt)min; get time and convert to an integer.
-% Note that these are VALUES, time and pressure. NOT INDICES.
-dtmin1_30 = Data_O.Time(ivIdx.dPmin1)-0.03;
-dtmin2_30 = Data_O.Time(ivIdx.dPmin2)-0.03;
+% Dog (Original): 30ms prior to (dP/dt)min; get time and convert to an integer.
+% Note that these are VALUES, time and pressure. NOT INDICES. Also, this is a
+% complete recalculation of what's done in idx_pes(). Not sure why I did both,
+% come to think of it...!
+dtmin_30 = Data_O.Time(ivIdx.dPmin1)-0.03;
 
-Ret.Pes1Times = Ret.Time_D(uint16(dtmin1_30/mystp));
-Ret.Pes1 = Ret.Pres_D(uint16(dtmin1_30/mystp));
-Ret.Pes2Times = Ret.Time_D(uint16(dtmin2_30/mystp));
-Ret.Pes2 = Ret.Pres_D(uint16(dtmin2_30/mystp));
+Ret.PesDTimes = Ret.Time_D(uint16(dtmin_30/mystp));
+Ret.PesD = Ret.Pres_D(uint16(dtmin_30/mystp));
 
-% Vanderpool, Pes is at the minimum of d2P/dt2 just before (dP/dt)min. The
-% finding technique code below is from data_isoseg (which actually is
-% called for the rest of the times just after this routine).
-mysz3 = length(ivIdx.Ps3);
-Ret.Pes3Times = zeros(mysz3,1);
-Ret.Pes3 = zeros(mysz3,1);
+% Pressure acceleration: Pes is at the maximum of d2P/dt2 just before
+% (dP/dt)min. The finding technique code below is from data_isoseg (which
+% actually is called for the rest of the times just after this routine).
+mysz = length(Ret.PesD);
+Ret.PesPTimes = zeros(mysz,1);
+Ret.PesP = zeros(mysz,1);
 
-for i = 1: 1: mysz3
+for i = 1: 1: mysz
     % Find corresponding index of Pes in doubled data.
-    Pes = find(round(Ret.Time_D,3) == round(Data_O.Time(ivIdx.Pes3(i)),3));
+    Pes = find(round(Ret.Time_D,3) == round(Data_O.Time(ivIdx.PesP(i)),3));
     
     % Set values of time and pressure based on that index.
-    Ret.Pes3Times(i) = Ret.Time_D(Pes);
-    Ret.Pes3(i) = Ret.Pres_D(Pes);
+    Ret.PesPTimes(i) = Ret.Time_D(Pes);
+    Ret.PesP(i) = Ret.Pres_D(Pes);
 end

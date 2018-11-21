@@ -14,7 +14,9 @@ end
 %% Read in entire file to cell
 all = textscan(fd0, '%s', 'Delimiter', '\n');
 all = all{1,1};
-if fclose(fd0) ~= 0
+
+retval = fclose(fd0);
+if retval ~= 0
     [Pres, dPdt, Rvals, hdat] = deal (-1);
     return;
 end

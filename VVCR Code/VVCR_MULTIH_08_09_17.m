@@ -65,6 +65,7 @@ for i = 1:2
     Extr.dPminVal = GateStr.Extr.dPminVal;
 
     Res.TotNumWaves = GateStr.TotNumWaves;
+    clear('GateStr');
 
     % Find cycle periods, AFTER GUI_GateCheck
     if length(Extr.dPmaxIdx) > 1 & length(Extr.dPmaxVal) > 1
@@ -138,19 +139,19 @@ if ~RunT & ~RunK & ~RunV
 end
 
 %% (5) Fourier Series interpolation and finding isovolumic segments for fitting
+% Note that Pes recalc (for PesD) and segmentation occurs in data_double.
 [Data] = data_double (Data_O, ivIdx);
 
 [ivSeg, ivIdx] = data_isoseg (false, Data, ivIdx);
 
-% Get Pes processing done prior to fits based on accepted segmentations. First
-% call gets Dog-Pes, second gets PA-based Pes (Vanderpool).
-Res.Pes  = unique([Data.Pes1' Data.Pes2']);
-Res = compute_MeanStd (Res, Res.Pes, 'Pes'); 
-Res = compute_MeanStd (Res, Data.Pes3, 'PesV'); 
+% Get Pes processing done prior to fits: this is for all measured Pes, not just
+% the per-cycle (accepted) fits... that might be bad? Not sure. Below, when VVCR
+% is computed, only Pes for accepted cycles gets passed.
+Res = compute_MeanStd (Res, Data.PesD, 'PesD'); 
+Res = compute_MeanStd (Res, Data.PesP, 'PesP'); 
 
 %% (6) Perform Takeuchi fit(s), put up check GUI, and compute return quantities
-% FitT is "new" ICs (w/fitting limits and new ICs), FitO is "old" fit (Adam's
-% unconstrained fit)
+% FitT is "new" w/new Pes, FitO is same fit (Pmax) with old dog Pes.
 if RunT
     % frequency is the conversion to angular frequency 2*pi/T multiplied by the
     % number of waves found over the time period ICs structure for first pass -
@@ -161,6 +162,9 @@ if RunT
     ICS.dPmaxIdx = ivIdx.dPmax1;
     ICS.dPminIdx = ivIdx.dPmin1;
 
+    % Keep non-normalized fit for now, but don't include its output anymore.
+    % When time allows, remove the call below [FitO] and its processing in the
+    % GUI.
     [FitT, ivSeg, PlotT] = fit_takeuchi (ivSeg, Data, ICS, 1);
     [FitO] = fit_takeuchi (ivSeg, Data, ICS, 0);
 
@@ -173,19 +177,21 @@ if RunT
     end
 
     BadCycT = RetT.FitT.BadCyc;
-    BadCycO = RetT.FitO.BadCyc | RetT.FitT.BadCyc;
+    % BadCycO = RetT.FitO.BadCyc | RetT.FitT.BadCyc;
     
+    % Obviously when FitO actually disappears, this below can be significantly
+    % reduced.
     Res.FitT = RetT.FitT;
-    Res.FitO = RetT.FitO;
+    Res.FitO = RetT.FitT;
     Res.numPeaksT = sum(~BadCycT);
-    Res.numPeaksO = sum(~BadCycO);
+    Res.numPeaksO = sum(~BadCycT);
 
     GOOD_PmxT = RetT.FitT.PIsoMax(BadCycT~=1);
-    GOOD_PmxO = RetT.FitO.PIsoMax(BadCycO~=1);
+    GOOD_PmxO = RetT.FitO.PIsoMax(BadCycT~=1);
     Res = compute_MeanStd (Res, GOOD_PmxT, 'PmaxT');
     Res = compute_MeanStd (Res, GOOD_PmxO, 'PmaxO');
-    Res = compute_VVCR (Res, Data.Pes1(BadCycT~=1), GOOD_PmxT, 'T');
-    Res = compute_VVCR (Res, Data.Pes1(BadCycO~=1), GOOD_PmxO, 'O');
+    Res = compute_VVCR (Res, Data.PesP(BadCycT~=1), GOOD_PmxT, 'T');
+    Res = compute_VVCR (Res, Data.PesD(BadCycT~=1), GOOD_PmxO, 'O');
     Res.VandT = sum(RetT.FitT.VCyc);
     Res.VandO = sum(RetT.FitO.VCyc);
 else
@@ -226,7 +232,7 @@ if RunV
 
     GOOD_PmxV = RetV.FitV.PIsoMax(BadCycV~=1);
     Res = compute_MeanStd (Res, GOOD_PmxV, 'PmaxV');
-    Res = compute_VVCR (Res, Data.Pes3(BadCycV~=1), GOOD_PmxV, 'V');
+    Res = compute_VVCR (Res, Data.PesP(BadCycV~=1), GOOD_PmxV, 'V');
     Res.VandV = sum(RetV.FitV.VCyc);
 else
     
@@ -239,14 +245,11 @@ end
 % FitK is weighted residuals, contraction error weighted to be (roughly) the
 % same as relaxtion error. FitN is "Normal", no weighting.
 if RunK
-    if RunT
-        TakPIsoMax = mean(FitT.PIsoMax);
-    else
-        TakPIsoMax = 2*mean(Data.Pes2);
-    end
 
-    [FitK, PlotK] = fit_kind (ivSeg, ivIdx, Data, TakPIsoMax, 0);
-    [FitN] = fit_kind (ivSeg, ivIdx, Data, TakPIsoMax, 1);
+    % FitN method can also be eliminated (or converted into experimental method
+    % for computing 
+    [FitK, PlotK] = fit_kind (ivSeg, ivIdx, Data, 0);
+    [FitN] = fit_kind (ivSeg, ivIdx, Data, 1);
 
     % Call the Kind Fit Check GUI 
     % Not sure why MeanTP was being sent to fit check. Isn't used once it
@@ -275,8 +278,8 @@ if RunK
     GOOD_PmxN = FitN.RCoef(BadCycN~=1,1);
     Res = compute_MeanStd (Res, GOOD_PmxK, 'PmaxK');
     Res = compute_MeanStd (Res, GOOD_PmxN, 'PmaxN');
-    Res = compute_VVCR (Res, Data.Pes2(BadCycK~=1), GOOD_PmxK, 'K');
-    Res = compute_VVCR (Res, Data.Pes2(BadCycN~=1), GOOD_PmxN, 'N');
+    Res = compute_VVCR (Res, Data.PesP(BadCycK~=1), GOOD_PmxK, 'K');
+    Res = compute_VVCR (Res, Data.PesP(BadCycN~=1), GOOD_PmxN, 'N');
 else
     
     [Res.numPeaksK, Res.PmaxK_Mean, Res.PmaxK_StD, ...
@@ -290,7 +293,6 @@ end
 end
 
 %% Auxilliary Functions to simplify computation of final values.
-
 
 % --- Interpret the return structure coming back from GUIs.
 function [Res, Ret] = interpret_str (str, guinam, patfile, ResIn)

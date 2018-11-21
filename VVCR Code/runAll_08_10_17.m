@@ -1,3 +1,4 @@
+function runAll_08_10_17
 % Run VVCR analysis on a list of text files
 % Adam Rauff 10.1.2016
 
@@ -122,7 +123,7 @@ for i = 1:length(top)
         [Res, Pat] = VVCR_MULTIH_08_09_17(Fold_name, top_name);
         
         header = ['Pnam, Pmrn, file, HR, ' ...
-            'Pes_Mean, Pes_StD, PesV_Mean, PesV_StD, ',...
+            'PesD_Mean, PesD_StD, PesP_Mean, PesP_StD, ',...
             'PmaxT_Mean, PmaxT_StD, PmaxV_Mean, PmaxV_StD, ' ...
             'PmaxK_Mean, PmaxK_Std, ' ...
             'PmaxO_Mean, PmaxO_Std, PmaxN_Mean, PmaxN_Std, ' ...
@@ -237,11 +238,11 @@ for i = 1:length(top)
             fprintf(fd0, '%s, %s, %s, ', NamNoComma, Pat.MRN, Pat.FileNam);
             fprintf(fd0, '%10.6f, ' , Res.HR);
             
-            % Pes and both Pmax - end systolic pressure (Pes), and maximum
+            % PesD and both Pmax - end systolic pressure (PesD), and maximum
             % isovolumic pressure (Pmax) obtained from Takeuchi (Mean + 2*amp)
             % and Kind (Pmax) methods
-            fprintf(fd0, '%10.6f, %10.6f, ' , Res.Pes_Mean, Res.Pes_StD);
-            fprintf(fd0, '%10.6f, %10.6f, ' , Res.PesV_Mean, Res.PesV_StD);
+            fprintf(fd0, '%10.6f, %10.6f, ' , Res.PesD_Mean, Res.PesD_StD);
+            fprintf(fd0, '%10.6f, %10.6f, ' , Res.PesP_Mean, Res.PesP_StD);
             fprintf(fd0, '%10.6f, %10.6f, ' , Res.PmaxT_Mean, Res.PmaxT_StD);
             fprintf(fd0, '%10.6f, %10.6f, ' , Res.PmaxV_Mean, Res.PmaxV_StD);
             fprintf(fd0, '%10.6f, %10.6f, ' , Res.PmaxK_Mean, Res.PmaxK_StD);
@@ -296,4 +297,5 @@ for i = 1:length(top)
     end
 end
 
-diary off
+fclose all;
+diary off;
