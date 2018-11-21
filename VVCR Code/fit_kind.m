@@ -10,9 +10,8 @@ function [Ret1, Ret2] = fit_kind (ivSeg, ivIdx, Data, MeanTPmax, WgtFlg)
 %          contstant initial conditions for fit.
 
 % This causes the code to more strongly weight the isovolumic contraction
-% residuals compared to the "balanced" mean weights. The value (which
-% should be larger than 1) is the actual weight. If set to zero, this will
-% have no effect.
+% residuals compared to the "balanced" mean weights. The value (which should be
+% larger than 1) is the actual weight. If set to zero, this will have no effect.
 WGHT_CONT = 0;
 BOUND_VIO = 0;
 
@@ -35,8 +34,8 @@ Ret2.iv2PlotTime = [];
 Ret2.iv2PlotPres = [];
 Ret2.iv2TShift = zeros(nfits,1);
 
-% scroll through the number of rows (pressure waves) in the
-% structures: ivSeg.iv2Time and ivSeg.iv2Pres
+% scroll through the number of rows (pressure waves) in the structures:
+% ivSeg.iv2Time and ivSeg.iv2Pres
 for i = 1:nfits
 
     % zero is computed to offset each cycle to start at t=0 (not sure why I
@@ -127,9 +126,9 @@ for i = 1:nfits
 
 %   fprintf ('        RevPmax %7.3f %6.3f %6.4f %6.4f\n', c(1), c(2), c(3), c(4));
     
-    % store the time points and pressure points in one array for easy
-    % plotting - first pass (call from VVCR_); otherwise, reconsitute these
-    % arrays if needed just outside this loop.
+    % store the time points and pressure points in one array for easy plotting -
+    % first pass (call from VVCR_); otherwise, reconsitute these arrays if
+    % needed just outside this loop.
     [~, tsh, padd] = data_kind (c, Data.Time_D(posidx(1))-zero, dPtimes);
     psh = padd-Data.Pres_D(ivIdx.dPmin2_D(i));
 
@@ -157,9 +156,9 @@ for i = 1:nfits
 
 end
 
-% print to command line the waves that were not fit correctly. This is used
-% as a debugger to check that the "bad" waves, the ones that don't have a
-% good fit, are not utilized in the VVCR calculation.
+% print to command line the waves that were not fit correctly. This is used as a
+% debugger to check that the "bad" waves, the ones that don't have a good fit,
+% are not utilized in the VVCR calculation.
 indX = find(Ret1.BadCyc==1); % find indices of the bad waves
 if BOUND_VIO
     fprintf('\n');
@@ -237,15 +236,15 @@ p1m = @(P,t) tp_P2T*(P(1)-P(2))*( ...
     -5*a(6)*sin(tp_P2T*5*t) + 5*b(6)*cos(tp_P2T*5*t) ...
     -6*a(7)*sin(tp_P2T*6*t) + 6*b(7)*cos(tp_P2T*6*t) );
 
-% Code to compute (dP/dt)min offset: Given the fit coefficients in P, find
-% the fitted time of (dP/dt)min, then compute difference. Voila!
+% Code to compute (dP/dt)min offset: Given the fit coefficients in P, find the
+% fitted time of (dP/dt)min, then compute difference. Voila!
 %
 % In more detail: P coefficients determine point of maximum for multiharmonic
-% fit. So we just compute that. Then, we also already know the time at which
-% the actual (dP/dt)min occurs. These are independent events, given a specific
-% set of P coefficients. Then, knowing both of these times, we can choose the
-% time for the multiharmonic at which comparisons are made - and it's centered 
-% around each vector's (dP/dt)min.
+% fit. So we just compute that. Then, we also already know the time at which the
+% actual (dP/dt)min occurs. These are independent events, given a specific set
+% of P coefficients. Then, knowing both of these times, we can choose the time
+% for the multiharmonic at which comparisons are made - and it's centered around
+% each vector's (dP/dt)min.
 %
 % Tspan is just some range (shifted or not it's irrelevant) in which we believe
 % we can find the isovolumic (dP/dt)min.

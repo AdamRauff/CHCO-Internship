@@ -1,8 +1,8 @@
 function [ Res, Pat ] = VVCR_MULTIH_08_09_17( PathName, FileName)
 
 %% (1) Read in data from the given FileName
-% determine if FileName is from calf or humans to apply apprpriate loadp func
-% if third digit/entry of FileName is numeric == human; otherwise, calf.
+% determine if FileName is from calf or humans to apply apprpriate loadp func if
+% third digit/entry of FileName is numeric == human; otherwise, calf.
 if FileName(1) == 'H' && ischar(FileName(2)) && ~isnan(str2double(FileName(3)));
     [Pres, dPdt, Rvals, Pat] = loadp_10_04_18(PathName, FileName);
     if isstruct(Pat)
@@ -152,9 +152,9 @@ Res = compute_MeanStd (Res, Data.Pes3, 'PesV');
 % FitT is "new" ICs (w/fitting limits and new ICs), FitO is "old" fit (Adam's
 % unconstrained fit)
 if RunT
-    % frequency is the conversion to angular frequency 2*pi/T
-    % multiplied by the number of waves found over the time period
-    % ICs structure for first pass - enables individual computation of ICs
+    % frequency is the conversion to angular frequency 2*pi/T multiplied by the
+    % number of waves found over the time period ICs structure for first pass -
+    % enables individual computation of ICs
     ICS.Freq_o = double(((2*pi)*Res.TotNumWaves)/(Data.time_end)); % OLD METHOD
     ICS.Freq = 2*pi/Data.time_per;
     ICS.Pres = Data.Pres;
@@ -198,12 +198,12 @@ else
 end
 
 %% (7) Perform Takeuchi fit w/Vanderpool Landmarks, put up check GUI, and 
-% compute return quantities. FitV uses "new" ICs (w/fitting limits and new
-% as with above. No "old" (unconstrained) fit here.
+% compute return quantities. FitV uses "new" ICs (w/fitting limits and new as
+% with above. No "old" (unconstrained) fit here.
 if RunV
-    % frequency is the conversion to angular frequency 2*pi/T
-    % multiplied by the number of waves found over the time period
-    % ICs structure for first pass - enables individual computation of ICs
+    % frequency is the conversion to angular frequency 2*pi/T multiplied by the
+    % number of waves found over the time period ICs structure for first pass -
+    % enables individual computation of ICs
     ICS.Freq = 2*pi/Data.time_per;
     ICS.Pres = Data.Pres;
     ICS.dPmaxIdx = ivIdx.dPmax3;
@@ -236,8 +236,8 @@ else
 end
 
 %% (8) Perform Kind fit, put up check GUI, and compute return quantities
-% FitK is weighted residuals, contraction error weighted to be (roughly)
-% the same as relaxtion error. FitN is "Normal", no weighting.
+% FitK is weighted residuals, contraction error weighted to be (roughly) the
+% same as relaxtion error. FitN is "Normal", no weighting.
 if RunK
     if RunT
         TakPIsoMax = mean(FitT.PIsoMax);
@@ -248,9 +248,9 @@ if RunK
     [FitK, PlotK] = fit_kind (ivSeg, ivIdx, Data, TakPIsoMax, 0);
     [FitN] = fit_kind (ivSeg, ivIdx, Data, TakPIsoMax, 1);
 
-    % Call the Kind Fit Check GUI
+    % Call the Kind Fit Check GUI 
     % Not sure why MeanTP was being sent to fit check. Isn't used once it
-    % arrives. Comment out for now, remove later if it's never used...
+    % arrives. Comment out for now, remove later if it's never used...   
     %if RunT
     %    FitK.MeanTP = mean(RetT.FitT.PIsoMax);
     %else

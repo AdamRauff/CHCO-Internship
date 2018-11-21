@@ -36,15 +36,14 @@ FileSkpTrck = [];
 NewAnalyzedTxt = [];
 
 % create variable to hold name of csv file
-% In future: should add an input box when script runs so user can
-% interactively assign csv file name every time script runs
+% In future: should add an input box when script runs so user can interactively
+% assign csv file name every time script runs
 csvName = 'RV_data.csv';
 
-% Here would be a good opportunity to open the csv file if it
-% exists, and check if top_name already exists in the csv file.
-% If it already exists in the csv file, the analysis was
-% already run on it, and it should be skipped
-% check to if csvName file exists
+% Here would be a good opportunity to open the csv file if it exists, and check
+% if top_name already exists in the csv file. If it already exists in the csv
+% file, the analysis was already run on it, and it should be skipped check to if
+% csvName file exists
 filechk = which(csvName);
 
 if ~isempty(filechk)
@@ -65,11 +64,11 @@ for i = 1:length(top)
     top_name = top(i).name;
     Fold_name = [top(i).folder filesep];
     
-    % -----------------------------------------------------------------
-    % this piece of code is only added for the analysis of the text files
-    % that were recieved from Dr. Hunter on 9/30/16. None of these files
-    % had a .txt file extension, and therefore never satisfied the regexp
-    % if statement below.
+    % -----------------------------------------------------------------    
+    % this piece of code is only added for the analysis of the text files that
+    % were recieved from Dr. Hunter on 9/30/16. None of these files had a .txt
+    % file extension, and therefore never satisfied the regexp if statement
+    % below.
     [pathstr, name, ext] = fileparts(strcat(Fold_name,'/',top_name));
     
     if ~isempty(strfind('H', top_name)) && ~strcmpi(ext, '.txt')
@@ -117,9 +116,9 @@ for i = 1:length(top)
         disp(['Current File: ', top_name]);
         
         % add try catch here. In case txt file is not pressure data, or what
-        % not. In the catch, record the name of the text file somewhere, so
-        % if it is a pressure file that could not be opened, it is remarked
-        % Did this within the load_calf file, it is a good idea!! Thanks Adam!
+        % not. In the catch, record the name of the text file somewhere, so if
+        % it is a pressure file that could not be opened, it is remarked Did
+        % this within the load_calf file, it is a good idea!! Thanks Adam!
         [Res, Pat] = VVCR_MULTIH_08_09_17(Fold_name, top_name);
         
         header = ['Pnam, Pmrn, file, HR, ' ...
@@ -224,10 +223,10 @@ for i = 1:length(top)
                 fd0 = fopen(csvName, 'a');
                 
                 % After a subsequent session begins, the program appended data
-                % to the last filled cell. This statement makes sure to start
-                % a new line before printing the data, to ensure the appended
-                % data is recorded separatly, and does not corrupt the data of
-                % the last cell
+                % to the last filled cell. This statement makes sure to start a
+                % new line before printing the data, to ensure the appended data
+                % is recorded separatly, and does not corrupt the data of the
+                % last cell
                 if i == 1 || fileCount == 1
                     fprintf(fd0, ' ,\n');
                 end

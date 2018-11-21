@@ -39,20 +39,20 @@ if isstruct(ICS)
 end
 Ret1.VCyc = zeros(nfits,1);
 
-% Variables needed for adding points to any Takeuchi method fit (w/
-% Vanderpool "walk down the pressure curve" method). The results of this
-% method are only shown for the new Takeuchi fit (Method=1), or the
-% Vanderpool landmarks (Method=2), but we don't need these for the old
-% (Adam ICs) fit. Also set existing ivSeg (that came in on call) to Ret2 to
-% minimally insure continuity of this variable. Finally, set the char
-% variable 'ext' that is used in providing user feedback.
+% Variables needed for adding points to any Takeuchi method fit (w/ Vanderpool
+% "walk down the pressure curve" method). The results of this method are only
+% shown for the new Takeuchi fit (Method=1), or the Vanderpool landmarks
+% (Method=2), but we don't need these for the old (Adam ICs) fit. Also set
+% existing ivSeg (that came in on call) to Ret2 to minimally insure continuity
+% of this variable. Finally, set the char variable 'ext' that is used in
+% providing user feedback.
 if Method > 0
     Ret2 = ivSeg;
     
     % Ploting vectors of the fitting data for GUI_FitTakeuchi or
-    % GUI_FitVanderpool. Because the Takeuchi and Vanderpool methods each
-    % can have unique rejections, the iv*Plot vectors must be unique, 
-    % although ADD_ vectors are local to this function.
+    % GUI_FitVanderpool. Because the Takeuchi and Vanderpool methods each can
+    % have unique rejections, the iv*Plot vectors must be unique, although ADD_
+    % vectors are local to this function.
     ADD_TPoints = []; 
     ADD_PPoints = []; 
     Ret3.iv1PlotTime = [];
@@ -76,8 +76,8 @@ end
 % Seg.Time and Seg.Pres
 for i = 1:nfits
     
-    % Obtain vectors of fitting time, pressure; then normalize start time
-    % to zero for every waveform (to obtain consistent phase) for newer methods.
+    % Obtain vectors of fitting time, pressure; then normalize start time to
+    % zero for every waveform (to obtain consistent phase) for newer methods.
     WaveTs = [Data.Time_D(Seg.Time(i).PosIso)'; ...
         Data.Time_D(Seg.Time(i).NegIso)'];
     WavePs = [Seg.Pres(i).PosIso; Seg.Pres(i).NegIso];
@@ -98,10 +98,9 @@ for i = 1:nfits
         lb = [  0.0   0.0  0.5*ICS(3) -2*pi/3];
         ub = [500.0 500.0    2*ICS(3)   -pi/3];
     else
-        % Deriving the initial values from the data. Freq is an average
-        % found of the function. Mean is the specific average pressure
-        % value between dp/dt max and min (top of curve) specific to this
-        % cycle.
+        % Deriving the initial values from the data. Freq is an average found of
+        % the function. Mean is the specific average pressure value between
+        % dp/dt max and min (top of curve) specific to this cycle.
         T1 = ICS.dPmaxIdx(i);
         T2 = ICS.dPminIdx(i);
         Mea = mean(double(ICS.Pres(T1:T2)));
@@ -109,9 +108,9 @@ for i = 1:nfits
         % Amplitude is about twice the mean
         Amp = double(1.8*Mea);
     
-        % keep in mind this means the initial conditions of every wave fit
-        % may be slightly different, While values entered via GUI make ICs
-        % same for all waves.
+        % keep in mind this means the initial conditions of every wave fit may
+        % be slightly different, While values entered via GUI make ICs same for
+        % all waves.
         if Method > 0
             c2 = [Mea, Amp, 1.5*ICS.Freq, -pi/2];
         else
@@ -149,9 +148,9 @@ for i = 1:nfits
     Ret1.RCoef(i,:) = c;
     Ret1.PIsoMax(i) = c(1)+abs(c(2));
 
-    % store the time points and pressure points in one array for easy
-    % plotting - first pass (call from VVCR_); otherwise, reconsitute these
-    % arrays if needed just outside this loop.
+    % store the time points and pressure points in one array for easy plotting -
+    % first pass (call from VVCR_); otherwise, reconsitute these arrays if
+    % needed just outside this loop.
     if Method == 1
         Ret3.iv1PlotTime = [Ret3.iv1PlotTime; WaveTs];
         Ret3.iv1PlotPres = [Ret3.iv1PlotPres; WavePs];
@@ -161,8 +160,8 @@ for i = 1:nfits
     end
    
     % AR 6/5/17 -----------------------------------------------
-    % adding points succesively to beginning of systole to make better fit
-    % of sick patients with wide curves. Don't do this for method=2.
+    % adding points succesively to beginning of systole to make better fit of
+    % sick patients with wide curves. Don't do this for method=2.
     
     % obtain maximum pressure point on actual curve
     PresMax = max(Data.Pres_D(Seg.Time(i).PosIso(1,1):1: ...
@@ -203,8 +202,8 @@ for i = 1:nfits
                 WaveTsNorm = WaveTs;
             end
 
-            % re-fit sinusiod
-            % equation from Naeiji et al, single beat method of VVC
+            % re-fit sinusiod equation from Naeiji et al, single beat method of
+            % VVC
             sin_fun2 = @(P)(P(1)+P(2)*sin(P(3)*WaveTsNorm+P(4)))-WavePs; 
 
             %least squares fitting
@@ -255,11 +254,11 @@ for i = 1:nfits
         end
     end
     
-    % ---------------------------------------------------------------
-    % NOTE the absolute value of the amplitude is taken!!!!!!!
-    % refer to patient HA002019, Wave 11 (last pressure waveform) for example 
-    % sometime amplitude of given equation solves for negative ( with a
-    % significant phase shift, which can make a good fit (r^2 > 0.99).
+    % --------------------------------------------------------------------
+    % NOTE the absolute value of the amplitude is taken!!!!!!! refer to patient
+    % HA002019, Wave 11 (last pressure waveform) for example sometime amplitude
+    % of given equation solves for negative ( with a significant phase shift,
+    % which can make a good fit (r^2 > 0.99).
     % --------------------------------------------------------------------
 end
 
@@ -296,9 +295,9 @@ else
     Ret1.InitIC = Ret1.CycICs;
 end
 
-% print to command line the waves that were not fit correctly. This is used
-% as a debugger to check that the "bad" waves, the ones that don't have a
-% good fit, are not utilized in the VVCR calculation.
+% print to command line the waves that were not fit correctly. This is used as a
+% debugger to check that the "bad" waves, the ones that don't have a good fit,
+% are not utilized in the VVCR calculation.
 indX = find(Ret1.BadCyc==1); % find indices of the bad waves
 if ~isempty(indX)
     disp(['    fit_takeuchi' ext ': Some waves fit well, ave R^2 = ' ...
