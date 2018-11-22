@@ -1,5 +1,11 @@
 function [ Res, Pat ] = VVCR_MULTIH_08_09_17( PathName, FileName)
 
+% If GUI is true, code will pop up every GUI every time. If GUI is false, it
+% will only pop up GUI_GateCheck when the number of maxes & mins is not equal,
+% and will not pop up the GUI_Fit* figures. Things go faster, but it's dangerous
+% (no checks on the output).
+GUI = false;
+
 %% (1) Read in data from the given FileName
 % determine if FileName is from calf or humans to apply apprpriate loadp func if
 % third digit/entry of FileName is numeric == human; otherwise, calf.
@@ -51,8 +57,18 @@ for i = 1:2
     PeakStr.Red_X = Red_X;
 
     % call on GUI.
-    GateStr = GUI_GateCheck (PeakStr);
-
+    if length(Extr.dPmaxVal) == length(Extr.dPminVal)
+        if GUI
+            GateStr = GUI_GateCheck (PeakStr);
+        else
+            GateStr = PeakStr;
+            GateStr.Exit = 'good';
+            GateStr.TotNumWaves = length(Extr.dPmaxVal);
+        end
+    else
+        GateStr = GUI_GateCheck (PeakStr);
+    end
+        
     [Res, Ret] = interpret_str (GateStr, 'GUI_GateCheck', FileName, Res);
     if Ret
         return;
@@ -88,7 +104,7 @@ for i = 1:2
     Found  = double(mingood)/double(Res.TotNumWaves);
     if i == 1 && Found < 0.5
 
-	quest = ['Very few cycles gated compared to total number of cycles. '...
+	    quest = ['Very few cycles gated compared to total number of cycles. '...
             ' Keep current (filtered) data, load unfiltered data, or ' ...
             'discard patient?'];
         button = questdlg(quest,'Poor Gating','Keep Current', ...
@@ -169,13 +185,18 @@ if RunT
     [FitO] = fit_takeuchi (ivSeg, Data, ICS, 0);
 
     % Call the Takeuchi Fit Check GUI
-    TStr.Plot = PlotT; TStr.FitT = FitT; TStr.FitO = FitO;
-    RetT = GUI_FitTakeuchi (TStr, Data, ivIdx, ivVal, ivSeg);
-    [Res, Ret] = interpret_str (RetT, 'GUI_FitTakeuchi', FileName, Res);
-    if Ret
-        return;
+    TStr.FitT = FitT; TStr.FitO = FitO;
+    if GUI
+        TStr.Plot = PlotT;
+        RetT = GUI_FitTakeuchi (TStr, Data, ivIdx, ivVal, ivSeg);
+        [Res, Ret] = interpret_str (RetT, 'GUI_FitTakeuchi', FileName, Res);
+        if Ret
+            return;
+        end
+    else
+        RetT = TStr;
     end
-
+        
     BadCycT = RetT.FitT.BadCyc;
     % BadCycO = RetT.FitO.BadCyc | RetT.FitT.BadCyc;
     
@@ -218,11 +239,16 @@ if RunV
     [FitV, ivSeg, PlotV] = fit_takeuchi (ivSeg, Data, ICS, 2);
 
     % Call the Vanderpool Fit Check GUI
-    VStr.Plot = PlotV; VStr.FitV = FitV;
-    RetV = GUI_FitVanderpool (VStr, Data, ivIdx, ivVal, ivSeg);
-    [Res, Ret] = interpret_str (RetV, 'GUI_FitVanderpool', FileName, Res);
-    if Ret
-        return;
+    VStr.FitV = FitV;
+    if GUI
+        VStr.Plot = PlotV;
+        RetV = GUI_FitVanderpool (VStr, Data, ivIdx, ivVal, ivSeg);
+        [Res, Ret] = interpret_str (RetV, 'GUI_FitVanderpool', FileName, Res);
+        if Ret
+            return;
+        end
+    else
+        RetV = VStr;
     end
 
     BadCycV = RetV.FitV.BadCyc;
@@ -259,11 +285,16 @@ if RunK
     %else
     %    FitK.MeanTP = mean(RetT.FitT.PIsoMax);
     %end
-    KStr.Plot = PlotK; KStr.FitK = FitK;
-    RetK = GUI_FitKind (KStr, Data, ivIdx, ivVal, ivSeg);
-    [Res, Ret] = interpret_str (RetK, 'GUI_FitKind', FileName, Res);
-    if Ret
-        return;
+    KStr.FitK = FitK;
+    if GUI
+        KStr.Plot = PlotK;
+        RetK = GUI_FitKind (KStr, Data, ivIdx, ivVal, ivSeg);
+        [Res, Ret] = interpret_str (RetK, 'GUI_FitKind', FileName, Res);
+        if Ret
+            return;
+        end
+    else
+        RetK = KStr;
     end
 
     BadCycK = RetK.FitK.BadCyc;
