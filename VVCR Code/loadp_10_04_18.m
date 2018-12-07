@@ -27,7 +27,8 @@ while isempty(regexp(all{header},'Begin'))
     header = header+1;
 end
 
-hdat = struct('Nam', '', 'MRN', '', 'wcase', '', 'tres', 0.004);
+hdat = struct('Nam', '', 'MRN', '', 'wcase', '', 'tstp', 0.004, 'type', 1, ...
+    'FileNam', file);
 for i = 1: 1: header-2
     if regexpi(all{i}, 'PATIENT NAME:')
         hdat.Nam = strtrim(extractAfter(all{i}, 'PATIENT NAME:'));

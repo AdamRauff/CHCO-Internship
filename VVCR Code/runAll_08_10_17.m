@@ -7,17 +7,18 @@ clear all;
 close all;
 clc;
 
-diary('RV_stdout.txt');
-mydate = datestr(now,'ddd mmm dd HH:MM:SS YYYY');
-disp(['VVCR Analysis ' mydate]); 
-
 % bring up UI that allows user to select a folder (directory)
 Fold_name = uigetdir('','Select folder containing txt files with pressure data');
 if ~Fold_name
     disp('runAll: uigetdir closed.');
-    diary off;
     return;
 end
+
+% Output Command Window info to diary file
+diary('RV_stdout.txt');
+mydate = datestr(now,'ddd mmm dd HH:MM:SS YYYY');
+disp(['VVCR Analysis ' mydate]);
+disp(['              ' Fold_name]);
 
 % attach a forward slash to the end of Fold_name so folder address ends
 % with /
@@ -51,7 +52,8 @@ if ~isempty(filechk)
     fd0 = fopen(csvName);
 
     % read all columns of csv file (11 columns)
-    csvDat = textscan(fd0, '%s %s %s %s %s %s %s %s %s %s %s', 'HeaderLines',1, 'Delimiter',',');
+    csvDat = textscan(fd0, '%s %s %s %s %s %s %s %s %s %s %s', ...
+        'HeaderLines',1, 'Delimiter',',');
     
     OldAnalyzedTxt = csvDat{1,3}; % this will be a Ax1 cell with A = number of text files analyzed
     

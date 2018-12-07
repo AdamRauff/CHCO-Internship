@@ -1,22 +1,18 @@
-function [Pres, dPdt, Rvals, file, npath] = ...
-    load_calf_p_5_17_17(npath, file, sm)
+function [Pres, dPdt, Rvals, Fdat] = load_calf_p_5_17_17(path, file)
 
 debug = 0;
 marks = 0;
 
-if debug == 1
-    disp(['loadp pass ' num2str(sm)]);
-end
-
 if isa(file(1),'char')
-    filename = strcat(npath, file);   % Get the full filename
+    filename = strcat(path, file);   % Get the full filename
     redname = basename(filename, 3);  % Get its basename for reporting
     fd0 = fopen(filename);            % open the file descriptor
     if fd0 < 1
-        [Pres, dPdt, Rvals, file, npath] = deal (-1);
+        [Pres, dPdt, Rvals, file, Fdat] = deal (-1);
         return;
     end
-
+    Fdat = struct('FileNam', file, 'tstp', 0.001, 'type', 0);
+    
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 % AR 5/17
 % calf pressure files do not have name or MRN in text file
@@ -48,9 +44,10 @@ if isa(file(1),'char')
         
             elseif strcmp(tmp{i}, 'Systemic') && strcmp(tmp{i+1}, 'pressure')
                 SysPres = i-2;
+                RVPres = i-2;
             end
         catch ME
-            Pres = 0; dPdt = 0; Rvals = 0; file = 0; npath = 0;
+            Pres = 0; dPdt = 0; Rvals = 0; file = 0; Fdat = 0;
             return;
         end
     end
@@ -60,17 +57,9 @@ if isa(file(1),'char')
     % have an "RV" array
     if Time == 0 || RVPres == 0
          
-        % set all outputs to 0
-        Pres = 0;
-        dPdt = 0; 
-        Rvals = 0;
-        nam = 0;
-        mrn = 0;
-        file = 0;
-        npath = 0;
-        marks = 0; 
+        % set all outputs to 0 & exit
+        [Pres, dPdt, Rvals, file, Fdat] = deal(0);
         
-        % exit the function
         disp('Unable to find time array or pressure array');
         return
     end
@@ -89,9 +78,11 @@ if isa(file(1),'char')
     SP = DataALL{SysPres};
     Spres = cellfun(@str2double, SP);
     
-    % computing derivative of pressure by forward difference
+    % computing (temp) derivative of pressure by forward difference (this is now
+    % never used) and set timestep size
     dPdt = diff(Pres)./(Tnumeric(2)-Tnumeric(1));
-
+    Fdat.tstp = Tnumeric(2)-Tnumeric(1);
+    
     % finding the rvals - rough estimates (first round)
     % flip data. used for finding Minima
     DataInv = (-1)*dPdt;
@@ -108,9 +99,8 @@ if isa(file(1),'char')
     % check to see if any peaks were found
     if isempty(MinIdx) || isempty(pksT)
         
-        Pres = 0;
-        dPdt = 0;
-        Rvals = 0;
+        [Pres, dPdt, Rvals, file, Fdat] = deal(0);
+        
         disp('Signal does not seem to contain apppropriate numbers');
         disp('check load_calf_p file for the pressures and derivative found');
         return

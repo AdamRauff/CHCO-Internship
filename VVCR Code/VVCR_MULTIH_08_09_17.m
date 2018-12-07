@@ -4,22 +4,15 @@ function [ Res, Pat ] = VVCR_MULTIH_08_09_17( PathName, FileName)
 % will only pop up GUI_GateCheck when the number of maxes & mins is not equal,
 % and will not pop up the GUI_Fit* figures. Things go faster, but it's dangerous
 % (no checks on the output).
-GUI = false;
+GUI = true;
 
 %% (1) Read in data from the given FileName
 % determine if FileName is from calf or humans to apply apprpriate loadp func if
 % third digit/entry of FileName is numeric == human; otherwise, calf.
-if FileName(1) == 'H' && ischar(FileName(2)) && ~isnan(str2double(FileName(3)));
+if FileName(1) == 'H' && ischar(FileName(2)) && ~isnan(str2double(FileName(3)))
     [Pres, dPdt, Rvals, Pat] = loadp_10_04_18(PathName, FileName);
-    if isstruct(Pat)
-        Pat.type = 1;
-        Pat.FileNam = FileName;
-    end
 else
-    [Pres, dPdt, Rvals, Pat.FileNam] = load_calf_p_5_17_17(PathName, ...
-        FileName, 100);
-    Pat.tres = 1e-3;
-    Pat.type = 0;
+    [Pres, dPdt, Rvals, Pat] = load_calf_p_5_17_17(PathName, FileName);
 end
 
 % check to see if RV array was NOT found by loaddp
@@ -84,7 +77,7 @@ for i = 1:2
     clear('GateStr');
 
     % Find cycle periods, AFTER GUI_GateCheck
-    if length(Extr.dPmaxIdx) > 1 & length(Extr.dPmaxVal) > 1
+    if length(Extr.dPmaxIdx) > 1 && length(Extr.dPmaxVal) > 1
         cyclenIdx = mean([median(diff(Extr.dPminIdx)) median(diff(Extr.dPmaxIdx))]);
         Data_O.time_per = cyclenIdx*Data_O.time_step;
     else
@@ -146,7 +139,7 @@ RunK = logical(length(ivIdx.Ps2));
 RunV = logical(length(ivIdx.Ps3));
 
 % if there were no good pressure waveforms left, then skip patient
-if ~RunT & ~RunK & ~RunV
+if ~RunT && ~RunK && ~RunV
 
     % set all output variables to true, return to runAll
     [Res, Pat] = deal(true);
