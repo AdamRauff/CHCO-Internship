@@ -123,23 +123,6 @@ for i = 1:length(top)
         % it is a pressure file that could not be opened, it is remarked Did
         % this within the load_calf file, it is a good idea!! Thanks Adam!
         [Res, Pat] = VVCR_MULTIH_08_09_17(Fold_name, top_name);
-        
-        header = ['Pnam, Pmrn, file, HR, ' ...
-            'PesD_Mean, PesD_StD, PesP_Mean, PesP_StD, ',...
-            'PmaxT_Mean, PmaxT_StD, PmaxV_Mean, PmaxV_StD, ' ...
-            'PmaxK_Mean, PmaxK_Std, ' ...
-            'PmaxO_Mean, PmaxO_Std, PmaxN_Mean, PmaxN_Std, ' ...
-            'NumPeaks_T, Vander_T, ', ...
-            'VVCRiT_Mean, VVCRiT_StD, VVCRnT_Mean, VVCRnT_StD, ' ...
-            'NumPeaks_V, Vander_V, ', ...
-            'VVCRiV_Mean, VVCRiV_StD, VVCRnV_Mean, VVCRnV_StD, ' ...
-            'NumPeaks_K, ' ...
-            'VVCRiK_Mean, VVCRiK_StD, VVCRnK_Mean, VVCRnK_StD, ' ...  
-            'NumPeaks_O, Vander_O, ', ...
-            'VVCRiO_Mean, VVCRiO_StD, VVCRnO_Mean, VVCRnO_StD, ' ...
-            'NumPeaks_N, ' ...
-            'VVCRiN_Mean, VVCRiN_StD, VVCRnN_Mean, VVCRnN_StD, ' ...  
-            'TotNumWaves\n'];
 
         if ~isstruct(Res)
             % check to see if outputs are false or true
@@ -194,10 +177,32 @@ for i = 1:length(top)
                 continue 
             end
         end
-        % ----------------------------------------------------------
-        % check Pat.Nam and Pat.MRN, to make sure they do not give
-        % valid names and mrn. The analyzed data must be anonymized!!!
-        % ----------------------------------------------------------
+        
+        % At this point we know that the return is valid (is a structure).
+        % We build the file header based on the returned fields in Res,
+        % ignoring (for now) the fields that are structures (these are the
+        % total results of each analysis.
+        resh = fieldnames(Res);
+        resh = sort(resh);
+        
+        header = ['Pnam, Pmrn, file, '];
+        for i = 1: 1: length(resh)
+            field = resh{i};
+            if ~isstruct(Res.(field))
+                field = regexprep(field, '^A_', '');
+                field = regexprep(field, '^B_', '');
+                field = regexprep(field, '_Vcorr', ' Vcorr');
+                field = regexprep(field, '_nFit', ' nFit');
+                if length(regexp(field, '_')) > 1
+                    field = regexprep(field, '_', ' ','once');
+                end
+                header = [header field ', '];
+            end
+        end
+        header = [header '\r\n'];
+        
+        % check Pat.Nam and Pat.MRN, to make sure they do not give valid
+        % names and mrn. The analyzed data must be anonymized!!!
 
         TXT_FLAG = true; % text file was readable by loadp
         fileCount = fileCount + 1;
@@ -238,43 +243,23 @@ for i = 1:length(top)
             % Name, MRN, Filename
             NamNoComma = regexprep (Pat.Nam, ',', '');
             fprintf(fd0, '%s, %s, %s, ', NamNoComma, Pat.MRN, Pat.FileNam);
-            fprintf(fd0, '%10.6f, ' , Res.HR);
-            
-            % PesD and both Pmax - end systolic pressure (PesD), and maximum
-            % isovolumic pressure (Pmax) obtained from Takeuchi (Mean + 2*amp)
-            % and Kind (Pmax) methods
-            fprintf(fd0, '%10.6f, %10.6f, ' , Res.PesD_Mean, Res.PesD_StD);
-            fprintf(fd0, '%10.6f, %10.6f, ' , Res.PesP_Mean, Res.PesP_StD);
-            fprintf(fd0, '%10.6f, %10.6f, ' , Res.PmaxT_Mean, Res.PmaxT_StD);
-            fprintf(fd0, '%10.6f, %10.6f, ' , Res.PmaxV_Mean, Res.PmaxV_StD);
-            fprintf(fd0, '%10.6f, %10.6f, ' , Res.PmaxK_Mean, Res.PmaxK_StD);
-            fprintf(fd0, '%10.6f, %10.6f, ' , Res.PmaxO_Mean, Res.PmaxO_StD);
-            fprintf(fd0, '%10.6f, %10.6f, ' , Res.PmaxN_Mean, Res.PmaxN_StD);
 
-            % print VVCR - ventricular vascular coupling ratio
-            % UT - Dr. Uyen Troung
-            % KH - Dr. Kendall Hunter
-            % Res.VVCRnT_Mean = 1/Res.VVCRiT_Mean, they are reciprocals
-            fprintf(fd0, '%i, %i, ', Res.numPeaksT, Res.VandT);
-            fprintf(fd0, '%8.6f, %8.6f, ', Res.VVCRiT_Mean, Res.VVCRiT_StD);
-            fprintf(fd0, '%9.5f, %9.5f, ', Res.VVCRnT_Mean, Res.VVCRnT_StD);
-            fprintf(fd0, '%i, %i, ', Res.numPeaksV, Res.VandV);
-            fprintf(fd0, '%8.6f, %8.6f, ', Res.VVCRiV_Mean, Res.VVCRiV_StD);
-            fprintf(fd0, '%9.5f, %9.5f, ', Res.VVCRnV_Mean, Res.VVCRnV_StD);
-            fprintf(fd0, '%i, ', Res.numPeaksK);
-            fprintf(fd0, '%8.6f, %8.6f, ', Res.VVCRiK_Mean, Res.VVCRiK_StD);
-            fprintf(fd0, '%9.5f, %9.5f, ', Res.VVCRnK_Mean, Res.VVCRnK_StD);
-            fprintf(fd0, '%i, %i, ', Res.numPeaksO, Res.VandO);
-            fprintf(fd0, '%8.6f, %8.6f, ', Res.VVCRiO_Mean, Res.VVCRiO_StD);
-            fprintf(fd0, '%9.5f, %9.5f, ', Res.VVCRnO_Mean, Res.VVCRnO_StD);
-            fprintf(fd0, '%i, ', Res.numPeaksN);
-            fprintf(fd0, '%8.6f, %8.6f, ', Res.VVCRiN_Mean, Res.VVCRiN_StD);
-            fprintf(fd0, '%9.5f, %9.5f, ', Res.VVCRnN_Mean, Res.VVCRnN_StD);
-
-            % the number of analyzed peaks and the total number of waves
-            fprintf(fd0, '%i\n', Res.TotNumWaves);
+            % print remainder based entirely on field names avoiding (for
+            % now) returned structures.
+            for i = 1: 1: length(resh)
+                field = resh{i};
+                if ~isstruct(Res.(field))
+                    value = Res.(field);
+                    if round(value) == value
+                        fprintf(fd0, '%4i, ', value);
+                    else
+                        fprintf(fd0, '%10.6f, ', value);
+                    end
+                end
+            end
 
             % close Pat.FileNam
+            fprintf(fd0, '\r\n');
             fclose(fd0);
             
             % print to command window how many files were analyzed
