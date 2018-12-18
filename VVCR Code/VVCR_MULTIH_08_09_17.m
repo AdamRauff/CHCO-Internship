@@ -4,7 +4,7 @@ function [ Res, Pat ] = VVCR_MULTIH_08_09_17( PathName, FileName)
 % will only pop up GUI_GateCheck when the number of maxes & mins is not equal,
 % and will not pop up the GUI_Fit* figures. Things go faster, but it's dangerous
 % (no checks on the output).
-GUI = true;
+GUI = false;
 
 %% (1) Read in data from the given FileName
 % determine if FileName is from calf or humans to apply apprpriate loadp func if
@@ -33,7 +33,7 @@ end
 [Data_O] = data_filter (Pat, Pres, dPdt, Rvals);
 
 %% (3) Determine all indexing for analysis.
-Res.TotNumWaves = 0;
+Res.A_TotNumWaves = 0;
 for i = 1:2
     % Capture Extrema and record number found, then build input structure for
     % GUI, then call.
@@ -73,7 +73,7 @@ for i = 1:2
     Extr.dPminIdx = GateStr.Extr.dPminIdx;
     Extr.dPminVal = GateStr.Extr.dPminVal;
 
-    Res.TotNumWaves = GateStr.TotNumWaves;
+    Res.A_TotNumWaves = GateStr.TotNumWaves;
     clear('GateStr');
 
     % Find cycle periods, AFTER GUI_GateCheck
@@ -83,7 +83,7 @@ for i = 1:2
     else
         Data_O.time_per = Data_O.Time(end);
     end
-    Res.HR = 60/Data_O.time_per;
+    Res.A_HR = 60/Data_O.time_per;
         
     disp(['    VVCR_MULTIH: Average Period = ' num2str(Data_O.time_per, ...
         '%05.3f') ' sec, timestep ' num2str(Data_O.time_step*1000, '%04.1f') ...
@@ -94,7 +94,7 @@ for i = 1:2
 
     % If very few timings were found, filtering may be a problem.
     mingood = min([length(ivIdx.Ps1) length(ivIdx.Ps2)]);
-    Found  = double(mingood)/double(Res.TotNumWaves);
+    Found  = double(mingood)/double(Res.A_TotNumWaves);
     if i == 1 && Found < 0.5
 
 	    quest = ['Very few cycles gated compared to total number of cycles. '...
@@ -156,8 +156,8 @@ end
 % Get Pes processing done prior to fits: this is for all measured Pes, not just
 % the per-cycle (accepted) fits... that might be bad? Not sure. Below, when VVCR
 % is computed, only Pes for accepted cycles gets passed.
-Res = compute_MeanStd (Res, Data.PesD, 'PesD'); 
-Res = compute_MeanStd (Res, Data.PesP, 'PesP'); 
+Res = compute_MeanStd (Res, Data.PesD, 'B_PesD'); 
+Res = compute_MeanStd (Res, Data.PesP, 'B_PesP'); 
 
 %% (6) Perform Takeuchi fit(s), put up check GUI, and compute return quantities
 % FitT is "new" w/new Pes, FitO is same fit (Pmax) with old dog Pes.
@@ -165,7 +165,7 @@ if RunT
     % frequency is the conversion to angular frequency 2*pi/T multiplied by the
     % number of waves found over the time period ICs structure for first pass -
     % enables individual computation of ICs
-    ICS.Freq_o = double(((2*pi)*Res.TotNumWaves)/(Data.time_end)); % OLD METHOD
+    ICS.Freq_o = double(((2*pi)*Res.A_TotNumWaves)/(Data.time_end)); % OLD METHOD
     ICS.Freq = 2*pi/Data.time_per;
     ICS.Pres = Data.Pres;
     ICS.dPmaxIdx = ivIdx.dPmax1;
@@ -195,26 +195,23 @@ if RunT
     
     % Obviously when FitO actually disappears, this below can be significantly
     % reduced.
-    Res.FitT = RetT.FitT;
-    Res.FitO = RetT.FitT;
-    Res.numPeaksT = sum(~BadCycT);
-    Res.numPeaksO = sum(~BadCycT);
+    Res.TakeNorm_AllDat = RetT.FitT;
+    Res.TakeOldM_AllDat = RetT.FitT;
+    Res.TakeNorm_nFit = sum(~BadCycT);
+    Res.TakeOldM_nFit = sum(~BadCycT);
 
     GOOD_PmxT = RetT.FitT.PIsoMax(BadCycT~=1);
     GOOD_PmxO = RetT.FitO.PIsoMax(BadCycT~=1);
-    Res = compute_MeanStd (Res, GOOD_PmxT, 'PmaxT');
-    Res = compute_MeanStd (Res, GOOD_PmxO, 'PmaxO');
-    Res = compute_VVCR (Res, Data.PesP(BadCycT~=1), GOOD_PmxT, 'T');
-    Res = compute_VVCR (Res, Data.PesD(BadCycT~=1), GOOD_PmxO, 'O');
-    Res.VandT = sum(RetT.FitT.VCyc);
-    Res.VandO = sum(RetT.FitO.VCyc);
+    Res = compute_MeanStd (Res, GOOD_PmxT, 'TakeNorm_Pmax');
+    Res = compute_MeanStd (Res, GOOD_PmxO, 'TakeOldM_Pmax');
+    Res = compute_VVCR (Res, Data.PesP(BadCycT~=1), GOOD_PmxT, 'TakeNorm');
+    Res = compute_VVCR (Res, Data.PesD(BadCycT~=1), GOOD_PmxO, 'TakeOldM');
+    Res.TakeNorm_Vcorr = sum(RetT.FitT.VCyc);
+    Res.TakeOldM_Vcorr = sum(RetT.FitO.VCyc);
 else
     
-    [Res.numPeaksT, Res.PmaxT_Mean, Res.PmaxT_StD, Res.VandT, ...
-    Res.numPeaksO,  Res.PmaxO_Mean, Res.PmaxO_StD, Res.VandO, ...
-    Res.VVCRiT_Mean, Res.VVCRiT_StD, Res.VVCRnT_Mean, Res.VVCRnT_StD, ...
-    Res.VVCRiO_Mean, Res.VVCRiO_StD, Res.VVCRnO_Mean, Res.VVCRnO_StD] ...
-    = deal(0); 
+    [Res] = create_blank_fields ('TakeNorm', Res, false);
+    [Res] = create_blank_fields ('TakeOldM', Res, false);
 end
 
 %% (7) Perform Takeuchi fit w/Vanderpool Landmarks, put up check GUI, and 
@@ -246,18 +243,16 @@ if RunV
 
     BadCycV = RetV.FitV.BadCyc;
     
-    Res.FitV = RetV.FitV;
-    Res.numPeaksV = sum(~BadCycV);
+    Res.Vander_AllDat = RetV.FitV;
+    Res.Vander_nFit = sum(~BadCycV);
 
     GOOD_PmxV = RetV.FitV.PIsoMax(BadCycV~=1);
-    Res = compute_MeanStd (Res, GOOD_PmxV, 'PmaxV');
-    Res = compute_VVCR (Res, Data.PesP(BadCycV~=1), GOOD_PmxV, 'V');
-    Res.VandV = sum(RetV.FitV.VCyc);
+    Res = compute_MeanStd (Res, GOOD_PmxV, 'Vander_Pmax');
+    Res = compute_VVCR (Res, Data.PesP(BadCycV~=1), GOOD_PmxV, 'Vander');
+    Res.Vander_Vcorr = sum(RetV.FitV.VCyc);
 else
     
-    [Res.numPeaksV, Res.PmaxV_Mean, Res.PmaxV_StD, Res.VandV, ...
-    Res.VVCRiV_Mean, Res.VVCRiV_StD, Res.VVCRnV_Mean, Res.VVCRnV_StD] ...
-    = deal(0); 
+    [Res] = create_blank_fields ('Vander', Res, false);
 end
 
 %% (8) Perform Kind fit, put up check GUI, and compute return quantities
@@ -293,25 +288,29 @@ if RunK
     BadCycK = RetK.FitK.BadCyc;
     BadCycN = FitN.BadCyc | RetK.FitK.BadCyc;
 
-    Res.FitK = RetK.FitK;
-    Res.FitN = FitN;
-    Res.numPeaksK = sum(~BadCycK);
-    Res.numPeaksN = sum(~BadCycN);
+    Res.KindNorm_AllDat = RetK.FitK;
+    Res.KindExpr_AllDat = FitN;
+    Res.KindNorm_nFit = sum(~BadCycK);
+    Res.KindExpr_nFit = sum(~BadCycN);
 
     GOOD_PmxK = RetK.FitK.RCoef(BadCycK~=1,1);
     GOOD_PmxN = FitN.RCoef(BadCycN~=1,1);
-    Res = compute_MeanStd (Res, GOOD_PmxK, 'PmaxK');
-    Res = compute_MeanStd (Res, GOOD_PmxN, 'PmaxN');
-    Res = compute_VVCR (Res, Data.PesP(BadCycK~=1), GOOD_PmxK, 'K');
-    Res = compute_VVCR (Res, Data.PesP(BadCycN~=1), GOOD_PmxN, 'N');
+    Res = compute_MeanStd (Res, GOOD_PmxK, 'KindNorm_Pmax');
+    Res = compute_MeanStd (Res, GOOD_PmxN, 'KindExpr_Pmax');
+    Res = compute_VVCR (Res, Data.PesP(BadCycK~=1), GOOD_PmxK, 'KindNorm');
+    Res = compute_VVCR (Res, Data.PesP(BadCycN~=1), GOOD_PmxN, 'KindExpr');
 else
     
-    [Res.numPeaksK, Res.PmaxK_Mean, Res.PmaxK_StD, ...
-    Res.numPeaksN, Res.PmaxN_Mean, Res.PmaxN_StD, ...
-    Res.VVCRiK_Mean, Res.VVCRiK_StD, Res.VVCRnK_Mean, Res.VVCRnK_StD, ...
-    Res.VVCRiN_Mean, Res.VVCRiN_StD, Res.VVCRnN_Mean, Res.VVCRnN_StD] ...
-    = deal(0); 
+    [Res] = create_blank_fields ('KindNorm', Res, false);
+    [Res] = create_blank_fields ('KindExpr', Res, false);
 end
+
+Res = compute_MeanStd (Res, ivVal.dPmax2, 'dPmax');
+Res = compute_MeanStd (Res, ivVal.dPmin2, 'dPmin');
+Res = compute_MeanStd (Res, ivVal.Ps2, 'isoPs');
+Res = compute_MeanStd (Res, ivVal.Pe2, 'isoPe');
+Res = compute_MeanStd (Res, ivVal.Ns2, 'isoNs');
+Res = compute_MeanStd (Res, ivVal.Ne2, 'isoNe');
 
 % END OF VVCR_MULTIH
 end
@@ -369,16 +368,16 @@ function [Out] = compute_VVCR (In, Pes, Pmx, nam)
 Out = In;
 
 % Normal Ees/Ea or (Pmx-Pes)/Pes
-fieldmean = ['VVCRn' nam '_Mean'];
-fieldstd  = ['VVCRn' nam '_StD'];
+fieldmean = [nam '_VVCRn_Mean'];
+fieldstd  = [nam '_VVCRn_StD'];
 
 Out.(fieldmean) = (Pmx./Pes)-1;
 Out.(fieldstd)  = std(Out.(fieldmean));
 Out.(fieldmean) = mean(Out.(fieldmean));
 
 % Inverse Ea/Ees or Pes/(Pmx-Pes)
-fieldmean = ['VVCRi' nam '_Mean'];
-fieldstd  = ['VVCRi' nam '_StD'];
+fieldmean = [nam '_VVCRi_Mean'];
+fieldstd  = [nam '_VVCRi_StD'];
 
 Out.(fieldmean) = Pes./(Pmx-Pes);
 Out.(fieldstd)  = std(Out.(fieldmean));
@@ -386,3 +385,29 @@ Out.(fieldmean) = mean(Out.(fieldmean));
 
 end
 % --- end compute_VVCR ---
+
+% --- Create blank fields in the event an analysis type was skipped.
+function [Res] = create_blank_fields (nam, ResIn, VcorrFlag);
+
+Res = ResIn;
+
+fields = {'_VVCRn', '_VVCRi', '_Pmax'};
+for i = 1 : 1 : 3
+    fieldmean = [nam fields{i} '_Mean'];
+    fieldstd  = [nam fields{i} '_StD'];
+    Res.(fieldmean) = 0;
+    Res.(fieldstd)  = 0;
+end
+
+fields = {'_AllDat', '_nFit'};
+for i = 1 : 1 : 2
+    field = [nam fields{i}];
+    Res.(field) = 0;
+end
+
+if VcorrFlag
+    field = [nam '_Vcorr'];
+    Res.(field) = 0;
+end
+
+end
