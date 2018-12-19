@@ -307,10 +307,10 @@ end
 
 Res = compute_MeanStd (Res, ivVal.dPmax2, 'dPmax');
 Res = compute_MeanStd (Res, ivVal.dPmin2, 'dPmin');
-Res = compute_MeanStd (Res, ivVal.Ps2, 'isoPs');
-Res = compute_MeanStd (Res, ivVal.Pe2, 'isoPe');
-Res = compute_MeanStd (Res, ivVal.Ns2, 'isoNs');
-Res = compute_MeanStd (Res, ivVal.Ne2, 'isoNe');
+Res = compute_MeanStd (Res, ivVal.Ps2, 'iso1Ps');
+Res = compute_MeanStd (Res, ivVal.Pe2, 'iso2Pe');
+Res = compute_MeanStd (Res, ivVal.Ns2, 'iso3Ns');
+Res = compute_MeanStd (Res, ivVal.Ne2, 'iso4Ne');
 
 % END OF VVCR_MULTIH
 end
@@ -353,6 +353,7 @@ end
 function [Out] = compute_MeanStd (In, Var, nam)
 
 Out = In;
+
 fieldmean = [nam '_Mean'];
 fieldstd  = [nam '_StD'];
 
@@ -411,3 +412,4 @@ if VcorrFlag
 end
 
 end
+% --- end create_blank_fields ---
