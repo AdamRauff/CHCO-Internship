@@ -185,18 +185,21 @@ for i = 1:length(top)
         resh = fieldnames(Res);
         resh = sort(resh);
         
-        header = ['Pnam, Pmrn, file, '];
+        header = ['Pnam,Pmrn,file,'];
         for i = 1: 1: length(resh)
             field = resh{i};
             if ~isstruct(Res.(field))
-                field = regexprep(field, '^A_', '');
-                field = regexprep(field, '^B_', '');
+                % At this point we know it's going to be output, and things have
+                % been alphabetized as desired, but we perform transformations
+                % on the field names to make them a little more human readable.
+                field = regexprep(field, '^[A-Z]_', '');
+                field = regexprep(field, '[1-9]', '');
                 field = regexprep(field, '_Vcorr', ' Vcorr');
                 field = regexprep(field, '_nFit', ' nFit');
                 if length(regexp(field, '_')) > 1
                     field = regexprep(field, '_', ' ','once');
                 end
-                header = [header field ', '];
+                header = [header field ','];
             end
         end
         header = [header '\r\n'];
