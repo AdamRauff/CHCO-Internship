@@ -1,4 +1,4 @@
-function [Pres, dPdt, Rvals, hdat] = loadp_10_04_18(npath, file)
+function [Pres, dPdt, Rvals, hdat] = load_pres_patient(npath, file)
 
 debug = 0;
 
