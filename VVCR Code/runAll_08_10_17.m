@@ -114,7 +114,12 @@ for i = 1:length(top)
             % go to next iteration of i
             continue
         end
-        
+
+        % Ignore silently output & info files stored in data directory.
+        if regexp(top_name, 'RV_stdout') || regexp(top_name, 'README')
+            continue
+        end
+
         % print current file being analyzed
         disp(['Current File: ', top_name]);
         
