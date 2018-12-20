@@ -17,3 +17,5 @@ VVCR Code/Sick - wide pressure curves/*
 readPDF/Trial.py
 *.asv
 *.lnk
+*.xlsx
+*.agr

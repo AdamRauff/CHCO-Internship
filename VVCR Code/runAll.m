@@ -251,7 +251,7 @@ for i = 1:length(top)
 
             % Name, MRN, Filename
             NamNoComma = regexprep (Pat.Nam, ',', '');
-            fprintf(fd0, '%s, %s, %s, ', NamNoComma, Pat.MRN, Pat.FileNam);
+            fprintf(fd0, '%s,%s,%s,', NamNoComma, Pat.MRN, Pat.FileNam);
 
             % print remainder based entirely on field names avoiding (for
             % now) returned structures.
@@ -273,25 +273,12 @@ for i = 1:length(top)
             
             % print to command window how many files were analyzed
             disp(['FileCount: ', num2str(fileCount)]);
-%         else
-%             % check to if csvName file exists
-%             filechk = which(csvName);
-%             
-%             % if file does not exist, creat one, and write all the headers to it
-%             if isempty(filechk)
-%                 fd0 = fopen(csvName, 'w');
-%                 fprintf(fd0,'%s did not load\n', top_name);
-%                 fclose(fd0);
-%             else
-%                 % if file exists, append to it
-%                 fd0 = fopen(csvName, 'a');
-%                 fprintf(fd0,'%s did not load\n', top_name);
-%                 fclose(fd0);
-%             end
-            
+
         end   
     end
 end
 
 fclose all;
 diary off;
+
+end
