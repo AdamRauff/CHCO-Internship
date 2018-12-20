@@ -1,5 +1,5 @@
 function [ivIdx, ivVal, badcyc] = isoidx_takeuchi (idxsz, datsz, Dat, Ext, ...
-    ivIdx, ivVal, badcyc);
+    ivIdx, ivVal);
 % Find isovolumic timings for Takeuchi method points.
 
 disp('    data_isoidx_t: finding Takeuchi indices');
