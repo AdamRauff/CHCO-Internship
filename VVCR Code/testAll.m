@@ -4,7 +4,6 @@ function testAll
 % one of the landmarks to determine how Pmax varies with this landmark.
 
 % Prepare the workspace
-clear all;
 close all;
 clc;
 
@@ -18,7 +17,6 @@ isopos = 1;
 %    return;
 %end
 Fold_name = 'C:\Users\hunterk\Desktop\Students\Akshay\20181002_TedfordData\FakeWITT';
-plt_fh = fopen('RV_isopos.agr','w');
 
 % Output Command Window info to diary file
 diary('RV_stdout.txt');
@@ -46,7 +44,13 @@ NewAnalyzedTxt = [];
 % create variable to hold name of csv file
 % In future: should add an input box when script runs so user can interactively
 % assign csv file name every time script runs
-csvName = 'RV_data.csv';
+csvName = ['RV_isopos' num2str(isopos) '.csv'];
+
+agrName = ['RV_isopos' num2str(isopos) '.agr'];
+plt_fh = fopen(agrName, 'w');
+if ~plt_fh
+    error('agr file failed to open, unknown error');
+end
 
 % Here would be a good opportunity to open the csv file if it exists, and check
 % if top_name already exists in the csv file. If it already exists in the csv
@@ -130,6 +134,7 @@ for i = 1:length(top)
         % print current file being analyzed
         disp(['Current File: ', top_name]);
         
+        disp('TIMING2 ---------------------------');
         % add try catch here. In case txt file is not pressure data, or what
         % not. In the catch, record the name of the text file somewhere, so if
         % it is a pressure file that could not be opened, it is remarked Did

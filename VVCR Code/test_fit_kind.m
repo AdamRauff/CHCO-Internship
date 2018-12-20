@@ -63,10 +63,7 @@ for i = 1:nfits
         P0_weight = 1;
         nam = '';
     end
-
-%   disp(['    fit_kind' nam ': Constant Zero = ' num2str(zero, '%8.4f') ...
-%       ' | PosIso Start = ' num2str(oldzero, '%8.4f')]);
-
+    
 %-[Examining effect of weighting
 %   disp(['Cycle #' num2str(i,'%02i') ' Weighting Factor = ' ...
 %       num2str(P0_weight, '%8.3f')]);
@@ -103,6 +100,18 @@ for i = 1:nfits
     lb = [Data.PesP(i)  0.0 -0.005 0.48];
     ub = [         500 40.0  0.020 0.72];
 
+    if ~WgtFlg
+        PsT = Data.Time_D(ivSeg.iv2Time(i).PosIso(1));
+        PeT = Data.Time_D(ivSeg.iv2Time(i).PosIso(end));
+        NsT = Data.Time_D(ivSeg.iv2Time(i).NegIso(1));
+        NeT = Data.Time_D(ivSeg.iv2Time(i).NegIso(end));
+        fprintf('TIMING1: Start Zero/PsT  : %8.4f/%8.4f\n', zero, ...
+            oldzero);
+        fprintf('TIMING2: PsT/PeT/NsT/NeT : %8.4f/%8.4f/%8.4f/%8.4f\n', ...
+            PsT, PeT, NsT, NeT);
+        fprintf('ICS1/LB1 : %8.4f/%8.4f\n', c2(1), lb(1));
+    end
+    
     [c,SSE,~] = lsqnonlin (sin_fun2,c2,lb,ub,opts1);
     
     % r^2 value; if the fit was bad, mark that wave.
