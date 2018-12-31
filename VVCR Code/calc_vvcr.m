@@ -39,6 +39,13 @@ for i = 1:2
     % GUI, then call.
     [Extr] = data_maxmin (Data_O);
 
+    %%%%%%%%%%% TEDFORD DATA SPECIFIC CODE %%%%%%%%%%%
+    if length(Extr.dPmaxVal) == 2 && length(Extr.dPminVal) == 1
+        Extr.dPmaxVal(2) = [];
+        Extr.dPmaxIdx(2) = [];
+    end
+    %%%%%%%%%%% TEDFORD DATA SPECIFIC CODE %%%%%%%%%%%
+
     PeakStr.Data = Data_O;
     PeakStr.Extr = Extr;
 
@@ -96,7 +103,7 @@ for i = 1:2
     % If very few timings were found, filtering may be a problem.
     mingood = min([length(ivIdx.Ps1) length(ivIdx.Ps2)]);
     Found  = double(mingood)/double(Res.A_TotNumWaves);
-    if i == 1 && Found < 0.5
+    if i == 1 && Found < 0.5 && GUI
 	    quest = ['Very few cycles gated compared to total number of ' ...
             'cycles. Keep current (filtered) data, load unfiltered data, ' ...
             'or discard patient?'];
