@@ -217,6 +217,26 @@ FHEAD1 = 'C_KindNorm';
 FHEAD2 = 'D_KindExpr';
 if RunK
 
+    if isopos == 1
+        fprintf ('ivSeg.pos : ');
+        for i = 1: runNum
+            fprintf ('%10.6f ', 0);
+        end
+        for i = 1: 7-runNum
+            fprintf ('%10.6f ', ivSeg.iv2Pres(1).PosIso(i));
+        end
+        fprintf ('\n');
+    elseif isopos == 3
+        fprintf ('ivSeg.neg : ');
+        for i = 1: runNum
+            fprintf ('%10.6f ', 0);
+        end
+        for i = 1: 7-runNum
+            fprintf ('%10.6f ', ivSeg.iv2Pres(1).NegIso(i));
+        end
+        fprintf ('\n');
+    end
+
     % FitN method can also be eliminated (or converted into experimental method
     % for computing 
     [FitK, PlotK] = test_fit_kind (ivSeg, ivIdx, Data, 0);
