@@ -4,7 +4,7 @@ function [ Res, Pat ] = calc_vvcr(PathName, FileName)
 % will only pop up GUI_GateCheck when the number of maxes & mins is not equal,
 % and will not pop up the GUI_Fit* figures. Things go faster, but it's dangerous
 % (no checks on the output).
-GUI = false;
+GUI = true;
 
 %% (1) Read in data from the given FileName
 % determine if FileName is from calf or humans to apply apprpriate loadp func if
@@ -222,8 +222,8 @@ if RunT
     Res = compute_VVCR (Res, Data.PesP(BadCycT~=1), GOOD_PmxT, FHEAD1);
     Res = compute_VVCR (Res, Data.PesD(BadCycT~=1), GOOD_PmxO, FHEAD2);
 else
-    [Res] = create_blank_fields (FHEAD1, Res, false);
-    [Res] = create_blank_fields (FHEAD2, Res, false);
+    [Res] = create_blank_fields (FHEAD1, Res, true);
+    [Res] = create_blank_fields (FHEAD2, Res, true);
 end
 
 %% (7) Perform Takeuchi fit w/Vanderpool Landmarks, put up check GUI, and 
@@ -264,7 +264,7 @@ if RunV
     Res = compute_MeanStd (Res, GOOD_PmxV, [FHEAD1 '_Pmax']);
     Res = compute_VVCR (Res, Data.PesP(BadCycV~=1), GOOD_PmxV, FHEAD1);
 else
-    [Res] = create_blank_fields (FHEAD1, Res, false);
+    [Res] = create_blank_fields (FHEAD1, Res, true);
 end
 
 %% (8) Perform Kind fit, put up check GUI, and compute return quantities
@@ -319,12 +319,37 @@ else
     [Res] = create_blank_fields (FHEAD2, Res, false);
 end
 
-Res = compute_MeanStd (Res, ivVal.dPmax2, 'dPmax');
-Res = compute_MeanStd (Res, ivVal.dPmin2, 'dPmin');
-Res = compute_MeanStd (Res, ivVal.Ps2, 'iso1Ps');
-Res = compute_MeanStd (Res, ivVal.Pe2, 'iso2Pe');
-Res = compute_MeanStd (Res, ivVal.Ns2, 'iso3Ns');
-Res = compute_MeanStd (Res, ivVal.Ne2, 'iso4Ne');
+% Landmark Values
+Res = compute_MeanStd (Res, ivVal.dPmax2, 'G_dPmax_P');
+Res = compute_MeanStd (Res, ivVal.dPmin2, 'G_dPmin_P');
+
+Res = compute_MeanStd (Res, ivVal.Ps1, 'isoP_T_Ps');
+Res = compute_MeanStd (Res, ivVal.Ne1, 'isoP_T_Ne');
+
+Res = compute_MeanStd (Res, ivVal.Ps2, 'isoP_K_Ps');
+Res = compute_MeanStd (Res, ivVal.Pe2, 'isoP_K_Pe');
+Res = compute_MeanStd (Res, ivVal.Ns2, 'isoP_K_Ns');
+Res = compute_MeanStd (Res, ivVal.Ne2, 'isoP_K_Ne');
+
+Res = compute_MeanStd (Res, ivVal.Ps3, 'isoP_V_Ps');
+Res = compute_MeanStd (Res, ivVal.Ne3, 'isoP_V_Ne');
+
+% Landmark Timing
+norm = Data.time_step./Data.time_end;
+
+Res = compute_MeanStd (Res, norm*ivIdx.dPmax2, 'G_dPmax_T');
+Res = compute_MeanStd (Res, norm*ivIdx.dPmin2, 'G_dPmin_T');
+
+Res = compute_MeanStd (Res, norm*ivIdx.Ps1, 'isoT_T_Ps');
+Res = compute_MeanStd (Res, norm*ivIdx.Ne1, 'isoT_T_Ne');
+
+Res = compute_MeanStd (Res, norm*ivIdx.Ps2, 'isoT_K_Ps');
+Res = compute_MeanStd (Res, norm*ivIdx.Pe2, 'isoT_K_Pe');
+Res = compute_MeanStd (Res, norm*ivIdx.Ns2, 'isoT_K_Ns');
+Res = compute_MeanStd (Res, norm*ivIdx.Ne2, 'isoT_K_Ne');
+
+Res = compute_MeanStd (Res, norm*ivIdx.Ps3, 'isoT_V_Ps');
+Res = compute_MeanStd (Res, norm*ivIdx.Ne3, 'isoT_V_Ne');
 
 % END OF VVCR_MULTIH
 end
@@ -409,10 +434,8 @@ for i = 1 : 1 : 3
     Res.([nam fields{i} '_StD'])  = 0;
 end
 
-fields = {'_AllDat', '_nFit'};
-for i = 1 : 1 : 2
-    Res.([nam fields{i}]) = 0;
-end
+Res.([nam '_nFit']) = 0;
+Res.([nam '_AllDat']).Err = 0;
 
 if VcorrFlag
     Res.([nam '_Vcorr']) = 0;
