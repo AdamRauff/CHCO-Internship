@@ -250,7 +250,7 @@ p1m = @(P,t) tp_P2T*(P(1)-P(2))*( ...
 %
 % Tspan is just some range (shifted or not it's irrelevant) in which we believe
 % we can find the isovolumic (dP/dt)min.
-Tspan = t1(end) : 0.0001: tM(3);
+Tspan = t1(end) : 0.0001: tM(3)*0.7;
 dPt0 = p1m (P, Tspan);
 [~,idx] = min(dPt0);
 

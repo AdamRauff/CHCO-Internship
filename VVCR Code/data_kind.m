@@ -52,7 +52,7 @@ p1m = @(P,t) tp_P2T*(P(1)-P(2))*( ...
 
 % Code to compute (dP/dt)min offset: Given the fit coefficients in P, find
 % the fitted time of (dP/dt)min, then compute difference. Voila!
-Tspan = tdat(1) : 0.0001 : tM(3);
+Tspan = tdat(1) : 0.0001 : tM(3)*0.7;
 dPt0 = p1m (P, Tspan);
 [~,idx] = min(dPt0);
 
