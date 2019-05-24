@@ -7,8 +7,9 @@ function testAll
 close all;
 clc;
 
+for isopos = 1: 1: 4
 % This is the parameter to vary: 1-Ps, 2-Pe, 3-Ns, 4-Ne.
-isopos = 1;
+%isopos = 1;
 
 % bring up UI that allows user to select a folder (directory)
 %Fold_name = uigetdir('','Select folder containing txt files with pressure data');
@@ -205,11 +206,13 @@ for i = 1:length(top)
         % total results of each analysis.
         isoposFields = {'iso1Ps_Mean', 'iso2Pe_Mean', 'iso3Ns_Mean', ...
             'iso4Ne_Mean'};
+        isoposDFields = {'iso1dPs_Mean', 'iso2dPe_Mean', 'iso3dNs_Mean', ...
+            'iso4dNe_Mean'};
         deltP = 'DELTA_Pmax_Mean';
         deltV = ['DELTA' isoposFields{isopos}];
         
-        resh = {'C_KindNorm_Pmax_Mean', isoposFields{isopos}, deltP, deltV, ...
-            'Deriv'};
+        resh = {'C_KindNorm_Pmax_Mean', isoposFields{isopos}, ...
+            isoposDFields{isopos}, deltP, deltV, 'Deriv'};
 
         Res1.(deltP) = 0;
         Res1.(deltV) = 0;
@@ -321,6 +324,8 @@ for i = 1:length(top)
             
         end   
     end
+end
+
 end
 
 fclose all;

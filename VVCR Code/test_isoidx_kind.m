@@ -1,6 +1,7 @@
 function [ivIdx, ivVal, badcyc] = test_isoidx_kind (idxsz, datsz, Dat, Ext, ...
-    ivIdx, ivVal, badcyc, adjust, isopos)
-% Find isovolumic timings for Kind method points.
+    ivIdx, ivVal, badcyc)
+% Find isovolumic timings for Kind method points. When found, add/substract
+% values to allow exploration of ranges of landmarks.
 %
 % Kind method states that th pos iso starts at R wave, which isn't available, so
 % we approximate by using the same time as Takeuchi. However, when waves are
@@ -56,10 +57,7 @@ for i = 1:idxsz
             break;
         end
     end
-
-    if isopos == 2
-        Pend = Pend + adjust;
-    end
+    Pend = Pend + 2;
 
     ivVal.Pe2(i) = Dat.Pres(Pend);
     ivIdx.Pe2(i) = Pend;
@@ -84,10 +82,7 @@ for i = 1:idxsz
         end
 
     end
-
-    if isopos == 3
-        Pstr = Pstr + adjust;
-    end
+    Pstr = Pstr - 2;
 
     ivVal.Ns2(i) = Dat.Pres(Pstr);
     ivIdx.Ns2(i) = Pstr;
@@ -119,10 +114,7 @@ for i = 1:idxsz
         end
 
     end
-
-    if isopos == 4
-        Pend = Pend + adjust;
-    end
+    Pend = Pend + 2;
 
     ivVal.Ne2(i) = Dat.Pres(Pend);
     ivIdx.Ne2(i) = Pend;

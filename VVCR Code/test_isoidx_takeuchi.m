@@ -1,5 +1,5 @@
-function [ivIdx, ivVal, badcyc] = test_isoidx_takeuchi (idxsz, datsz, Dat, Ext, ...
-    ivIdx, ivVal, adjust, isopos)
+function [ivIdx, ivVal, badcyc] = test_isoidx_takeuchi (idxsz, datsz, Dat, ...
+    Ext, ivIdx, ivVal)
 % Find isovolumic timings for Takeuchi method points.
 
 disp('    data_isoidx_t: finding Takeuchi indices');
@@ -80,13 +80,9 @@ for i = 1:idxsz
             EDi = EDi - 1;
         end
     end
-
+    EDi = EDi - 2;
     % Consistent Start time, despite shifting start of pos iso phase.
-    ivIdx.Tst(i) = EDi - 2;
-
-    if isopos == 1
-        EDi = EDi + adjust;
-    end
+    ivIdx.Tst(i) = EDi;
 
     % assign iv*.Ps1 values
     ivVal.Ps1(i) = Dat.Pres(EDi);

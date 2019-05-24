@@ -89,7 +89,7 @@ disp(['    calc_vvcr: Average Period = ' num2str(Data_O.time_per, ...
     ' ms']);
 
 %% (4) Find isovolumic timings for Takaguichi & Kind method.
-[ivIdx, ivVal] = test_data_isoidx (Data_O, Extr, runNum, isopos);
+[ivIdx, ivVal] = test_data_isoidx (Data_O, Extr);
 
 % If very few timings were found, filtering may be a problem.
 % %%% Removed for Tedford Data %%%
@@ -119,6 +119,8 @@ RunV = 0;
 [Data] = test_data_double (Data_O, ivIdx);
 
 [ivSeg, ivIdx] = data_isoseg (false, Data, ivIdx);
+
+[ivSeg, ivVal] = test_uniq_isoseg (ivSeg, ivVal, ivIdx, Data, isopos, runNum);
 
 % Get Pes processing done prior to fits: this is for all measured Pes, not just
 % the per-cycle (accepted) fits... that might be bad? Not sure. Below, when VVCR
@@ -216,27 +218,6 @@ end
 FHEAD1 = 'C_KindNorm';
 FHEAD2 = 'D_KindExpr';
 if RunK
-
-    if isopos == 1
-        fprintf ('ivSeg.pos : ');
-        for i = 1: runNum
-            fprintf ('%10.6f ', 0);
-        end
-        for i = 1: 7-runNum
-            fprintf ('%10.6f ', ivSeg.iv2Pres(1).PosIso(i));
-        end
-        fprintf ('\n');
-    elseif isopos == 3
-        fprintf ('ivSeg.neg : ');
-        for i = 1: runNum
-            fprintf ('%10.6f ', 0);
-        end
-        for i = 1: 7-runNum
-            fprintf ('%10.6f ', ivSeg.iv2Pres(1).NegIso(i));
-        end
-        fprintf ('\n');
-    end
-
     % FitN method can also be eliminated (or converted into experimental method
     % for computing 
     [FitK, PlotK] = test_fit_kind (ivSeg, ivIdx, Data, 0);
@@ -279,6 +260,10 @@ Res = compute_MeanStd (Res, ivVal.Ps2, 'iso1Ps');
 Res = compute_MeanStd (Res, ivVal.Pe2, 'iso2Pe');
 Res = compute_MeanStd (Res, ivVal.Ns2, 'iso3Ns');
 Res = compute_MeanStd (Res, ivVal.Ne2, 'iso4Ne');
+Res = compute_MeanStd (Res, ivVal.dPs2, 'iso1dPs');
+Res = compute_MeanStd (Res, ivVal.dPe2, 'iso2dPe');
+Res = compute_MeanStd (Res, ivVal.dNs2, 'iso3dNs');
+Res = compute_MeanStd (Res, ivVal.dNe2, 'iso4dNe');
 
 % END OF VVCR_MULTIH
 end

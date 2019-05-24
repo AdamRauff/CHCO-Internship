@@ -1,4 +1,4 @@
-function [ivIdx, ivVal] = test_data_isoidx (Dat, Ext, runNum, isopos)
+function [ivIdx, ivVal] = test_data_isoidx (Dat, Ext)
 % This code finds indicies and values for the isovolumic sections of the RV
 % pressure waveform. There are several approaches for this: Takeuchi, Kind,
 % and now, Vanderpool. These are defined as (note d2P/dt2 is abbreivated PA
@@ -33,8 +33,6 @@ function [ivIdx, ivVal] = test_data_isoidx (Dat, Ext, runNum, isopos)
 %       D - "Dog" experimental method
 %       P - Pressure accel method.
 
-adjust = runNum - 2;
-
 datsz = length(Dat.Pres);
 idxsz = length(Ext.dPmaxIdx);
 
@@ -51,12 +49,12 @@ idxsz = length(Ext.dPmaxIdx);
 
 [ivIdx, ivVal] = idx_pes (idxsz, datsz, Dat, Ext);
 
-[ivIdx, ivVal, badcyc] = test_isoidx_takeuchi (idxsz, datsz, Dat, Ext, ivIdx, ...
-    ivVal, adjust, isopos);
-[ivIdx, ivVal, badcyc] = test_isoidx_vanderpool (idxsz, datsz, Dat, Ext, ivIdx, ...
-    ivVal, badcyc, adjust, isopos);
+[ivIdx, ivVal, badcyc] = test_isoidx_takeuchi (idxsz, datsz, Dat, Ext, ...
+    ivIdx, ivVal);
+[ivIdx, ivVal, badcyc] = test_isoidx_vanderpool (idxsz, datsz, Dat, Ext, ...
+    ivIdx, ivVal, badcyc);
 [ivIdx, ivVal, badcyc] = test_isoidx_kind (idxsz, datsz, Dat, Ext, ivIdx, ...
-    ivVal, badcyc, adjust, isopos);
+    ivVal, badcyc);
 
 %% Remove bad cycles from ivVal, ivIdx vectors.
 % First sort & unique the indices coming from the iso_idx routines.

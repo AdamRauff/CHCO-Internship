@@ -1,5 +1,5 @@
 function [ivIdx, ivVal, badcyc] = test_isoidx_vanderpool (idxsz, datsz, Dat, ...
-    Ext, ivIdx, ivVal, badcyc, adjust, isopos)
+    Ext, ivIdx, ivVal, badcyc)
 % Find isovolumic timings and end systole for Takeuchi method using Vanderpool's
 % technique.
 %
@@ -59,10 +59,7 @@ for i = 1:idxsz
         end
     end
     EDi = EDi + 1;
-    
-    if isopos == 1
-        EDi = EDi + adjust;
-    end
+    EDi = EDi - 2; % This is the landmark exploration adjustment.
 
     % assign iv*.Ps1 values
     ivVal.Ps3(i) = Dat.Pres(EDi);
@@ -92,10 +89,7 @@ for i = 1:idxsz
 
     end
     Eir = Eir - 1;
-    
-    if isopos == 4
-        Eir = Eir + adjust;
-    end
+    Eir = Eir + 2; % This is the landmark exploration adjustment.
     
     % assign iv*.Ne values
     ivVal.Ne3(i) = Dat.Pres(Eir);
