@@ -386,7 +386,7 @@ set(handles.pressure_axes,'fontsize',12);
 
 title('Kind Sinusoidal Fitting','FontSize',16);
 xlabel('Time [s]','FontSize',14);
-ylabel('Data.Pres_Dsue [mmHg]','FontSize',14);
+ylabel('Pressure [mmHg]','FontSize',14);
 
 hold on;
 
