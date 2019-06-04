@@ -9,13 +9,6 @@ disp('    data_idx_pes: finding end systolic pressure indices');
 % badcyc.PD = [];
 % badcyc.PP = [];
 
-%% COMPUTE [Pes] TIMINGS - DOG EXPERIMENT METHOD
-% Note that this won't reproduce the data-doubled values; that code will just
-% stay in data_double (until it just gets deleted)...
-stepback = round(0.030/Dat.time_step);
-ivIdx.PesD = Ext.dPminIdx - stepback;
-ivVal.PesD = Dat.Pres(ivIdx.PesD);
-
 %% COMPUTE [Pes] TIMINGS - PRESSURE ACCEL METHOD
 ivIdx.PesP = zeros(idxsz,1);
 ivVal.PesP = zeros(idxsz,1);

@@ -83,7 +83,6 @@ FitT = handles.InVar.FitT;
 
 % store first fit output into output structure.
 handles.OutVar.FitT = handles.InVar.FitT;
-handles.OutVar.FitO = handles.InVar.FitO;
 handles.OutVar.Exit = 'Good';
 
 % plot pressure, sinusoid fits

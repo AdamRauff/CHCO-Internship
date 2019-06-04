@@ -154,7 +154,6 @@ if ~RunT && ~RunK && ~RunV
 end
 
 %% (5) Fourier Series interpolation and finding isovolumic segments for fitting
-% Note that Pes recalc (for PesD) and segmentation occurs in data_double.
 [Data] = data_double (Data_O, ivIdx);
 
 [ivSeg, ivIdx] = data_isoseg (false, Data, ivIdx);
@@ -162,10 +161,9 @@ end
 % Get Pes processing done prior to fits: this is for all measured Pes, not just
 % the per-cycle (accepted) fits... that might be bad? Not sure. Below, when VVCR
 % is computed, only Pes for accepted cycles gets passed.
-Res = compute_MeanStd (Res, Data.PesD, 'B_PesD'); 
 Res = compute_MeanStd (Res, Data.PesP, 'B_PesP');
 
-% In all the fits below, FHEADx values prior to entry to each RunX section
+% In all the fits below, FHEAD values prior to entry to each RunX section
 % define the headers for returned fields. The X_ in front of each name allows
 % them to be sorted as desired when returned to runAll. Note that other fields
 % already set (like the B_PesP above) also have X_ in front to allow sorting.
@@ -173,13 +171,11 @@ Res = compute_MeanStd (Res, Data.PesP, 'B_PesP');
 %% (6) Perform Takeuchi fit(s), put up check GUI, and compute return quantities
 % FitT is "new" (time-normalized) w/new Pes, FitO is same fit (Pmax) with old
 % dog Pes.
-FHEAD1 = 'E_TakeNorm';
-FHEAD2 = 'G_TakeOldM';
+FHEAD = 'E_TakeNorm';
 if RunT
     % frequency is the conversion to angular frequency 2*pi/T multiplied by the
     % number of waves found over the time period ICs structure for first pass -
     % enables individual computation of ICs
-    ICS.Freq_o = double(((2*pi)*Res.A_TotNumWaves)/(Data.time_end)); % OLD METHOD
     ICS.Freq = 2*pi/Data.time_per;
     ICS.Pres = Data.Pres;
     ICS.dPmaxIdx = ivIdx.dPmax1;
@@ -189,10 +185,9 @@ if RunT
     % When time allows, remove the call below [FitO] and its processing in the
     % GUI.
     [FitT, ivSeg, PlotT] = fit_takeuchi (ivSeg, Data, ICS, 1);
-    [FitO] = fit_takeuchi (ivSeg, Data, ICS, 0);
 
     % Call the Takeuchi Fit Check GUI
-    TStr.FitT = FitT; TStr.FitO = FitO;
+    TStr.FitT = FitT;
     if GUI
         TStr.Plot = PlotT;
         RetT = GUI_FitTakeuchi (TStr, Data, ivIdx, ivVal, ivSeg);
@@ -203,33 +198,24 @@ if RunT
     else
         RetT = TStr;
     end
-        
+   
     BadCycT = RetT.FitT.BadCyc;
-    % BadCycO = RetT.FitO.BadCyc | RetT.FitT.BadCyc;
-    
-    % Obviously when FitO actually disappears, this below can be simplified.
-    Res.([FHEAD1 '_AllDat']) = RetT.FitT;
-    Res.([FHEAD2 '_AllDat']) = RetT.FitT;
-    Res.([FHEAD1 '_nFit']) = sum(~BadCycT);
-    Res.([FHEAD2 '_nFit']) = sum(~BadCycT);
-    Res.([FHEAD1 '_Vcorr']) = sum(RetT.FitT.VCyc);
-    Res.([FHEAD2 '_Vcorr']) = sum(RetT.FitO.VCyc);
+
+    Res.([FHEAD '_AllDat']) = RetT.FitT;
+    Res.([FHEAD '_nFit']) = sum(~BadCycT);
+    Res.([FHEAD '_Vcorr']) = sum(RetT.FitT.VCyc);
 
     GOOD_PmxT = RetT.FitT.PIsoMax(BadCycT~=1);
-    GOOD_PmxO = RetT.FitO.PIsoMax(BadCycT~=1);
-    Res = compute_MeanStd (Res, GOOD_PmxT, [FHEAD1 '_Pmax']);
-    Res = compute_MeanStd (Res, GOOD_PmxO, [FHEAD2 '_Pmax']);
-    Res = compute_VVCR (Res, Data.PesP(BadCycT~=1), GOOD_PmxT, FHEAD1);
-    Res = compute_VVCR (Res, Data.PesD(BadCycT~=1), GOOD_PmxO, FHEAD2);
+    Res = compute_MeanStd (Res, GOOD_PmxT, [FHEAD '_Pmax']);
+    Res = compute_VVCR (Res, Data.PesP(BadCycT~=1), GOOD_PmxT, FHEAD);
 else
-    [Res] = create_blank_fields (FHEAD1, Res, true);
-    [Res] = create_blank_fields (FHEAD2, Res, true);
+    [Res] = create_blank_fields (FHEAD, Res, true);
 end
 
 %% (7) Perform Takeuchi fit w/Vanderpool Landmarks, put up check GUI, and 
 % compute return quantities. FitV uses "new" ICs (w/fitting limits and new as
 % with above. No "old" (unconstrained) fit here.
-FHEAD1 = 'F_Vander';
+FHEAD = 'F_Vander';
 if RunV
     % frequency is the conversion to angular frequency 2*pi/T multiplied by the
     % number of waves found over the time period ICs structure for first pass -
@@ -256,37 +242,27 @@ if RunV
 
     BadCycV = RetV.FitV.BadCyc;
 
-    Res.([FHEAD1 '_AllDat']) = RetV.FitV;
-    Res.([FHEAD1 '_nFit']) = sum(~BadCycV);
-    Res.([FHEAD1 '_Vcorr']) = sum(RetV.FitV.VCyc);
+    Res.([FHEAD '_AllDat']) = RetV.FitV;
+    Res.([FHEAD '_nFit']) = sum(~BadCycV);
+    Res.([FHEAD '_Vcorr']) = sum(RetV.FitV.VCyc);
     
     GOOD_PmxV = RetV.FitV.PIsoMax(BadCycV~=1);
-    Res = compute_MeanStd (Res, GOOD_PmxV, [FHEAD1 '_Pmax']);
-    Res = compute_VVCR (Res, Data.PesP(BadCycV~=1), GOOD_PmxV, FHEAD1);
+    Res = compute_MeanStd (Res, GOOD_PmxV, [FHEAD '_Pmax']);
+    Res = compute_VVCR (Res, Data.PesP(BadCycV~=1), GOOD_PmxV, FHEAD);
 else
-    [Res] = create_blank_fields (FHEAD1, Res, true);
+    [Res] = create_blank_fields (FHEAD, Res, true);
 end
 
 %% (8) Perform Kind fit, put up check GUI, and compute return quantities
 % FitK is unweighted residuals with time normalization. FitN has contraction
 % error weighted to be (roughly) the same as relaxtion error.
-FHEAD1 = 'C_KindNorm';
-FHEAD2 = 'D_KindExpr';
+FHEAD = 'C_KindNorm';
 if RunK
 
     % FitN method can also be eliminated (or converted into experimental method
     % for computing 
     [FitK, PlotK] = fit_kind (ivSeg, ivIdx, Data, 0);
-    [FitN] = fit_kind (ivSeg, ivIdx, Data, 1);
 
-    % Call the Kind Fit Check GUI 
-    % Not sure why MeanTP was being sent to fit check. Isn't used once it
-    % arrives. Comment out for now, remove later if it's never used...   
-    %if RunT
-    %    FitK.MeanTP = mean(RetT.FitT.PIsoMax);
-    %else
-    %    FitK.MeanTP = mean(RetT.FitT.PIsoMax);
-    %end
     KStr.FitK = FitK;
     if GUI
         KStr.Plot = PlotK;
@@ -300,23 +276,15 @@ if RunK
     end
 
     BadCycK = RetK.FitK.BadCyc;
-    BadCycN = FitN.BadCyc | RetK.FitK.BadCyc;
 
-    Res.([FHEAD1 '_AllDat']) = RetK.FitK;
-    Res.([FHEAD2 '_AllDat']) = FitN;
-    Res.([FHEAD1 '_nFit']) = sum(~BadCycK);
-    Res.([FHEAD2 '_nFit']) = sum(~BadCycN);
+    Res.([FHEAD '_AllDat']) = RetK.FitK;
+    Res.([FHEAD '_nFit']) = sum(~BadCycK);
 
     GOOD_PmxK = RetK.FitK.RCoef(BadCycK~=1,1);
-    GOOD_PmxN = FitN.RCoef(BadCycN~=1,1);
-    Res = compute_MeanStd (Res, GOOD_PmxK, [FHEAD1 '_Pmax']);
-    Res = compute_MeanStd (Res, GOOD_PmxN, [FHEAD2 '_Pmax']);
-    Res = compute_VVCR (Res, Data.PesP(BadCycK~=1), GOOD_PmxK, FHEAD1);
-    Res = compute_VVCR (Res, Data.PesP(BadCycN~=1), GOOD_PmxN, FHEAD2);
-
+    Res = compute_MeanStd (Res, GOOD_PmxK, [FHEAD '_Pmax']);
+    Res = compute_VVCR (Res, Data.PesP(BadCycK~=1), GOOD_PmxK, FHEAD);
 else
-    [Res] = create_blank_fields (FHEAD1, Res, false);
-    [Res] = create_blank_fields (FHEAD2, Res, false);
+    [Res] = create_blank_fields (FHEAD, Res, false);
 end
 
 % Landmark Values

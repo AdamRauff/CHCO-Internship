@@ -21,19 +21,11 @@ Ret.dP2t_D = interpft(Data_O.dP2t, mysz);
 Ret.Time_D = mystp:mystp:Data_O.Time(end);
 
 %% Pes approximations.
-% Dog (Original): 30ms prior to (dP/dt)min; get time and convert to an integer.
-% Note that these are VALUES, time and pressure. NOT INDICES. Also, this is a
-% complete recalculation of what's done in idx_pes(). Not sure why I did both,
-% come to think of it...!
-dtmin_30 = Data_O.Time(ivIdx.dPmin1)-0.03;
-
-Ret.PesDTimes = Ret.Time_D(uint16(dtmin_30/mystp));
-Ret.PesD = Ret.Pres_D(uint16(dtmin_30/mystp));
-
 % Pressure acceleration: Pes is at the maximum of d2P/dt2 just before
 % (dP/dt)min. The finding technique code below is from data_isoseg (which
 % actually is called for the rest of the times just after this routine).
-mysz = length(Ret.PesD);
+% Note that these are VALUES, time and pressure. NOT INDICES. (RIGHT?)
+mysz = length(ivIdx.dPmin1);
 Ret.PesPTimes = zeros(mysz,1);
 Ret.PesP = zeros(mysz,1);
 

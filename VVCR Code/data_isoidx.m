@@ -43,9 +43,7 @@ idxsz = length(Ext.dPmaxIdx);
 
 %% Call functions to get indices and values.
 % Index and Iso-Index routines. idx_pes() finds Pes independent from the three
-% landmark-finding codes. Pes is distinct from each method. For now idx_pes()
-% computes PesD (Dog Pes, 30ms before Pmin) for historical reasons, but
-% eventually it should be ditched.
+% landmark-finding codes. Pes is distinct from each method.
 
 [ivIdx, ivVal] = idx_pes (idxsz, datsz, Dat, Ext);
 
