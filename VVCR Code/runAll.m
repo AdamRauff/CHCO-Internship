@@ -156,25 +156,29 @@ for i = 1:length(top)
                 filechk = which(csvName);
 
                 % if file does not exist, create one & write header line.
-                if isempty(filechk)
+                if isempty(filechk) && exist('header')
                     fd0 = fopen(csvName, 'w');
                     fprintf(fd0, header);
-                else
+                elseif ~isempty(filechk)
                     % if Pat.FileNam exists, append to it
                     fd0 = fopen(csvName, 'a');
 
                     if i == 1 || fileCount == 0 
                         fprintf(fd0, ' ,\n');
                     end
+                else
+                    fd0 = 0;
                 end
 
-                myStr = ['This, Pat.FileNam, ',top(i).name, ...
-                    ', was, skipped, becuase, user, determined, ' ...
-                    'something, was, wrong'];
-                fprintf(fd0,[myStr, '\n']);
+                if fd0 > 0
+                    myStr = ['This, Pat.FileNam, ',top(i).name, ...
+                        ', was, skipped, becuase, user, determined, ' ...
+                        'something, was, wrong'];
+                    fprintf(fd0,[myStr, '\n']);
 
-                % close file
-                fclose(fd0);
+                    % close file
+                    fclose(fd0);
+                end
 
                 % remark iteration of i that was skipped
                 FileSkpTrck = i;

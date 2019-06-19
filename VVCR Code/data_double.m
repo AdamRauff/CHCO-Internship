@@ -21,11 +21,11 @@ Ret.dP2t_D = interpft(Data_O.dP2t, mysz);
 Ret.Time_D = mystp:mystp:Data_O.Time(end);
 
 %% Pes approximations.
-% Pressure acceleration: Pes is at the maximum of d2P/dt2 just before
+% Pressure acceleration: Pes is at the maximum of d2P/dt2 ajust before
 % (dP/dt)min. The finding technique code below is from data_isoseg (which
-% actually is called for the rest of the times just after this routine).
-% Note that these are VALUES, time and pressure. NOT INDICES. (RIGHT?)
-mysz = length(ivIdx.dPmin1);
+% actually is called for the rest of the times just after this routine). Note
+% that these are VALUES, time and pressure. NOT INDICES. (RIGHT?)
+mysz = length(ivIdx.PesP);
 Ret.PesPTimes = zeros(mysz,1);
 Ret.PesP = zeros(mysz,1);
 

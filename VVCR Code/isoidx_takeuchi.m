@@ -71,7 +71,7 @@ for i = 1:idxsz
                 abs(EDi-ivIdx.dPmax1(i)) <= 3
 
                 disp(['        curve # ' num2str(i, '%02i') ...
-                    ', too few points in isovolumic contration, ' ...
+                    ', too few points in isovolumic contraction, ' ...
 		            'skipping.']);
 
                 badcyc.T = [badcyc.T, i]; % add to list of bad curves
@@ -157,12 +157,21 @@ for i = 1:idxsz
     % if ivIdx.Ne1 < ivIdx.dPmin, or ivIdx.Ne1 is only about 4 points ahead of
     % the min, then we got a problem: there are basically no isovolumic points
     % on the negative side of the curve. We must reject these examples...
+    %
+    % Wed Jun 19 13:57:59 MDT 2019 KSH - Relax this requirement to 3 points, and
+    % separate out errors: one message for end diastole leading, another if
+    % there are too few points. Otherwise the problem is unclear...
     if ivIdx.Ne1(i) <= ivIdx.dPmin1(i) || ...
         (ivIdx.Ne1(i) > ivIdx.dPmin1(i) && ...
-        abs(ivIdx.Ne1(i)-ivIdx.dPmin1(i)) <= 3)
+        abs(ivIdx.Ne1(i)-ivIdx.dPmin1(i)) <= 2)
 
-        disp(['        curve # ' num2str(i, '%02i') ...
-            ', end diastole leads (dP/dt)min, skipping.']);
+        if ivIdx.Ne1(i) <= ivIdx.dPmin1(i)
+            disp(['        curve # ' num2str(i, '%02i') ...
+                ', end diastole leads (dP/dt)min, skipping.']);
+        else
+            disp(['        curve # ' num2str(i, '%02i') ...
+                ', too few points in isovolumic relaxation, skipping.']);
+        end
 
         % get rid of curve if it is not already marked
         if isempty(find(badcyc.T==i,1))

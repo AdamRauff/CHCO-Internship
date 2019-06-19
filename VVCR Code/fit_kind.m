@@ -80,7 +80,8 @@ for i = 1:nfits
     % P3 use 0.0 (start of time-normalized iso contraction)
     % P4 use 58% (that's their IC!)
 
-    c2 = [2.5*Data.PesP(i), 10, 0.00, 0.58];
+    j = ivIdx.goodcyc2(i);
+    c2 = [2.5*Data.PesP(j), 10, 0.00, 0.58];
     Ret1.CycICs(i,:) = c2; 
 
     % First Set of Limits - very weak bounds on t_Pmax. OLD DO NOT USE
