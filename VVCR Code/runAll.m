@@ -226,9 +226,9 @@ for i = 1:length(top)
         % record the name of the file. this is used to make sure 2 of
         % the same files aren't analyzed
         if isempty(NewAnalyzedTxt)
-            NewAnalyzedTxt = top_name;
+            NewAnalyzedTxt = string(top_name);
         else
-            NewAnalyzedTxt = [NewAnalyzedTxt; top_name];
+            NewAnalyzedTxt = [NewAnalyzedTxt; string(top_name)];
         end
 
         if TXT_FLAG == true
