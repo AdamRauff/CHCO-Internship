@@ -118,8 +118,8 @@ for i = 1:nfits
         end
         Ret1.CycICs(i,:)= c2; % Saved cycle specific ICs
 
-        lb = [  0.0   0.0  1.5*ICS.Freq -2*pi/3];
-        ub = [500.0 500.0  2.5*ICS.Freq   -pi/4];
+        lb = [  0.0   0.0  1*ICS.Freq -2*pi/3];
+        ub = [500.0 500.0  3*ICS.Freq   -pi/9];
     end
 
     if Method > 0
