@@ -2,7 +2,7 @@ function [ivIdx, ivVal, badcyc] = isoidx_takeuchi (idxsz, datsz, Dat, Ext, ...
     ivIdx, ivVal);
 % Find isovolumic timings for Takeuchi method points.
 
-disp('    data_isoidx_t: finding Takeuchi indices');
+disp('    isoidx_takeuchi: finding Takeuchi indices');
 
 ivIdx.Ps1 = zeros(idxsz,1);
 ivVal.Ps1 = zeros(idxsz,1);
@@ -41,7 +41,10 @@ for i = 1:idxsz
             break;
         end
     end
-
+    if isoidx_check_bad (i, badcyc.T)
+        continue;
+    end
+    
     % sometimes EDi is 1 or 2 time points away from dP/dt max. This is usually
     % due to a step-like shape of the pressure curve, because of the error 
     % associated with the physcial system of the catheter.
@@ -79,6 +82,9 @@ for i = 1:idxsz
             end
             EDi = EDi - 1;
         end
+        if isoidx_check_bad (i, badcyc.T)
+            continue;
+        end
     end
 
     % assign iv*.Ps1 values
@@ -104,6 +110,7 @@ for i = 1:idxsz
 
             ESi = ivIdx.Ps1(i)-10;
             badcyc.T = [badcyc.T, -i]; % add to list of bad curves
+            break;
         end
         
         % if algorithm unable to find the negative ivVal.Ps1, it continues to
@@ -126,8 +133,12 @@ for i = 1:idxsz
 		   'skipping.']);
 
                badcyc.T = [badcyc.T, -i]; % add to list of bad curves
+               break;
            end
         end
+    end
+    if isoidx_check_bad (i, badcyc.T)
+        continue;
     end
 
     % find which point is closest to the pressure value of ivVal.Ps1
@@ -176,6 +187,7 @@ for i = 1:idxsz
         % get rid of curve if it is not already marked
         if isempty(find(badcyc.T==i,1))
             badcyc.T = [badcyc.T, -i];
+            continue;
         end
 
         % ask Hunter about this scenario - Hunter look into this scenario!!! see

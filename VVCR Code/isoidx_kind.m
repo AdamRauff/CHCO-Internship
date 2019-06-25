@@ -8,7 +8,7 @@ function [ivIdx, ivVal, badcyc] = isoidx_kind (idxsz, datsz, Dat, Ext, ...
 % (iv*.Ps1) vetors into the Kind vectors. We also create unique copies of the
 % extrema vectors for the same reason.
 
-disp('    data_isoidx_k: finding Kind indices');
+disp('    isoidx_kind: finding Kind indices');
 
 ivIdx.Ps2 = ivIdx.Ps1;
 ivVal.Ps2 = ivVal.Ps1; 
@@ -55,7 +55,7 @@ for i = 1:idxsz
             [~, Pend] = max(Dat.Pres(ivIdx.dPmax2(i):ivIdx.dPmin2(i)));
             break;
         end
-    end
+    end    
     ivVal.Pe2(i) = Dat.Pres(Pend);
     ivIdx.Pe2(i) = Pend;
 
@@ -78,6 +78,9 @@ for i = 1:idxsz
             break;
         end
 
+    end
+    if isoidx_check_bad(i, badcyc.K)
+        continue;
     end
     ivVal.Ns2(i) = Dat.Pres(Pstr);
     ivIdx.Ns2(i) = Pstr;
@@ -109,6 +112,10 @@ for i = 1:idxsz
         end
 
     end
+    if isoidx_check_bad (i, badcyc.K)
+        continue;
+    end
+    
     ivVal.Ne2(i) = Dat.Pres(Pend);
     ivIdx.Ne2(i) = Pend;
 

@@ -13,7 +13,7 @@ function [ivIdx, ivVal, badcyc] = isoidx_vanderpool (idxsz, datsz, Dat, Ext, ...
 % max of (PA) rather than just to the min of (PA)).
 ALT_PES = 1;
 
-disp('    data_isoidx_v: finding Vanderpool indices for Takeuchi method');
+disp('    isoidx_vanderpool: finding Vanderpool indices for Takeuchi method');
 
 if ~isfield(Dat, 'OrigdPdt')
     disp(['        using filtered pressure acceleration for landmark ' ...
@@ -56,7 +56,11 @@ for i = 1:idxsz
 
             EDi = ivIdx.dPmin3(1); 
             badcyc.V = [badcyc.V, 1]; % add first to list of bad curves
+            break;
         end
+    end
+    if isoidx_check_bad (i, badcyc.V)
+        continue;
     end
     EDi = EDi + 1;
 
@@ -86,6 +90,9 @@ for i = 1:idxsz
             break;
         end
 
+    end
+    if isoidx_check_bad (i, badcyc.V)
+        continue;
     end
     Eir = Eir - 1;
     
