@@ -9,6 +9,8 @@ function [Ret1, Ret2, Ret3] = fit_takeuchi (ivSeg, Data, ICS, Method)
 %          needed for individual-cycle ICs; if called from a GUI, contains
 %          contstant initial conditions for fit.
 
+BOUND_VIO = 0;
+
 opts1 = optimoptions (@lsqnonlin);
 opts1.Display = 'off';
 opts1.MaxFunctionEvaluations = 2000;
@@ -143,8 +145,13 @@ for i = 1:nfits
     end
 
     if any( abs(c-lb) < 1e-6 ) || any ( abs(ub-c) < 1e-6 )
-        disp(['    fit_takeuchi' ext ': fit bounds violated on ' ...
-            'cycle ' num2str(i, '%02i')]);
+        if ~BOUND_VIO
+            fprintf('    fit_takeuchi%s: fit bounds violated on cycle %02i', ...
+                nam, i);
+            BOUND_VIO = 1;
+        else
+            fprintf(' %02i', i);
+        end
         Ret1.BadCyc(i) = 1;
     end
     
@@ -293,6 +300,9 @@ end
 % print to command line the waves that were not fit correctly. This is used as a
 % debugger to check that the "bad" waves, the ones that don't have a good fit,
 % are not utilized in the VVCR calculation.
+if BOUND_VIO
+    fprintf('\n');
+end
 indX = find(Ret1.BadCyc==1); % find indices of the bad waves
 if ~isempty(indX)
     disp(['    fit_takeuchi' ext ': Some waves fit well, ave R^2 = ' ...

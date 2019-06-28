@@ -162,10 +162,10 @@ end
 % print to command line the waves that were not fit correctly. This is used as a
 % debugger to check that the "bad" waves, the ones that don't have a good fit,
 % are not utilized in the VVCR calculation.
-indX = find(Ret1.BadCyc==1); % find indices of the bad waves
 if BOUND_VIO
     fprintf('\n');
 end
+indX = find(Ret1.BadCyc==1); % find indices of the bad waves
 if ~isempty(indX)
     disp(['    fit_kind' nam ': Some waves fit well, ave R^2 = ' ...
         num2str(mean(Ret1.Rsq(Ret1.BadCyc~=1)),'%5.3f') '.']);
