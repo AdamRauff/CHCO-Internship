@@ -55,7 +55,7 @@ for i = 1:idxsz
             [~, Pend] = max(Dat.Pres(ivIdx.dPmax2(i):ivIdx.dPmin2(i)));
             break;
         end
-    end    
+    end
     ivVal.Pe2(i) = Dat.Pres(Pend);
     ivIdx.Pe2(i) = Pend;
 

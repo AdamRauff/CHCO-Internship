@@ -173,10 +173,8 @@ Res = compute_MeanStd (Res, Data.PesP, 'B_PesP');
 % dog Pes.
 FHEAD = 'E_TakeNorm';
 if RunT
-    % frequency is the conversion to angular frequency 2*pi/T multiplied by the
-    % number of waves found over the time period ICs structure for first pass -
-    % enables individual computation of ICs
-    ICS.Freq = 2*pi/Data.time_per;
+    % Frequency based on individual cycle length works better, that is now done
+    % in the fit_ routine on a per-cycle basis.
     ICS.Pres = Data.Pres;
     ICS.dPmaxIdx = ivIdx.dPmax1;
     ICS.dPminIdx = ivIdx.dPmin1;
@@ -217,10 +215,8 @@ end
 % with above. No "old" (unconstrained) fit here.
 FHEAD = 'F_Vander';
 if RunV
-    % frequency is the conversion to angular frequency 2*pi/T multiplied by the
-    % number of waves found over the time period ICs structure for first pass -
-    % enables individual computation of ICs
-    ICS.Freq = 2*pi/Data.time_per;
+    % Frequency based on individual cycle length works better, that is now done
+    % in the fit_ routine on a per-cycle basis.
     ICS.Pres = Data.Pres;
     ICS.dPmaxIdx = ivIdx.dPmax3;
     ICS.dPminIdx = ivIdx.dPmin3;

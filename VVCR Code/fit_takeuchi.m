@@ -28,6 +28,8 @@ else
     Seg.Time = ivSeg.iv3Time;
     Seg.Pres = ivSeg.iv3Pres;
 end
+% Note that method 0 (Adam's old non-normalized fit) should never be called, and
+% all instances of method < 0 are removed from this point forward.
 
 % Variables produced by the actual fit, all returned in Ret1
 Ret1.Rsq = zeros(nfits,1);     % Goodness of fit coefficients
@@ -46,30 +48,23 @@ Ret1.VCyc = zeros(nfits,1);
 % existing ivSeg (that came in on call) to Ret2 to minimally insure continuity
 % of this variable. Finally, set the char variable 'ext' that is used in
 % providing user feedback.
-if Method > 0
-    Ret2 = ivSeg;
-    
-    % Ploting vectors of the fitting data for GUI_FitTakeuchi or
-    % GUI_FitVanderpool. Because the Takeuchi and Vanderpool methods each can
-    % have unique rejections, the iv*Plot vectors must be unique, although ADD_
-    % vectors are local to this function.
-    ADD_TPoints = []; 
-    ADD_PPoints = []; 
-    Ret3.iv1PlotTime = [];
-    Ret3.iv1PlotPres = [];
-    Ret3.iv3PlotTime = [];
-    Ret3.iv3PlotPres = [];
+Ret2 = ivSeg;
 
-    if Method == 1
-        ext = '';
-    else
-        ext = '+V';
-    end
+% Ploting vectors of the fitting data for GUI_FitTakeuchi or
+% GUI_FitVanderpool. Because the Takeuchi and Vanderpool methods each can
+% have unique rejections, the iv*Plot vectors must be unique, although ADD_
+% vectors are local to this function.
+ADD_TPoints = [];
+ADD_PPoints = [];
+Ret3.iv1PlotTime = [];
+Ret3.iv1PlotPres = [];
+Ret3.iv3PlotTime = [];
+Ret3.iv3PlotPres = [];
+
+if Method == 1
+    ext = '';
 else
-    ext = '-o';
-    
-    Ret2 = [];
-    Ret3 = [];
+    ext = '+V';
 end
 
 % scroll through the number of rows (pressure waves) in the structures:
@@ -82,11 +77,7 @@ for i = 1:nfits
         Data.Time_D(Seg.Time(i).NegIso)'];
     WavePs = [Seg.Pres(i).PosIso; Seg.Pres(i).NegIso];
 
-    if Method > 0
-        WaveTsNorm = WaveTs-WaveTs(1);
-    else
-        WaveTsNorm = WaveTs;
-    end
+    WaveTsNorm = WaveTs-WaveTs(1);
 
     % this equation is from Naeiji et al, single beat method of VVC
     sin_fun2 = @(P)(P(1)+P(2)*sin(P(3)*WaveTsNorm+P(4)))-WavePs; 
@@ -97,36 +88,51 @@ for i = 1:nfits
 
         lb = [  0.0   0.0  0.5*ICS(3) -2*pi/3];
         ub = [500.0 500.0    2*ICS(3)   -pi/3];
+% Maybe bounds should also be saved for consistency...?
     else
-        % Deriving the initial values from the data. Freq is an average found of
-        % the function. Mean is the specific average pressure value between
-        % dp/dt max and min (top of curve) specific to this cycle.
+        % Deriving the initial values from the data.
+        % Mean is the specific average pressure value between dp/dt max and
+        % min (top of curve) specific to this cycle.
         T1 = ICS.dPmaxIdx(i);
         T2 = ICS.dPminIdx(i);
         Mea = mean(double(ICS.Pres(T1:T2)));
-    
+
         % Amplitude is about twice the mean
         Amp = double(1.8*Mea);
-    
-        % keep in mind this means the initial conditions of every wave fit may
-        % be slightly different, While values entered via GUI make ICs same for
-        % all waves.
-        if Method > 0
-            c2 = [Mea, Amp, 1.5*ICS.Freq, -pi/2];
-        else
-            c2 = [Mea, Amp, ICS.Freq_o, -0.5];
-        end
-        Ret1.CycICs(i,:)= c2; % Saved cycle specific ICs
 
-        lb = [  0.0   0.0  1*ICS.Freq -2*pi/3];
-        ub = [500.0 500.0  3*ICS.Freq   -pi/9];
+        % Set frequency from maximum value of normalized time vector (period),
+        % that is, a cycle-specific period as well!!
+        Freq = 1/max(WaveTsNorm)*2*pi;
+
+        % c2 (IC vector) is saved, so that original ICs are also used in GUI.
+        c2 = [Mea, Amp, 0.95*Freq, -0.4*pi];
+        Ret1.CycICs(i,:)= c2;
+
+        % A little more thought into the bounds.
+        %
+        % Magnitudes:
+        % Lower bounds on Mean & Amplitude. Zero mean doesn't make sense, it
+        % should be at least close to the waveform mean. So lb(1) = Mea/4 (give
+        % it a little leeway). Then amplitude has to at least be that too, so
+        % both are given that minimum value.
+        %
+        % Frequency.
+        % It shouldn't less than be half (very long sin wave), but it definitely
+        % shouldn't be more than about 1.5 (double hump if more). Note that the
+        % period was coming in funky from being computed from the whole vector
+        % lenght; now, the individual period is determined from the maximum time
+        % value in WaveTsNorm - this should be a much more stable IC!!!
+        %
+        % Phase.       
+        % We start the phase such that we're just after sin() starts to recover
+        % from its minimum. But it shouldn't go back there too much, so -0.6*pi
+        % is just on the other side of the min, and 0 phase means we're starting
+        % at sin() = 0.
+        lb = [Mea/4 Mea/4 0.5*Freq -0.6*pi];
+        ub = [500.0 500.0 1.3*Freq       0];
     end
 
-    if Method > 0
-        [c,SSE,~] = lsqnonlin (sin_fun2,c2,lb,ub,opts1);
-    else
-        [c,SSE,~] = lsqnonlin (sin_fun2,c2,[],[],opts1);
-    end
+    [c,SSE,~] = lsqnonlin (sin_fun2,c2,lb,ub,opts1);
 
     % r^2 value; if the fit was bad, mark that wave.
     SSTO = norm(WavePs-mean(WavePs))^2;
@@ -136,12 +142,10 @@ for i = 1:nfits
        Ret1.BadCyc(i) = 1; 
     end
 
-    if Method > 0
-        if any( abs(c-lb) < 1e-6 ) || any ( abs(ub-c) < 1e-6 )
-            disp(['    fit_takeuchi' ext ': fit bounds violated on ' ...
-                'cycle ' num2str(i, '%02i')]);
-            Ret1.BadCyc(i) = 1; 
-        end
+    if any( abs(c-lb) < 1e-6 ) || any ( abs(ub-c) < 1e-6 )
+        disp(['    fit_takeuchi' ext ': fit bounds violated on ' ...
+            'cycle ' num2str(i, '%02i')]);
+        Ret1.BadCyc(i) = 1;
     end
     
     % Store all coefficients, Pmax for return
@@ -173,10 +177,8 @@ for i = 1:nfits
         % keep count of how many points added to systole side
         count = 0;
 
-        if Method > 0
-            temp_ADD_TPoints = [];
-            temp_ADD_PPoints = [];
-        end
+        temp_ADD_TPoints = [];
+        temp_ADD_PPoints = [];
 
         while Ret1.PIsoMax(i) < PresMax
             
@@ -198,29 +200,22 @@ for i = 1:nfits
                 Data.Time_D(Seg.Time(i).NegIso)'];
             WavePs = [Seg.Pres(i).PosIso; Seg.Pres(i).NegIso];
 
-            if Method > 0
-                WaveTsNorm = WaveTs-WaveTs(1);
-            else
-                WaveTsNorm = WaveTs;
-            end
+
+            WaveTsNorm = WaveTs-WaveTs(1);
 
             % re-fit sinusiod equation from Naeiji et al, single beat method of
             % VVC
             sin_fun2 = @(P)(P(1)+P(2)*sin(P(3)*WaveTsNorm+P(4)))-WavePs; 
 
             %least squares fitting
-            if Method > 0
-                [c,SSE,~] = lsqnonlin (sin_fun2,c2,lb,ub,opts1);
-            else
-                [c,SSE,~] = lsqnonlin (sin_fun2,c2,[],[],opts1);
-            end
+            [c,SSE,~] = lsqnonlin (sin_fun2,c2,lb,ub,opts1);
 
             % r^2 value; if the fit was bad, mark that wave.
             SSTO = norm(WavePs-mean(WavePs))^2;
             Ret1.Rsq(i) = 1-SSE/SSTO;
 
             % Only mark that points are added if we actually take the result.
-            if Ret1.Rsq(i) <0.90
+            if Ret1.Rsq(i) < 0.90
                Ret1.BadCyc(i) = 1;
                Ret1.VCyc(i) = 0;
             else
@@ -250,7 +245,7 @@ for i = 1:nfits
             end
         end
 
-        if Method > 0 & Ret1.VCyc(i) == true 
+        if Ret1.VCyc(i) == true 
             ADD_TPoints = [ADD_TPoints; temp_ADD_TPoints];
             ADD_PPoints = [ADD_PPoints; temp_ADD_PPoints];
         end
@@ -287,14 +282,12 @@ if any(Ret1.VCyc)
 end
 
 % Give GUI_FitTakeuchi first ICs to work with, average of the specific ones?
-if Method > 0 & isstruct(ICS)
+if isstruct(ICS)
     if length(Ret1.CycICs(:)) > 4
         Ret1.InitIC = mean(Ret1.CycICs);
     else
         Ret1.InitIC = Ret1.CycICs;
     end
-else
-    Ret1.InitIC = Ret1.CycICs;
 end
 
 % print to command line the waves that were not fit correctly. This is used as a

@@ -96,8 +96,8 @@ for i = 1:nfits
     % - t0 should be pretty small and probably positive
     % - Beta: 0.6 is the "best value" for rats, so we give it some leeway.
 
-    lb = [Data.PesP(i)  0.0 -0.005 0.48];
-    ub = [         500 40.0  0.020 0.72];
+    lb = [Data.PesP(i)  0.0 -0.005 0.40];
+    ub = [         500 40.0  0.020 0.80];
 
     [c,SSE,~] = lsqnonlin (sin_fun2,c2,lb,ub,opts1);
     
