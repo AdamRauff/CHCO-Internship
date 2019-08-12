@@ -29,7 +29,7 @@ ivVal.dPmin2 = Ext.dPminVal;
 % badcyc.T values.
 [~,idx] = find(badcyc.T > 0);
 if isempty(idx)
-    badcyc.K = [];
+    badcyc.K = badcyc.P;
 else
 %   badcyc.K = 1;
     badcyc.K = badcyc.T(idx);

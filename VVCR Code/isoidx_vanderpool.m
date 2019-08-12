@@ -33,7 +33,7 @@ ivIdx.dPmin3 = Ext.dPminIdx;
 ivVal.dPmin3 = Ext.dPminVal;
 
 % These are unique from Takeuchi and Kind so we start with a fresh badcyc.
-badcyc.V = [];
+badcyc.V = badcyc.P;
 
 for i = 1:idxsz
 

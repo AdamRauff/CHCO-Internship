@@ -45,12 +45,12 @@ idxsz = length(Ext.dPmaxIdx);
 % Index and Iso-Index routines. idx_pes() finds Pes independent from the three
 % landmark-finding codes. Pes is distinct from each method.
 
-[ivIdx, ivVal] = idx_pes (idxsz, datsz, Dat, Ext);
+[ivIdx, ivVal, badcyc] = idx_pes (idxsz, datsz, Dat, Ext);
 
 ivIdx.mxIdx = idxsz;
 
 [ivIdx, ivVal, badcyc] = isoidx_takeuchi (idxsz, datsz, Dat, Ext, ivIdx, ...
-    ivVal);
+    ivVal, badcyc);
 [ivIdx, ivVal, badcyc] = isoidx_vanderpool (idxsz, datsz, Dat, Ext, ivIdx, ...
     ivVal, badcyc);
 [ivIdx, ivVal, badcyc] = isoidx_kind (idxsz, datsz, Dat, Ext, ivIdx, ...

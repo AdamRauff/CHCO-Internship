@@ -1,5 +1,5 @@
 function [ivIdx, ivVal, badcyc] = isoidx_takeuchi (idxsz, datsz, Dat, Ext, ...
-    ivIdx, ivVal);
+    ivIdx, ivVal, badcyc);
 % Find isovolumic timings for Takeuchi method points.
 
 disp('    isoidx_takeuchi: finding Takeuchi indices');
@@ -14,7 +14,7 @@ ivVal.dPmax1 = Ext.dPmaxVal;
 ivIdx.dPmin1 = Ext.dPminIdx;
 ivVal.dPmin1 = Ext.dPminVal;
 
-badcyc.T = [];
+badcyc.T = badcyc.P;
 
 % scroll through all maxima
 for i = 1:idxsz

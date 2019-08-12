@@ -1,19 +1,19 @@
-function [ivIdx, ivVal] = idx_pes (idxsz, datsz, Dat, Ext, ...
-    ivIdx, ivVal, badcyc);
+function [ivIdx, ivVal, badcyc] = idx_pes (idxsz, datsz, Dat, Ext, ...
+    ivIdx, ivVal);
 % Find timings for the occurance of Pes. Note that unlike the method-specific
 % landmarks, these eventually get put into the Data structure (in data_double).
 
 disp('    data_idx_pes: finding end systolic pressure indices');
 
-% Not sure how to use these right now. How does this go wrong!?!?!
-% badcyc.PD = [];
-% badcyc.PP = [];
+badcyc.P = [];
 
-%% COMPUTE [Pes] TIMINGS - PRESSURE ACCEL METHOD
 ivIdx.PesP = zeros(idxsz,1);
 ivVal.PesP = zeros(idxsz,1);
 
+%% COMPUTE [Pes] TIMINGS - PRESSURE ACCEL METHOD
 for i = 1:idxsz
+    
+    mybad = 0;
 
     % Compute start index.
     ESi = Ext.dPminIdx(i);
@@ -25,7 +25,15 @@ for i = 1:idxsz
     while Dat.dP2t(ESi) < dP2Zero
         dP2Zero = Dat.dP2t(ESi);
         ESi = ESi - 1;
+        if ESi == 0 && i == 1
+            % Ran off front of curve; reset ESi and try again with experimental
+            % method immediately below.
+            ESi = Ext.dPminIdx(1);
+            mybad = 1;
+            break;
+        end
     end
+
     ESi = ESi + 1;
     
     % Experimental position of end systole: @(PA)max before (dP/dt)min. Use this
@@ -37,7 +45,18 @@ for i = 1:idxsz
     while Dat.dP2t(ESi) > dP2Zero
         dP2Zero = Dat.dP2t(ESi);
         ESi = ESi - 1;
+        if ESi == 0 && i == 1
+            % Ran off front of curve again. Let ESi stay at zero (it will be
+            % incremented once below, set bad cycle if it still doesn't work.
+            
+
+            mybad = 2;
+
+            break;
+        end
     end
+
+    
     ESi = ESi + 1;
 
     % Method 2: find absolute minimum of (PA) after RVSP and before (dP/dt)min,
@@ -56,10 +75,22 @@ for i = 1:idxsz
             break;
         end
     end
+    
+    if ESEi < Pmi && mybad == 2
+        disp(['        curve # 01, start of isovolumic contraction ' ...
+ 	        'not captured at start of sample, skipping.']);
+        badcyc.P = [badcyc.P, 1]; % add first to list of bad curves
+    end
+%     if isoidx_check_bad (i, badcyc.P)
+%         continue;
+%     end
+
     ESEi = ESEi + 1;
 
     % Only keep method 2 if it's earlier than method 1.
-    if ESEi < ESi
+    if ESEi < ESi && ESi > 1
+        ESi = ESEi;
+    elseif ESi == 1
         ESi = ESEi;
     end
     
