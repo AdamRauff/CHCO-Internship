@@ -48,10 +48,7 @@ for i = 1:idxsz
         if ESi == 0 && i == 1
             % Ran off front of curve again. Let ESi stay at zero (it will be
             % incremented once below, set bad cycle if it still doesn't work.
-            
-
-            mybad = 2;
-
+            mybad = mybad + 1;
             break;
         end
     end
@@ -76,14 +73,13 @@ for i = 1:idxsz
         end
     end
     
-    if ESEi < Pmi && mybad == 2
-        disp(['        curve # 01, start of isovolumic contraction ' ...
- 	        'not captured at start of sample, skipping.']);
-        badcyc.P = [badcyc.P, 1]; % add first to list of bad curves
+    if ESEi < Pmi && mybad > 0
+        disp(['        curve # ' num2str(i, '%02i') ' can''t verify location of Pes.']);
+        badcyc.P = [badcyc.P, i];
     end
-%     if isoidx_check_bad (i, badcyc.P)
-%         continue;
-%     end
+%   if isoidx_check_bad (i, badcyc.P)
+%       continue;
+%   end
 
     ESEi = ESEi + 1;
 
