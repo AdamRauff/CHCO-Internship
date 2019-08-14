@@ -147,7 +147,7 @@ for i = 1:nfits
     if any( abs(c-lb) < 1e-6 ) || any ( abs(ub-c) < 1e-6 )
         if ~BOUND_VIO
             fprintf('    fit_takeuchi%s: fit bounds violated on cycle %02i', ...
-                nam, i);
+                ext, i);
             BOUND_VIO = 1;
         else
             fprintf(' %02i', i);

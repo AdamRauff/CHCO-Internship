@@ -56,10 +56,10 @@ for i = 1:nfits
         if WGHT_CONT
             P0_weight = P0_weight/WGHT_CONT;
         end
-        nam = ' (weighted)';
+        ext = ' (weighted)';
     else
         P0_weight = 1;
-        nam = '';
+        ext = '';
     end
 
 %-[Examining effect of weighting
@@ -116,7 +116,7 @@ for i = 1:nfits
     if any( abs(c-lb) < 1e-6 ) || any ( abs(ub-c) < 1e-6 )
         if ~BOUND_VIO 
             fprintf('    fit_kind%s: fit bounds violated on cycle %02i', ...
-                nam, i);
+                ext, i);
             BOUND_VIO = 1;
         else
             fprintf(' %02i', i);
@@ -167,11 +167,11 @@ if BOUND_VIO
 end
 indX = find(Ret1.BadCyc==1); % find indices of the bad waves
 if ~isempty(indX)
-    disp(['    fit_kind' nam ': Some waves fit well, ave R^2 = ' ...
+    disp(['    fit_kind' ext ': Some waves fit well, ave R^2 = ' ...
         num2str(mean(Ret1.Rsq(Ret1.BadCyc~=1)),'%5.3f') '.']);
     disp(['        These waves are excluded: ', num2str(indX','%02i ')]);
 else
-    disp(['    fit_kind' nam ': All waves fit well, ave R^2 = ' ...
+    disp(['    fit_kind' ext ': All waves fit well, ave R^2 = ' ...
             num2str(mean(Ret1.Rsq),'%5.3f') '.']);
 end
 
